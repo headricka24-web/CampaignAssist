@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 
+export async function DELETE() {
+  await prisma.binItem.deleteMany()
+  await prisma.article.deleteMany()
+  return NextResponse.json({ ok: true })
+}
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const bucket = searchParams.get('bucket')

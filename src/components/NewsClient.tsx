@@ -29,6 +29,8 @@ export default function NewsClient({ candidates, initialBuckets }: Props) {
   const [scanning, setScanning]           = useState(false)
   const [scanStatus, setScanStatus]       = useState('')
   const [backfilling, setBackfilling]     = useState(false)
+  const [clearing, setClearing]           = useState(false)
+  const [confirmClear, setConfirmClear]   = useState(false)
   const [expandedId, setExpandedId]       = useState<string | null>(null)
   const [sortCol, setSortCol]             = useState<'datePublished' | 'outlet' | 'sentiment' | 'title'>('datePublished')
   const [sortDir, setSortDir]             = useState<'asc' | 'desc'>('desc')
@@ -56,6 +58,16 @@ export default function NewsClient({ candidates, initialBuckets }: Props) {
       }
     } catch { setScanStatus('✘ Scan failed.') }
     finally { setScanning(false) }
+  }
+
+  async function handleClearAll() {
+    setClearing(true)
+    try {
+      await fetch('/api/articles', { method: 'DELETE' })
+      setBuckets({ CandidateCoverage: [], OpponentCoverage: [], GeneralRace: [], HotButtons: [] })
+      setScanStatus('✔ All articles cleared.')
+    } catch { setScanStatus('✘ Clear failed.') }
+    finally { setClearing(false); setConfirmClear(false) }
   }
 
   async function handleBackfill() {
@@ -158,6 +170,25 @@ export default function NewsClient({ candidates, initialBuckets }: Props) {
                 {backfilling
                   ? <span className="flex items-center gap-2"><span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin inline-block" />Generating…</span>
                   : `⚡ Generate ${pendingCount} Missing Summaries`}
+              </button>
+            )}
+
+            {confirmClear ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-red-300">Remove all articles?</span>
+                <button onClick={handleClearAll} disabled={clearing}
+                  className="text-xs bg-red-500 hover:bg-red-600 text-white font-bold px-3 py-1.5 rounded-lg disabled:opacity-50">
+                  {clearing ? '…' : 'Yes, clear all'}
+                </button>
+                <button onClick={() => setConfirmClear(false)}
+                  className="text-xs text-blue-300 hover:text-white px-2 py-1.5">
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button onClick={() => setConfirmClear(true)}
+                className="text-xs text-red-300 hover:text-red-200 font-semibold border border-red-400 border-opacity-40 px-3 py-2 rounded-lg transition-colors">
+                🗑 Clear All
               </button>
             )}
 
