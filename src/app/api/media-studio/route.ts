@@ -10,36 +10,83 @@ type Section = typeof SECTIONS[number]
 
 async function getContext() {
   const candidate = await prisma.candidate.findFirst()
-  const articles = await prisma.article.findMany({
+  const articles  = await prisma.article.findMany({
     orderBy: { datePublished: 'desc' },
     take: 10,
   })
-  const name = candidate?.name ?? 'the candidate'
-  const race = candidate ? `${candidate.race} in ${candidate.state}` : 'this race'
+  const name      = candidate?.name      ?? 'the candidate'
+  const race      = candidate?.race      ?? 'this race'
+  const state     = candidate?.state     ?? 'the state'
+  const incumbent = candidate?.incumbent ? 'incumbent Republican' : 'Republican challenger'
   const headlines = articles.map(a => `- ${a.title} (${a.sentiment ?? 'Neutral'})`).join('\n')
-  return { name, race, headlines, hasArticles: articles.length > 0 }
+  return { name, race, state, incumbent, headlines, hasArticles: articles.length > 0 }
 }
 
-const prompts: Record<Section, (ctx: { name: string; race: string; headlines: string }) => [string, string]> = {
+type Ctx = { name: string; race: string; state: string; incumbent: string; headlines: string }
+
+const prompts: Record<Section, (ctx: Ctx) => [string, string]> = {
   facebook: (ctx) => [
-    'You are a campaign social media director. Write punchy Facebook posts that drive engagement. No hashtags.',
-    `Candidate: ${ctx.name}, running for ${ctx.race}.\n\nRecent news:\n${ctx.headlines}\n\nWrite 3 Facebook posts. For each, write a bold opening line, 2-sentence body, and a call-to-action. Separate each post with ---`,
+    'You are a Republican campaign social media director. Write punchy, conservative Facebook posts that energize the GOP base and appeal to patriotic values. No hashtags. Bold and direct.',
+    `Candidate: ${ctx.name} (${ctx.incumbent}), running for ${ctx.race} in ${ctx.state}.
+
+Recent news coverage:
+${ctx.headlines}
+
+Write 3 Facebook posts for the Republican campaign. For each: write a bold opening line that fires up conservatives, a 2-sentence body grounded in Republican values, and a strong call-to-action. Separate each post with ---`,
   ],
+
   instagram: (ctx) => [
-    'You are a campaign social media director. Write Instagram captions with energy and hashtags.',
-    `Candidate: ${ctx.name}, running for ${ctx.race}.\n\nRecent news:\n${ctx.headlines}\n\nWrite 3 Instagram captions. Each should be 2-3 sentences with 5 hashtags at the end. Separate each with ---`,
+    'You are a Republican campaign social media director. Write energizing Instagram captions with a patriotic, conservative voice and relevant hashtags.',
+    `Candidate: ${ctx.name} (${ctx.incumbent}), running for ${ctx.race} in ${ctx.state}.
+
+Recent news coverage:
+${ctx.headlines}
+
+Write 3 Instagram captions for the Republican campaign. Each should be 2-3 sentences with a conservative message, then 5 relevant hashtags (include #GOP, #Republican, and state-specific tags). Separate each with ---`,
   ],
+
   newsletter: (ctx) => [
-    'You are a campaign communications director. Write a warm, energizing campaign newsletter.',
-    `Candidate: ${ctx.name}, running for ${ctx.race}.\n\nRecent news:\n${ctx.headlines}\n\nWrite a campaign email newsletter with: Subject line, Preview text, and 3 short body paragraphs. Label each section clearly.`,
+    'You are a Republican campaign communications director. Write a warm, energizing campaign newsletter that rallies the conservative base and motivates action.',
+    `Candidate: ${ctx.name} (${ctx.incumbent}), running for ${ctx.race} in ${ctx.state}.
+
+Recent news coverage:
+${ctx.headlines}
+
+Write a campaign email newsletter with:
+SUBJECT LINE:
+PREVIEW TEXT:
+BODY: (3 short paragraphs — open with conservative values, connect to current news, close with a call-to-action)
+
+Keep it tight and motivating.`,
   ],
+
   taglines: (ctx) => [
-    'You are a political messaging expert. Write short, memorable campaign taglines and signage text.',
-    `Candidate: ${ctx.name}, running for ${ctx.race}.\n\nRecent news:\n${ctx.headlines}\n\nWrite:\n- 5 campaign taglines (short, punchy)\n- 3 yard sign / banner ideas (bold, ALL CAPS style)\n\nLabel each section.`,
+    'You are a Republican political messaging expert. Write short, powerful campaign taglines that capture conservative values and winning energy.',
+    `Candidate: ${ctx.name} (${ctx.incumbent}), running for ${ctx.race} in ${ctx.state}.
+
+Recent news coverage:
+${ctx.headlines}
+
+Write:
+- 5 campaign taglines (short, punchy, conservative — think America, freedom, strength, common sense)
+- 3 yard sign / banner ideas (bold, ALL CAPS, 5 words or fewer)
+
+Label each section clearly.`,
   ],
+
   strategy: (ctx) => [
-    'You are a senior campaign strategist. Give sharp, actionable tactical advice.',
-    `Candidate: ${ctx.name}, running for ${ctx.race}.\n\nRecent news:\n${ctx.headlines}\n\nGive 4 tactical strategy recommendations based on this news. For each: write a bold title, mark urgency (HIGH/MEDIUM/LOW), and give 2 sentences of advice. Separate each with ---`,
+    'You are a senior Republican campaign strategist. Give sharp, actionable tactical advice grounded in conservative political strategy and GOP winning playbooks.',
+    `Candidate: ${ctx.name} (${ctx.incumbent}), running for ${ctx.race} in ${ctx.state}.
+
+Recent news coverage:
+${ctx.headlines}
+
+Give 4 tactical Republican strategy recommendations based on this news. For each:
+- Bold title
+- Urgency level: HIGH / MEDIUM / LOW
+- 2 sentences of specific advice on how to use this for a GOP win
+
+Focus on offense — where the Republican message is strongest and where Democrats are vulnerable. Separate each with ---`,
   ],
 }
 
