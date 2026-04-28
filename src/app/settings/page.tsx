@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { prisma } from '@/lib/db'
 import OutletForm from '@/components/OutletForm'
 import CandidateForm from '@/components/CandidateForm'
