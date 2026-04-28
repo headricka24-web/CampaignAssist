@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { prisma } from '@/lib/db'
 import OutletForm from '@/components/OutletForm'
 import CandidateForm from '@/components/CandidateForm'
+import CandidateList from '@/components/CandidateList'
 
 export default async function SettingsPage() {
   const [candidates, outlets] = await Promise.all([
@@ -17,14 +18,7 @@ export default async function SettingsPage() {
         <div>
           <h2 className="font-semibold text-gray-700 mb-3">Candidates</h2>
           <CandidateForm />
-          <ul className="mt-4 space-y-2">
-            {candidates.map(c => (
-              <li key={c.id} className="text-sm bg-white border border-gray-200 rounded px-3 py-2">
-                <span className="font-medium">{c.name}</span>
-                <span className="text-gray-400 ml-2">{c.race} · {c.state} · {c.party}</span>
-              </li>
-            ))}
-          </ul>
+          <CandidateList candidates={candidates} />
         </div>
         <div>
           <h2 className="font-semibold text-gray-700 mb-3">Outlets</h2>

@@ -13,3 +13,20 @@ export async function POST(req: NextRequest) {
   })
   return NextResponse.json(candidate, { status: 201 })
 }
+
+export async function DELETE(req: NextRequest) {
+  const { id } = await req.json() as { id: string }
+  if (!id) return NextResponse.json({ error: 'missing id' }, { status: 400 })
+
+  // Cascade: bins → binItems, briefs, exports → candidate
+  const bins = await prisma.bin.findMany({ where: { candidateId: id }, select: { id: true } })
+  const binIds = bins.map(b => b.id)
+
+  await prisma.binItem.deleteMany({ where: { binId: { in: binIds } } })
+  await prisma.brief.deleteMany({ where: { binId: { in: binIds } } })
+  await prisma.export.deleteMany({ where: { binId: { in: binIds } } })
+  await prisma.bin.deleteMany({ where: { candidateId: id } })
+  await prisma.candidate.delete({ where: { id } })
+
+  return NextResponse.json({ ok: true })
+}
