@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { summarizeArticle } from '@/layers/summarization'
 
+export const maxDuration = 60
+
 const delay = (ms: number) => new Promise(r => setTimeout(r, ms))
 
 export async function POST() {

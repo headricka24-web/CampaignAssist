@@ -43,9 +43,10 @@ const bucketIcon: Record<string, string> = {
 export default async function DashboardPage() {
   const { total, newToday, byBucket, bySentiment, recentArticles } = await getStats()
 
-  const positiveCount = bySentiment.find(s => s.sentiment === 'Positive')?._count ?? 0
-  const negativeCount = bySentiment.find(s => s.sentiment === 'Negative')?._count ?? 0
-  const sentimentScore = total > 0 ? Math.round((positiveCount / total) * 100) : 0
+  const positiveCount  = bySentiment.find(s => s.sentiment === 'Positive')?._count ?? 0
+  const negativeCount  = bySentiment.find(s => s.sentiment === 'Negative')?._count ?? 0
+  const scoredCount    = positiveCount + negativeCount
+  const sentimentScore = scoredCount > 0 ? Math.round((positiveCount / scoredCount) * 100) : 0
 
   return (
     <div className="space-y-8">
@@ -123,7 +124,7 @@ export default async function DashboardPage() {
             <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">Sentiment Pulse</h2>
             <div className="flex items-end justify-between mb-3">
               <span className="font-display text-5xl font-bold text-navy">{sentimentScore}%</span>
-              <span className="text-sm text-green-600 font-semibold">Favorable</span>
+              <span className="text-sm text-green-600 font-semibold">of leaning coverage</span>
             </div>
             {/* Bar */}
             <div className="h-3 bg-gray-100 rounded-full overflow-hidden mb-4">
