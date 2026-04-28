@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { ask } from '@/lib/claude'
 
+export const maxDuration = 60
+
 async function fetchRSS(query: string): Promise<string[]> {
   const encoded = encodeURIComponent(query)
   const url = `https://news.google.com/rss/search?q=${encoded}&hl=en-US&gl=US&ceid=US:en`

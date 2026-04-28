@@ -3,6 +3,8 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/db'
 import { ask } from '@/lib/claude'
 
+export const maxDuration = 60
+
 const SECTIONS = ['facebook', 'instagram', 'newsletter', 'taglines', 'strategy'] as const
 type Section = typeof SECTIONS[number]
 

@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { ask } from '@/lib/claude'
 
+export const maxDuration = 60
+
 function todayKey() {
   return new Date().toISOString().slice(0, 10) // YYYY-MM-DD
 }
