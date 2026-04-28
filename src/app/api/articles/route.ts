@@ -5,7 +5,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const bucket = searchParams.get('bucket')
   const sentiment = searchParams.get('sentiment')
-  const limit = parseInt(searchParams.get('limit') ?? '50')
+  const limit = Math.min(parseInt(searchParams.get('limit') ?? '50') || 50, 200)
 
   const articles = await prisma.article.findMany({
     where: {

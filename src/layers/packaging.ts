@@ -20,7 +20,7 @@ export function exportBin(
           date: a.datePublished,
           bucket: a.bucket,
           sentiment: a.sentiment,
-          topics: JSON.parse(a.topics),
+          topics: (() => { try { return JSON.parse(a.topics) } catch { return [] } })(),
           summary: a.summary,
         })),
       },
@@ -39,7 +39,7 @@ export function exportBin(
         a.datePublished.toISOString().slice(0, 10),
         a.bucket ?? '',
         a.sentiment ?? '',
-        JSON.parse(a.topics).join(';'),
+        (() => { try { return JSON.parse(a.topics).join(';') } catch { return '' } })(),
         `"${(a.summary ?? '').replace(/"/g, '""')}"`,
       ].join(','),
     )
