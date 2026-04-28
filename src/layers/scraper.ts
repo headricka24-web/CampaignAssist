@@ -22,7 +22,6 @@ function extractTag(xml: string, tag: string): string {
 }
 
 function cleanGoogleUrl(url: string): string {
-  // Google News wraps URLs — extract the real one
   const match = url.match(/url=([^&]+)/)
   if (match) return decodeURIComponent(match[1])
   return url
@@ -40,7 +39,6 @@ async function fetchRSS(query: string): Promise<ScrapedArticle[]> {
   if (!res.ok) throw new Error(`RSS fetch failed: ${res.status}`)
 
   const xml = await res.text()
-
   const items: ScrapedArticle[] = []
   const itemMatches = xml.match(/<item>[\s\S]*?<\/item>/g) ?? []
 
@@ -65,19 +63,32 @@ async function fetchRSS(query: string): Promise<ScrapedArticle[]> {
   return items
 }
 
+// Drop articles whose title+snippet don't mention the state or candidate name
+function filterRelevant(articles: ScrapedArticle[], ...keywords: string[]): ScrapedArticle[] {
+  const terms = keywords.filter(Boolean).map(k => k.toLowerCase())
+  return articles.filter(a => {
+    const hay = (a.title + ' ' + a.snippet).toLowerCase()
+    return terms.some(t => hay.includes(t))
+  })
+}
+
 export async function scrapeForCandidate(candidateName: string, state: string, race: string) {
-  return fetchRSS(`"${candidateName}" ${state} ${race}`)
+  const results = await fetchRSS(`"${candidateName}" ${state}`)
+  return filterRelevant(results, candidateName, state)
 }
 
 export async function scrapeForOpponent(opponentName: string, state: string, race: string) {
-  return fetchRSS(`"${opponentName}" ${state} ${race}`)
+  const results = await fetchRSS(`"${opponentName}" ${state}`)
+  return filterRelevant(results, opponentName, state)
 }
 
 export async function scrapeGeneralRace(race: string, state: string) {
-  return fetchRSS(`${race} ${state} election 2026`)
+  const results = await fetchRSS(`"${state}" ${race} election 2026`)
+  return filterRelevant(results, state)
 }
 
 export async function scrapeHotButtons(topics: string[], state: string) {
-  const query = topics.map(t => `"${t}"`).join(' OR ') + ` ${state} election`
-  return fetchRSS(query)
+  const query = topics.map(t => `"${t}"`).join(' OR ') + ` "${state}"`
+  const results = await fetchRSS(query)
+  return filterRelevant(results, state)
 }
