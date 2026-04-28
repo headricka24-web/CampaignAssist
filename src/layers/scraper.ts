@@ -63,32 +63,42 @@ async function fetchRSS(query: string): Promise<ScrapedArticle[]> {
   return items
 }
 
-// Drop articles whose title+snippet don't mention the state or candidate name
-function filterRelevant(articles: ScrapedArticle[], ...keywords: string[]): ScrapedArticle[] {
+// titleOnly=true: only check the title (prevents snippet false-positives like "New Hampshire University")
+function filterRelevant(articles: ScrapedArticle[], keywords: string[], titleOnly = false): ScrapedArticle[] {
   const terms = keywords.filter(Boolean).map(k => k.toLowerCase())
   return articles.filter(a => {
-    const hay = (a.title + ' ' + a.snippet).toLowerCase()
+    const hay = titleOnly ? a.title.toLowerCase() : (a.title + ' ' + a.snippet).toLowerCase()
     return terms.some(t => hay.includes(t))
   })
 }
 
-export async function scrapeForCandidate(candidateName: string, state: string, race: string) {
+export async function scrapeForCandidate(candidateName: string, state: string, _race: string) {
   const results = await fetchRSS(`"${candidateName}" ${state}`)
-  return filterRelevant(results, candidateName, state)
+  // Candidate name in title or snippet is fine; state check is title-only to avoid false positives
+  return results.filter(a => {
+    const title   = a.title.toLowerCase()
+    const full    = (a.title + ' ' + a.snippet).toLowerCase()
+    return full.includes(candidateName.toLowerCase()) || title.includes(state.toLowerCase())
+  })
 }
 
-export async function scrapeForOpponent(opponentName: string, state: string, race: string) {
+export async function scrapeForOpponent(opponentName: string, state: string, _race: string) {
   const results = await fetchRSS(`"${opponentName}" ${state}`)
-  return filterRelevant(results, opponentName, state)
+  return results.filter(a => {
+    const title = a.title.toLowerCase()
+    const full  = (a.title + ' ' + a.snippet).toLowerCase()
+    return full.includes(opponentName.toLowerCase()) || title.includes(state.toLowerCase())
+  })
 }
 
 export async function scrapeGeneralRace(race: string, state: string) {
   const results = await fetchRSS(`"${state}" ${race} election 2026`)
-  return filterRelevant(results, state)
+  // Title must mention the state — prevents articles about other states slipping in via snippet
+  return filterRelevant(results, [state], true)
 }
 
 export async function scrapeHotButtons(topics: string[], state: string) {
   const query = topics.map(t => `"${t}"`).join(' OR ') + ` "${state}"`
   const results = await fetchRSS(query)
-  return filterRelevant(results, state)
+  return filterRelevant(results, [state], true)
 }
