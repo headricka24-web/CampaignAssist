@@ -1,0 +1,126 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Candidate {
+  id        String   @id @default(cuid())
+  name      String
+  race      String
+  state     String
+  party     String
+  incumbent Boolean  @default(false)
+  createdAt DateTime @default(now())
+  bins      Bin[]
+}
+
+model Outlet {
+  id       String    @id @default(cuid())
+  name     String
+  type     String    // News | Blog | Social | TV | Radio | Other
+  reach    String?
+  leaning  String?
+  articles Article[]
+}
+
+model Article {
+  id           String   @id @default(cuid())
+  title        String
+  url          String   @unique
+  datePublished DateTime
+  outletId     String
+  outlet       Outlet   @relation(fields: [outletId], references: [id])
+  author       String?
+  language     String   @default("en")
+  region       String?
+  sourceType   String   // News | Blog | Social | PressRelease
+  rawText      String
+  summary      String?
+  bucket       String?  // CandidateCoverage | OpponentCoverage | GeneralRace | HotButtons
+  topics       String   @default("[]") // JSON array stored as string
+  sentiment    String?  // Positive | Neutral | Negative
+  confidence   Float?
+  createdAt    DateTime @default(now())
+  binItems     BinItem[]
+}
+
+model Bin {
+  id          String    @id @default(cuid())
+  candidateId String
+  candidate   Candidate @relation(fields: [candidateId], references: [id])
+  name        String
+  dateCreated DateTime  @default(now())
+  digest      String?
+  items       BinItem[]
+  briefs      Brief[]
+  exports     Export[]
+}
+
+model BinItem {
+  id        String  @id @default(cuid())
+  binId     String
+  bin       Bin     @relation(fields: [binId], references: [id])
+  articleId String
+  article   Article @relation(fields: [articleId], references: [id])
+  sortOrder Int     @default(0)
+
+  @@unique([binId, articleId])
+}
+
+model Brief {
+  id         String   @id @default(cuid())
+  binId      String
+  bin        Bin      @relation(fields: [binId], references: [id])
+  type       String   // DailyDigest | IssueBrief | NeedToKnow | Newsletter | Email | SocialCopy | EventRequest
+  content    String
+  templateId String?
+  template   Template? @relation(fields: [templateId], references: [id])
+  createdAt  DateTime @default(now())
+}
+
+model Template {
+  id             String  @id @default(cuid())
+  name           String
+  type           String
+  structure      String  // JSON: sections + placeholders
+  defaultContent String
+  briefs         Brief[]
+}
+
+model Export {
+  id          String   @id @default(cuid())
+  binId       String
+  bin         Bin      @relation(fields: [binId], references: [id])
+  format      String   // CSV | JSON | Markdown
+  content     String
+  generatedAt DateTime @default(now())
+  status      String   @default("ready")
+}
+
+model MediaPack {
+  id        String   @id @default(cuid())
+  date      String   @unique
+  content   String   // JSON
+  createdAt DateTime @default(now())
+}
+
+model DailyBrief {
+  id        String   @id @default(cuid())
+  date      String   @unique // YYYY-MM-DD
+  content   String
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  entity    String
+  entityId  String
+  userId    String?
+  meta      String?
+  createdAt DateTime @default(now())
+}

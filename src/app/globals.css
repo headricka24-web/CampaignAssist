@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --navy:  #0A1628;
+  --red:   #B22234;
+  --gold:  #D4A017;
+}
+
+/* ── Base ─────────────────────────────────────────────────────────── */
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background-color: #eef2f9;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(10,22,40,0.06) 0%, transparent 100%);
+  color: #1a2744;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Typography upgrades ──────────────────────────────────────────── */
+h1, h2, h3 { letter-spacing: -0.01em; }
+
+/* ── Scrollbar ────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #3d6eb5; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #264d8c; }
+
+/* ── Selection ────────────────────────────────────────────────────── */
+::selection { background: rgba(212,160,23,0.25); color: #0A1628; }
+
+/* ── Star bullet ──────────────────────────────────────────────────── */
+.star-bullet::before { content: '★ '; color: var(--gold); }
+
+/* ── News table row hover ─────────────────────────────────────────── */
+.news-row:hover td { background-color: #dce8f7 !important; }
+
+/* ── Ticker animation ─────────────────────────────────────────────── */
+@keyframes ticker {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.ticker-track {
+  display: flex;
+  width: max-content;
+  animation: ticker 30s linear infinite;
+}
+.ticker-track:hover { animation-play-state: paused; }
+
+/* ── Shimmer border ───────────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+.shimmer-border {
+  background: linear-gradient(90deg, #0A1628, #D4A017, #B22234, #D4A017, #0A1628);
+  background-size: 200% auto;
+  animation: shimmer 4s linear infinite;
+}
+
+/* ── Card hover lift ──────────────────────────────────────────────── */
+.card-lift { transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.card-lift:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(10,22,40,0.14); }
+
+/* ── Glass panel ──────────────────────────────────────────────────── */
+.glass {
+  background: rgba(255,255,255,0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.6);
+}
+
+/* ── Focus ring ───────────────────────────────────────────────────── */
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 4px; }
