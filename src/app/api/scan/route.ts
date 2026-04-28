@@ -7,8 +7,9 @@ import {
   scrapeHotButtons,
 } from '@/layers/scraper'
 import { classifyArticle } from '@/layers/classification'
-import { summarizeArticle } from '@/layers/summarization'
 import type { ScrapedArticle } from '@/layers/scraper'
+
+export const maxDuration = 60
 
 async function getOrCreateOutlet(name: string) {
   const clean = name.replace(/\s*\(.*?\)\s*/g, '').trim() || name
@@ -38,18 +39,13 @@ async function processArticle(
 
   if (hasApiKey) {
     try {
-      const [cls, sum] = await Promise.all([
-        classifyArticle(scraped.title, rawText, candidateName, opponentName),
-        summarizeArticle(scraped.title, rawText, scraped.outletName, scraped.datePublished),
-      ])
-      bucket    = cls.bucket
-      topics    = cls.topics
-      sentiment = cls.sentiment
-      confidence= cls.confidence
-      summary   = sum
-    } catch (e) {
-      // Claude failed — save with defaults, mark as pending classification
-      summary = null
+      const cls = await classifyArticle(scraped.title, rawText, candidateName, opponentName)
+      bucket     = cls.bucket
+      topics     = cls.topics
+      sentiment  = cls.sentiment
+      confidence = cls.confidence
+    } catch {
+      // Claude failed — save with defaults
     }
   }
 
@@ -104,17 +100,14 @@ export async function POST(req: NextRequest) {
     [hotButtonArticles.status === 'fulfilled' ? hotButtonArticles.value : [], 'HotButtons'],
   ]
 
-  for (const [articles, bucket] of batches) {
-    for (const article of articles) {
-      try {
-        const result = await processArticle(article, candidate.name, opponent, bucket, hasApiKey)
-        if (result.status === 'skipped') results.skipped++
-        else results.ingested++
-      } catch {
-        results.errors++
-      }
-    }
-  }
+  const allTasks = batches.flatMap(([articles, bucket]) =>
+    articles.map(article =>
+      processArticle(article, candidate.name, opponent, bucket, hasApiKey)
+        .then(r => { if (r.status === 'skipped') results.skipped++; else results.ingested++ })
+        .catch(() => { results.errors++ })
+    )
+  )
+  await Promise.all(allTasks)
 
   await prisma.auditLog.create({
     data: { action: 'scan', entity: 'Candidate', entityId: candidateId, meta: JSON.stringify(results) },
