@@ -122,7 +122,7 @@ export default function HotButtons() {
             Hot <span className="text-gold-400">Buttons</span>
           </h1>
           <p className="text-blue-200 text-lg max-w-xl mb-6">
-            Scan what's dominating the political conversation in your state right now — then get a tactical playbook for reaching every type of voter.
+            Know what voters in your state are talking about before your opponents do. Get a real-time issue briefing and a voter-by-voter messaging strategy in one click.
           </p>
           <button
             onClick={fetchBriefing}
@@ -131,7 +131,7 @@ export default function HotButtons() {
           >
             {loadingBrief
               ? <><span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full inline-block" /> Scanning the news…</>
-              : briefing ? '↺ Refresh Briefing' : '🔥 What\'s on the Table Right Now?'}
+              : briefing ? '↺ Refresh Briefing' : '🔥 Scan Live Issues'}
           </button>
           {briefError && <p className="mt-3 text-red-300 text-sm">{briefError}</p>}
         </div>

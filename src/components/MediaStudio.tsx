@@ -147,7 +147,7 @@ export default function MediaStudio() {
             Media <span className="text-gold-400">Studio</span>
           </h1>
           <p className="text-blue-200 text-lg max-w-xl mb-6">
-            Turn your intelligence feed into a content arsenal. Generate each piece individually — only when you need it.
+            Professional campaign content — on demand. Every post, newsletter, and tagline is built from your live news feed and tailored to your candidate.
           </p>
 
           {/* Tone selector */}

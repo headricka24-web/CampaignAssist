@@ -226,7 +226,7 @@ export default function LetsFund() {
             Let's <span className="text-gold-400">Fund It.</span>
           </h1>
           <p className="text-blue-200 text-lg max-w-xl mb-5">
-            AI-generated fundraising content for every channel. Target by demographic and issue, or generate a general version — your choice every time.
+            Raise more with less effort. Every piece is written specifically for your candidate, your state, and the voters most likely to give.
           </p>
           <div className="flex flex-wrap gap-2 mb-5">
             <span className="text-xs font-bold text-blue-300 border border-navy-400 px-3 py-1 rounded-full">🎯 Demographic Targeting</span>
@@ -258,7 +258,7 @@ export default function LetsFund() {
       <div className="bg-white rounded-2xl border border-gold-200 px-5 py-4 flex items-start gap-3">
         <span className="text-gold-400 text-lg shrink-0 mt-0.5">💡</span>
         <p className="text-sm text-gray-600 leading-relaxed">
-          <strong className="text-navy">Each card generates independently.</strong> Click <span className="font-mono bg-gray-100 px-1 rounded text-xs">⚙️ Customize targeting</span> on any card to target a specific voter group or issue — or just hit <span className="font-mono bg-gray-100 px-1 rounded text-xs">Generate →</span> for a general version. Results open in a popup so your layout stays clean.
+          <strong className="text-navy">Each piece generates independently.</strong> Use <span className="font-mono bg-gray-100 px-1 rounded text-xs">⚙️ Customize targeting</span> to dial in a specific voter group or issue — or generate a general version instantly. Set your tone above to match your campaign's voice.
         </p>
       </div>
 

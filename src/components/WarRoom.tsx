@@ -192,7 +192,7 @@ export default function WarRoom() {
             The <span className="text-gold-400">War Room.</span>
           </h1>
           <p className="text-blue-200 text-lg max-w-xl mb-6">
-            Stay ahead of attacks before they land. We scan today's news for every angle the opposition could use — then arm you with a counter-punch.
+            See every attack coming before it lands. The War Room analyzes your live news feed for opposition vulnerabilities, flags threats by severity, and generates a counter-response in seconds.
           </p>
           <button onClick={handleScan} disabled={loading}
             className="bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white font-black px-8 py-3 rounded-xl text-sm tracking-widest uppercase shadow-glow-red transition-colors focus:outline-none focus:ring-2 focus:ring-gold-400">

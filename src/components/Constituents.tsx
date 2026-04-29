@@ -50,7 +50,7 @@ export default function Constituents() {
             Know Your <span className="text-gold-400">Constituents.</span>
           </h1>
           <p className="text-blue-200 text-lg max-w-xl mb-6">
-            Deep demographic intelligence on your state — income, voting patterns, swing voter targets, and exactly where to focus your Republican outreach.
+            Stop guessing. Know exactly who your voters are — their income, voting history, and what moves them. Identify your base, your swing targets, and where every dollar of outreach should go.
           </p>
           <button onClick={generate} disabled={loading}
             className="bg-gold-400 hover:bg-gold-500 disabled:opacity-50 text-navy font-black px-8 py-3 rounded-xl text-sm tracking-widest uppercase transition-colors focus:outline-none focus:ring-2 focus:ring-white">

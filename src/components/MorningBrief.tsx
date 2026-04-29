@@ -38,7 +38,7 @@ export default function MorningBrief() {
               <div className="w-8 h-8 rounded-lg bg-gold-100 flex items-center justify-center shrink-0">
                 <span className="text-gold-500 font-black text-sm">★</span>
               </div>
-              <h2 className="font-display text-xl font-bold text-navy">Here's Your Morning Brief</h2>
+              <h2 className="font-display text-xl font-bold text-navy">Daily Intelligence Brief</h2>
             </div>
             <p className="text-[11px] text-gray-400 uppercase tracking-widest pl-10">{today}</p>
           </div>
@@ -59,11 +59,13 @@ export default function MorningBrief() {
 
         {!loading && !content && !generating && (
           <div className="py-2">
-            {noArticles && <p className="text-sm text-gray-500 mb-3">No articles found. Run a news scan first, then generate your brief.</p>}
-            {!noArticles && <p className="text-sm text-gray-500 mb-3">Click to generate your morning brief from all scanned articles.</p>}
+            {noArticles
+              ? <p className="text-sm text-gray-500 mb-3">No articles in your feed yet — run a News Tracker scan first.</p>
+              : <p className="text-sm text-gray-500 mb-3">Get a sharp, strategic read on everything your campaign needs to know today.</p>
+            }
             <button onClick={generate} disabled={generating}
               className="bg-navy hover:bg-navy-700 text-white font-bold px-6 py-2.5 rounded-xl text-sm transition-colors shadow-sm disabled:opacity-50">
-              ★ Generate Morning Brief
+              ★ Generate Today's Brief
             </button>
           </div>
         )}
@@ -71,7 +73,7 @@ export default function MorningBrief() {
         {generating && (
           <div className="flex items-center gap-2.5 text-sm text-gray-400 py-4">
             <span className="animate-spin inline-block w-4 h-4 border-2 border-navy border-t-transparent rounded-full" />
-            Claude is writing your brief…
+            Compiling your intelligence brief…
           </div>
         )}
 

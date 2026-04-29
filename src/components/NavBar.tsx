@@ -53,9 +53,11 @@ export default function NavBar() {
           </div>
 
           {/* Live indicator */}
-          <div className="flex items-center gap-2 text-xs text-blue-300/80">
-            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse-slow" aria-hidden="true" />
-            <span className="hidden sm:block font-medium tracking-widest uppercase">Live</span>
+          <div className="flex items-center gap-3 text-xs text-blue-300/80">
+            <div className="hidden sm:flex items-center gap-1.5 border border-navy-400/60 px-2.5 py-1 rounded-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse-slow" aria-hidden="true" />
+              <span className="font-bold tracking-widest uppercase text-green-400">Live</span>
+            </div>
           </div>
         </div>
       </nav>

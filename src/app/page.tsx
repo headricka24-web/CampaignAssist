@@ -63,21 +63,21 @@ export default async function DashboardPage() {
             <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
             Live Intelligence Feed
           </div>
-          <h1 className="font-display text-4xl font-bold text-white leading-tight mb-2">
+          <h1 className="font-display text-4xl font-bold text-white leading-tight mb-3">
             Know Your Race.<br />
             <span className="text-gold-400">Own the Narrative.</span>
           </h1>
-          <p className="text-blue-200 text-lg max-w-xl">
-            Your campaign's 24/7 AI war room — monitoring every story, tracking every opponent move, and turning raw news into winning strategy.
+          <p className="text-blue-200 text-lg max-w-xl mb-2">
+            The command center Republican campaigns use to monitor every story, outmaneuver the opposition, and turn today's news into tomorrow's win.
           </p>
           <div className="flex gap-3 mt-6">
             <Link href="/news"
               className="bg-red-500 hover:bg-red-600 text-white font-bold px-6 py-2.5 rounded-lg text-sm tracking-wide transition-colors shadow-glow-red focus:outline-none focus:ring-2 focus:ring-gold-400">
-              ★ Scan the News
+              ★ Run Intelligence Scan
             </Link>
-            <Link href="/briefing"
+            <Link href="/war-room"
               className="border border-gold-400 text-gold-400 hover:bg-gold-400 hover:text-navy font-bold px-6 py-2.5 rounded-lg text-sm tracking-wide transition-colors focus:outline-none focus:ring-2 focus:ring-gold-400">
-              Generate Brief
+              Enter War Room
             </Link>
           </div>
         </div>
@@ -85,17 +85,17 @@ export default async function DashboardPage() {
 
       {/* Top Stats Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <StatCard label="Articles Tracked"  value={total}         accent="blue"  icon="📰" />
-        <StatCard label="New Today"          value={newToday}      accent="gold"  icon="⚡" />
-        <StatCard label="Favorable Coverage" value={positiveCount} accent="green" icon="▲" />
-        <StatCard label="Negative Coverage"  value={negativeCount} accent="red"   icon="▼" />
+        <StatCard label="Stories Monitored"  value={total}         accent="blue"  icon="📰" />
+        <StatCard label="Breaking Today"     value={newToday}      accent="gold"  icon="⚡" />
+        <StatCard label="Favorable"          value={positiveCount} accent="green" icon="▲" />
+        <StatCard label="Opposition"         value={negativeCount} accent="red"   icon="▼" />
       </div>
 
       {/* Bucket Breakdown */}
       <div>
         <div className="flex items-center gap-3 mb-4">
           <div className="h-px flex-1 bg-gradient-to-r from-navy-300 to-transparent" />
-          <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-navy-400">Coverage Breakdown</h2>
+          <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-navy-400">Intelligence Breakdown</h2>
           <div className="h-px flex-1 bg-gradient-to-l from-navy-300 to-transparent" />
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -176,10 +176,12 @@ export default async function DashboardPage() {
                 </li>
               ))}
               {recentArticles.length === 0 && (
-                <li className="py-8 text-center">
-                  <p className="text-gray-400 text-sm">No articles yet.</p>
-                  <Link href="/settings" className="text-navy-400 text-xs hover:text-red-500 font-semibold mt-1 inline-block">
-                    Add a candidate in Settings to get started →
+                <li className="py-10 text-center">
+                  <p className="text-gray-500 font-semibold text-sm">Your intelligence feed is ready.</p>
+                  <p className="text-gray-400 text-xs mt-1 mb-4">Run your first scan to start tracking coverage.</p>
+                  <Link href="/news"
+                    className="inline-block bg-navy text-white text-xs font-bold px-5 py-2.5 rounded-lg hover:bg-navy-700 transition-colors">
+                    ★ Start Intelligence Scan
                   </Link>
                 </li>
               )}
