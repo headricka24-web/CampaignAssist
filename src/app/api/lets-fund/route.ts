@@ -4,6 +4,16 @@ import { ask } from '@/lib/claude'
 
 export const maxDuration = 60
 
+function toneInstruction(tone: string): string {
+  const map: Record<string, string> = {
+    'Punchy':          'Write in a punchy, high-energy style — short sentences, bold claims, urgent tone.',
+    'Sophisticated':   'Write in a sophisticated, polished style — confident, authoritative, and refined.',
+    'Intellectual':    'Write in an intellectual style — data-driven, thoughtful, cite specific facts and policy details.',
+    'Policy-Oriented': 'Write in a policy-oriented style — focus on specific policy positions, outcomes, and governance details.',
+  }
+  return map[tone] ? `\n\nTONE INSTRUCTION: ${map[tone]}` : ''
+}
+
 const TYPES = ['email', 'directmail', 'callscript', 'textscript', 'majordonor', 'thankyou'] as const
 type FundType = typeof TYPES[number]
 
@@ -99,15 +109,16 @@ TEMPLATE 3 — MAJOR ($500+): (treat them as a key partner in the conservative m
 }
 
 export async function POST(req: NextRequest) {
-  const { type, demographic = 'General', issue = 'General' } = await req.json() as {
+  const { type, demographic = 'General', issue = 'General', tone = 'Punchy' } = await req.json() as {
     type: FundType
     demographic?: string
     issue?: string
+    tone?: string
   }
   if (!TYPES.includes(type)) return NextResponse.json({ error: 'invalid_type' }, { status: 400 })
 
   const ctx = await getContext()
   const [system, user] = prompts[type](ctx, demographic, issue)
-  const content = await ask(system, user, 500)
+  const content = await ask(system + toneInstruction(tone), user, 500)
   return NextResponse.json({ content })
 }

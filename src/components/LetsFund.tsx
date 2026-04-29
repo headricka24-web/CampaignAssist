@@ -5,6 +5,9 @@ import RichText from './RichText'
 
 type FundType = 'email' | 'directmail' | 'callscript' | 'textscript' | 'majordonor' | 'thankyou'
 
+const TONES = ['Punchy', 'Sophisticated', 'Intellectual', 'Policy-Oriented'] as const
+type Tone = typeof TONES[number]
+
 const CARDS: {
   id: FundType; icon: string; title: string; subtitle: string
   bar: string; border: string; tagColor: string; activeBg: string
@@ -69,7 +72,7 @@ function Modal({ card, content, targeting, onClose, onRegen }: {
   )
 }
 
-function FundCard(card: typeof CARDS[0]) {
+function FundCard(card: typeof CARDS[0] & { tone: Tone }) {
   const [content,     setContent]     = useState('')
   const [loading,     setLoading]     = useState(false)
   const [error,       setError]       = useState('')
@@ -95,6 +98,7 @@ function FundCard(card: typeof CARDS[0]) {
           type: card.id,
           demographic: demographic === 'General (No Targeting)' ? 'General' : demographic,
           issue: issue.trim() || 'General',
+          tone: card.tone,
         }),
       })
       const data = await res.json()
@@ -204,6 +208,8 @@ function FundCard(card: typeof CARDS[0]) {
 }
 
 export default function LetsFund() {
+  const [tone, setTone] = useState<Tone>('Punchy')
+
   return (
     <div className="space-y-8">
       {/* Hero */}
@@ -222,11 +228,28 @@ export default function LetsFund() {
           <p className="text-blue-200 text-lg max-w-xl mb-5">
             AI-generated fundraising content for every channel. Target by demographic and issue, or generate a general version — your choice every time.
           </p>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 mb-5">
             <span className="text-xs font-bold text-blue-300 border border-navy-400 px-3 py-1 rounded-full">🎯 Demographic Targeting</span>
             <span className="text-xs font-bold text-blue-300 border border-navy-400 px-3 py-1 rounded-full">🔥 Issue-Based Messaging</span>
             <span className="text-xs font-bold text-blue-300 border border-navy-400 px-3 py-1 rounded-full">✓ Email · Mail · Phone · Text</span>
             <span className="text-xs font-bold text-blue-300 border border-navy-400 px-3 py-1 rounded-full">✓ Major Donors · Thank Yous</span>
+          </div>
+
+          {/* Tone selector */}
+          <div>
+            <p className="text-xs font-black uppercase tracking-widest text-gold-400 mb-2">Content Tone</p>
+            <div className="flex flex-wrap gap-2">
+              {TONES.map(t => (
+                <button key={t} onClick={() => setTone(t)}
+                  className={`text-xs font-bold px-4 py-2 rounded-full border-2 transition-all ${
+                    tone === t
+                      ? 'bg-gold-400 border-gold-400 text-navy'
+                      : 'border-navy-400 text-blue-300 hover:border-gold-400 hover:text-gold-400'
+                  }`}>
+                  {t}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -241,7 +264,7 @@ export default function LetsFund() {
 
       {/* Cards */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        {CARDS.map(card => <FundCard key={card.id} {...card} />)}
+        {CARDS.map(card => <FundCard key={card.id} {...card} tone={tone} />)}
       </div>
     </div>
   )

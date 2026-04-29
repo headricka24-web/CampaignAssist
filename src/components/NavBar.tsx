@@ -4,12 +4,14 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 const links = [
-  { href: '/',            label: 'Dashboard'    },
-  { href: '/news',        label: 'News Tracker' },
-  { href: '/media',       label: 'Media Studio' },
-  { href: '/briefing',    label: 'Hot Buttons'  },
-  { href: '/legislative', label: "Let's Fund"   },
-  { href: '/settings',    label: 'Settings'     },
+  { href: '/',              label: 'Dashboard'     },
+  { href: '/news',          label: 'News Tracker'  },
+  { href: '/war-room',      label: '⚡ War Room'   },
+  { href: '/media',         label: 'Media Studio'  },
+  { href: '/briefing',      label: 'Hot Buttons'   },
+  { href: '/legislative',   label: "Let's Fund"    },
+  { href: '/constituents',  label: 'Constituents'  },
+  { href: '/settings',      label: 'Settings'      },
 ]
 
 export default function NavBar() {
