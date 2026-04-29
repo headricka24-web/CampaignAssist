@@ -4,58 +4,40 @@ import { ask } from '@/lib/claude'
 
 export const maxDuration = 60
 
-async function fetchHeadlines(query: string): Promise<string[]> {
-  const encoded = encodeURIComponent(query)
-  const url = `https://news.google.com/rss/search?q=${encoded}&hl=en-US&gl=US&ceid=US:en`
-  const res = await fetch(url, {
-    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; CampaignAssist/1.0)' },
-    next: { revalidate: 0 },
-  })
-  if (!res.ok) return []
-  const xml = await res.text()
-  const items = xml.match(/<item>[\s\S]*?<\/item>/g) ?? []
-  return items.slice(0, 10).map(item => {
-    const t = item.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? ''
-    return t.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/<!\[CDATA\[|\]\]>/g, '').trim()
-  }).filter(Boolean)
-}
-
 export async function POST(req: NextRequest) {
-  const { type, threatIndex } = await req.json() as {
-    type: 'scan' | 'respond'
-    threatIndex?: number
-    threats?: string[]
-  }
+  const body = await req.json() as { type: 'scan' | 'respond'; threat?: string }
 
   const candidate = await prisma.candidate.findFirst()
-  const name     = candidate?.name  ?? 'the candidate'
-  const state    = candidate?.state ?? 'the state'
-  const race     = candidate?.race  ?? 'this race'
+  const name  = candidate?.name  ?? 'the candidate'
+  const state = candidate?.state ?? 'the state'
+  const race  = candidate?.race  ?? 'this race'
 
-  // ── SCAN: find threats ────────────────────────────────────────────────────
-  if (type === 'scan') {
-    const [oppAttacks, candVulns, partyAttacks] = await Promise.all([
-      fetchHeadlines(`${name} criticism OR attack OR controversy ${state} 2026`),
-      fetchHeadlines(`${race} ${state} Republican weakness OR scandal OR failure 2026`),
-      fetchHeadlines(`${state} Democrat OR liberal attack Republican 2026`),
-    ])
+  // ── SCAN: analyze pre-scanned articles for threats ───────────────────────
+  if (body.type === 'scan') {
+    const articles = await prisma.article.findMany({
+      orderBy: { datePublished: 'desc' },
+      take: 40,
+      include: { outlet: true },
+    })
 
-    const allHeadlines = [...new Set([...oppAttacks, ...candVulns, ...partyAttacks])].slice(0, 20)
-
-    if (allHeadlines.length === 0) {
-      return NextResponse.json({ error: 'no_news' }, { status: 400 })
+    if (articles.length === 0) {
+      return NextResponse.json({ error: 'no_articles' }, { status: 400 })
     }
 
-    const headlines = allHeadlines.map((h, i) => `${i + 1}. ${h}`).join('\n')
+    const articleList = articles
+      .map(a => `- [${a.bucket ?? 'General'}] "${a.title}" (${a.outlet.name}) — Sentiment: ${a.sentiment ?? 'Neutral'}`)
+      .join('\n')
 
     const threats = await ask(
-      `You are an expert Republican opposition research director and crisis communications strategist. Your job is to find every possible attack vector the opposition could use against the GOP candidate. Be blunt, specific, and thorough. Think like the enemy.`,
+      `You are an expert Republican opposition research director and crisis communications strategist. Your job is to find every possible attack vector the opposition could use against the GOP candidate based on current news coverage. Be blunt, specific, and thorough. Think like the enemy.`,
       `Candidate: ${name} (Republican), running for ${race} in ${state}.
 
-Today's news headlines to analyze:
-${headlines}
+Here are the currently tracked news articles:
+${articleList}
 
-Identify 4-6 SPECIFIC THREATS from these headlines — moments where Democrats or media could attack ${name} or the Republican position. For each threat write exactly this format:
+Identify 4-6 SPECIFIC THREATS — stories or narratives in this coverage that Democrats or media could weaponize against ${name} or the Republican position.
+
+For each threat write exactly this format:
 
 THREAT: [one-line description of the attack]
 SEVERITY: [HIGH / MEDIUM / LOW]
@@ -66,12 +48,11 @@ Separate each threat with ---`,
       1200,
     )
 
-    return NextResponse.json({ threats, headlines: allHeadlines })
+    return NextResponse.json({ threats })
   }
 
   // ── RESPOND: generate counter-response ───────────────────────────────────
-  if (type === 'respond') {
-    const body = await req.json().catch(() => ({})) as { threat?: string }
+  if (body.type === 'respond') {
     const threat = body.threat ?? 'this attack'
 
     const response = await ask(

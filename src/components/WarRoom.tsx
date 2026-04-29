@@ -162,7 +162,8 @@ export default function WarRoom() {
         body: JSON.stringify({ type: 'scan' }),
       })
       const data = await res.json()
-      if (data.error) { setError('No threat data found. Try again shortly.'); return }
+      if (data.error === 'no_articles') { setError('No articles found — run a News Tracker scan first.'); return }
+      if (data.error) { setError('Scan failed. Try again.'); return }
       const blocks = (data.threats as string).split('---').map((b: string) => b.trim()).filter(Boolean)
       setThreats(blocks.map(parseThreat))
       setScanned(true)
