@@ -2,13 +2,14 @@
 
 import { useState } from 'react'
 import RichText from './RichText'
+import { useLocalStorage } from '@/lib/useLocalStorage'
 
 export default function Constituents() {
-  const [profile,  setProfile]  = useState('')
-  const [loading,  setLoading]  = useState(false)
-  const [error,    setError]    = useState('')
-  const [loaded,   setLoaded]   = useState(false)
-  const [stateName, setStateName] = useState('')
+  const [profile,   setProfile]   = useLocalStorage('constituents-profile', '')
+  const [stateName, setStateName] = useLocalStorage('constituents-state', '')
+  const [loading,   setLoading]   = useState(false)
+  const [error,     setError]     = useState('')
+  const [loaded,    setLoaded]    = useState(!!profile)
 
   async function generate() {
     setLoading(true)

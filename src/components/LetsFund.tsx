@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import RichText from './RichText'
+import { useLocalStorage } from '@/lib/useLocalStorage'
 
 type FundType = 'email' | 'directmail' | 'callscript' | 'textscript' | 'majordonor' | 'thankyou'
 
@@ -73,13 +74,13 @@ function Modal({ card, content, targeting, onClose, onRegen }: {
 }
 
 function FundCard(card: typeof CARDS[0] & { tone: Tone }) {
-  const [content,     setContent]     = useState('')
+  const [content,     setContent]     = useLocalStorage(`lets-fund-${card.id}`, '')
   const [loading,     setLoading]     = useState(false)
   const [error,       setError]       = useState('')
   const [open,        setOpen]        = useState(false)
   const [showOptions, setShowOptions] = useState(false)
-  const [demographic, setDemographic] = useState('General (No Targeting)')
-  const [issue,       setIssue]       = useState('')
+  const [demographic, setDemographic] = useLocalStorage(`lets-fund-${card.id}-demo`, 'General (No Targeting)')
+  const [issue,       setIssue]       = useLocalStorage(`lets-fund-${card.id}-issue`, '')
 
   const isTargeted = demographic !== 'General (No Targeting)' || issue.trim() !== ''
   const targetingLabel = [

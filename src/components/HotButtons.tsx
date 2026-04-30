@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import RichText from './RichText'
+import { useLocalStorage } from '@/lib/useLocalStorage'
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false)
@@ -63,13 +64,13 @@ function DemographicCard({ title, body }: { title: string; body: string }) {
 }
 
 export default function HotButtons() {
-  const [briefing,      setBriefing]      = useState('')
-  const [issues,        setIssues]        = useState<string[]>([])
-  const [demographics,  setDemographics]  = useState('')
-  const [loadingBrief,  setLoadingBrief]  = useState(false)
-  const [loadingDemog,  setLoadingDemog]  = useState(false)
-  const [briefError,    setBriefError]    = useState('')
-  const [demogError,    setDemogError]    = useState('')
+  const [briefing,     setBriefing]     = useLocalStorage('hot-buttons-briefing', '')
+  const [issues,       setIssues]       = useLocalStorage<string[]>('hot-buttons-issues', [])
+  const [demographics, setDemographics] = useLocalStorage('hot-buttons-demographics', '')
+  const [loadingBrief, setLoadingBrief] = useState(false)
+  const [loadingDemog, setLoadingDemog] = useState(false)
+  const [briefError,   setBriefError]   = useState('')
+  const [demogError,   setDemogError]   = useState('')
 
   async function fetchBriefing() {
     setLoadingBrief(true)

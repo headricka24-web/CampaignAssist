@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import RichText from './RichText'
+import { useLocalStorage } from '@/lib/useLocalStorage'
 
 type Section = 'facebook' | 'instagram' | 'newsletter' | 'taglines' | 'strategy' | 'talking-points'
 
@@ -56,11 +57,11 @@ function Modal({ title, icon, content, onClose, onRegenerate }: {
 }
 
 function StudioCard({ id, icon, title, subtitle, color, border, bar, tone }: typeof CARDS[0] & { tone: Tone }) {
-  const [content, setContent] = useState('')
+  const [content, setContent] = useLocalStorage(`media-studio-${id}`, '')
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState('')
   const [open,    setOpen]    = useState(false)
-  const [issue,   setIssue]   = useState('')
+  const [issue,   setIssue]   = useLocalStorage(`media-studio-${id}-issue`, '')
 
   async function generate() {
     setLoading(true)

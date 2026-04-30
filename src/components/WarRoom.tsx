@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import RichText from './RichText'
+import { useLocalStorage } from '@/lib/useLocalStorage'
 
 type Threat = {
   raw: string
@@ -147,10 +148,10 @@ function ThreatCard({ threat, index }: { threat: Threat; index: number }) {
 }
 
 export default function WarRoom() {
-  const [threats,  setThreats]  = useState<Threat[]>([])
+  const [threats,  setThreats]  = useLocalStorage<Threat[]>('war-room-threats', [])
   const [loading,  setLoading]  = useState(false)
   const [error,    setError]    = useState('')
-  const [scanned,  setScanned]  = useState(false)
+  const [scanned,  setScanned]  = useLocalStorage('war-room-scanned', false)
 
   async function handleScan() {
     setLoading(true)
