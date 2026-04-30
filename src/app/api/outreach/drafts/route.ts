@@ -7,14 +7,17 @@ export async function POST(req: NextRequest) {
   if (!title?.trim())   return NextResponse.json({ error: 'title required' }, { status: 400 })
   if (!content?.trim()) return NextResponse.json({ error: 'content required' }, { status: 400 })
 
+  const candidate = await prisma.candidate.findFirst()
+
   const draft = await prisma.contentDraft.create({
     data: {
-      title:    title.trim(),
-      type:     type ?? 'social',
-      content:  content.trim(),
-      platform: platform?.trim() || null,
-      notes:    notes?.trim() || null,
-      status:   'pending',
+      candidateId: candidate?.id ?? null,
+      title:       title.trim(),
+      type:        type ?? 'social',
+      content:     content.trim(),
+      platform:    platform?.trim() || null,
+      notes:       notes?.trim() || null,
+      status:      'pending',
     },
   })
   return NextResponse.json(draft)

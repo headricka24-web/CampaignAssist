@@ -129,6 +129,7 @@ model AuditLog {
 model Contact {
   id          String   @id @default(cuid())
   createdAt   DateTime @default(now())
+  candidateId String?
   name        String
   phone       String?
   email       String?
@@ -137,11 +138,14 @@ model Contact {
   status      String   @default("completed") // completed | attempted | pending
   contactedAt DateTime @default(now())
   notes       String?
+
+  @@index([candidateId])
 }
 
 model Donor {
   id          String    @id @default(cuid())
   createdAt   DateTime  @default(now())
+  candidateId String?
   name        String
   email       String?
   phone       String?
@@ -151,40 +155,51 @@ model Donor {
   followUpDue DateTime?
   notes       String?
   status      String    @default("received") // received | follow_up_needed | thanked
+
+  @@index([candidateId])
 }
 
 model Volunteer {
-  id         String   @id @default(cuid())
-  createdAt  DateTime @default(now())
-  name       String
-  email      String?
-  phone      String?
-  role       String?
-  shiftDate  DateTime
-  shiftStart String?
-  shiftEnd   String?
-  status     String   @default("scheduled") // scheduled | confirmed | completed | no_show
-  notes      String?
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  candidateId String?
+  name        String
+  email       String?
+  phone       String?
+  role        String?
+  shiftDate   DateTime
+  shiftStart  String?
+  shiftEnd    String?
+  status      String   @default("scheduled") // scheduled | confirmed | completed | no_show
+  notes       String?
+
+  @@index([candidateId])
 }
 
 model CampaignEvent {
   id          String   @id @default(cuid())
   createdAt   DateTime @default(now())
+  candidateId String?
   title       String
   type        String   @default("event") // rally | townhall | fundraiser | canvass | debate | meeting
   eventDate   DateTime
   location    String?
   description String?
   status      String   @default("upcoming") // upcoming | completed | cancelled
+
+  @@index([candidateId])
 }
 
 model ContentDraft {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  title     String
-  type      String   @default("social") // social | email | press_release | ad | mailer
-  content   String
-  platform  String?
-  status    String   @default("pending") // pending | approved | rejected
-  notes     String?
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  candidateId String?
+  title       String
+  type        String   @default("social") // social | email | press_release | ad | mailer
+  content     String
+  platform    String?
+  status      String   @default("pending") // pending | approved | rejected
+  notes       String?
+
+  @@index([candidateId])
 }

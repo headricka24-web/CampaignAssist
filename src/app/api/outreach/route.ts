@@ -17,12 +17,18 @@ function monthStart(d: Date) {
 }
 
 export async function GET() {
+  const candidate  = await prisma.candidate.findFirst()
+  const cid        = candidate?.id ?? null
+
   const now        = new Date()
   const todayStart = dayStart(now)
   const wkStart    = weekStart(now)
   const moStart    = monthStart(now)
   const in3Days    = new Date(now.getTime() + 3 * 86_400_000)
   const in48h      = new Date(now.getTime() + 2 * 86_400_000)
+
+  // All queries scoped to this candidate
+  const cidFilter = cid ? { candidateId: cid } : {}
 
   const [
     contactsToday,
@@ -36,29 +42,29 @@ export async function GET() {
     upcomingEvents,
     shiftsIn48h,
   ] = await Promise.all([
-    prisma.contact.count({ where: { contactedAt: { gte: todayStart } } }),
-    prisma.contact.count({ where: { contactedAt: { gte: wkStart } } }),
-    prisma.donor.aggregate({ where: { donatedAt: { gte: wkStart } }, _sum: { amount: true } }),
-    prisma.donor.aggregate({ where: { donatedAt: { gte: moStart } }, _sum: { amount: true } }),
+    prisma.contact.count({ where: { ...cidFilter, contactedAt: { gte: todayStart } } }),
+    prisma.contact.count({ where: { ...cidFilter, contactedAt: { gte: wkStart } } }),
+    prisma.donor.aggregate({ where: { ...cidFilter, donatedAt: { gte: wkStart } }, _sum: { amount: true } }),
+    prisma.donor.aggregate({ where: { ...cidFilter, donatedAt: { gte: moStart } }, _sum: { amount: true } }),
     prisma.donor.findMany({
-      where: { followUpDue: { lte: in3Days }, status: { not: 'thanked' } },
+      where: { ...cidFilter, followUpDue: { lte: in3Days }, status: { not: 'thanked' } },
       orderBy: { followUpDue: 'asc' },
       take: 8,
     }),
-    prisma.volunteer.count({ where: { shiftDate: { gte: now }, status: { in: ['scheduled', 'confirmed'] } } }),
-    prisma.contentDraft.count({ where: { status: 'pending' } }),
+    prisma.volunteer.count({ where: { ...cidFilter, shiftDate: { gte: now }, status: { in: ['scheduled', 'confirmed'] } } }),
+    prisma.contentDraft.count({ where: { ...cidFilter, status: 'pending' } }),
     prisma.contentDraft.findMany({
-      where: { status: 'pending' },
+      where: { ...cidFilter, status: 'pending' },
       orderBy: { createdAt: 'desc' },
       take: 5,
     }),
     prisma.campaignEvent.findMany({
-      where: { eventDate: { gte: now }, status: 'upcoming' },
+      where: { ...cidFilter, eventDate: { gte: now }, status: 'upcoming' },
       orderBy: { eventDate: 'asc' },
       take: 6,
     }),
     prisma.volunteer.count({
-      where: { shiftDate: { gte: now, lte: in48h }, status: 'scheduled' },
+      where: { ...cidFilter, shiftDate: { gte: now, lte: in48h }, status: 'scheduled' },
     }),
   ])
 
@@ -100,20 +106,20 @@ export async function GET() {
   }
 
   return NextResponse.json({
-    contacts:       { today: contactsToday, thisWeek: contactsThisWeek },
-    fundraising:    { thisWeek: raisedWeek._sum.amount ?? 0, thisMonth: raisedMonth._sum.amount ?? 0 },
-    followUpsDue:   followUpsDue.map(d => ({
+    contacts:         { today: contactsToday, thisWeek: contactsThisWeek },
+    fundraising:      { thisWeek: raisedWeek._sum.amount ?? 0, thisMonth: raisedMonth._sum.amount ?? 0 },
+    followUpsDue:     followUpsDue.map(d => ({
       id: d.id, name: d.name, amount: d.amount,
       followUpDue: d.followUpDue?.toISOString() ?? null,
       status: d.status, overdue: !!(d.followUpDue && d.followUpDue < now),
     })),
     volunteerShifts,
     pendingDraftCount,
-    pendingDrafts:  pendingDrafts.map(d => ({
+    pendingDrafts:    pendingDrafts.map(d => ({
       id: d.id, title: d.title, type: d.type, platform: d.platform,
       createdAt: d.createdAt.toISOString(),
     })),
-    upcomingEvents: upcomingEvents.map(e => ({
+    upcomingEvents:   upcomingEvents.map(e => ({
       id: e.id, title: e.title, type: e.type,
       eventDate: e.eventDate.toISOString(), location: e.location,
     })),
