@@ -57,11 +57,15 @@ function Modal({ title, icon, content, onClose, onRegenerate }: {
 }
 
 function StudioCard({ id, icon, title, subtitle, color, border, bar, tone }: typeof CARDS[0] & { tone: Tone }) {
-  const [content, setContent] = useLocalStorage(`media-studio-${id}`, '')
-  const [loading, setLoading] = useState(false)
-  const [error,   setError]   = useState('')
-  const [open,    setOpen]    = useState(false)
-  const [issue,   setIssue]   = useLocalStorage(`media-studio-${id}-issue`, '')
+  const [content,     setContent]     = useLocalStorage(`media-studio-${id}`, '')
+  const [loading,     setLoading]     = useState(false)
+  const [error,       setError]       = useState('')
+  const [open,        setOpen]        = useState(false)
+  const [issue,       setIssue]       = useLocalStorage(`media-studio-${id}-issue`, '')
+  const [showOptions, setShowOptions] = useState(false)
+
+  const isTalkingPoints = id === 'talking-points'
+  const hasIssue = issue.trim() !== ''
 
   async function generate() {
     setLoading(true)
@@ -93,9 +97,10 @@ function StudioCard({ id, icon, title, subtitle, color, border, bar, tone }: typ
             <span className="text-lg">{icon}</span>
             <h2 className={`font-display font-black text-sm uppercase tracking-wide ${color}`}>{title}</h2>
           </div>
-          <p className="text-xs text-gray-400 mb-4">{subtitle}</p>
+          <p className="text-xs text-gray-400 mb-3">{subtitle}</p>
 
-          {id === 'talking-points' && (
+          {/* Talking Points: always show issue input (required) */}
+          {isTalkingPoints && (
             <input
               type="text"
               value={issue}
@@ -103,6 +108,35 @@ function StudioCard({ id, icon, title, subtitle, color, border, bar, tone }: typ
               placeholder="e.g. immigration, tax cuts, school choice…"
               className="w-full text-xs border border-gray-200 rounded-xl px-3 py-2.5 mb-3 text-navy placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-gold-400"
             />
+          )}
+
+          {/* Other cards: optional issue targeting toggle */}
+          {!isTalkingPoints && (
+            <>
+              <button
+                onClick={() => setShowOptions(o => !o)}
+                className={`flex items-center justify-between w-full text-xs font-bold px-3 py-2 rounded-xl border transition-all mb-3 ${
+                  showOptions || hasIssue
+                    ? `bg-gold-50 border-gold-300 text-yellow-700`
+                    : 'bg-gray-50 border-gray-200 text-gray-400 hover:border-gray-300'
+                }`}
+              >
+                <span className="flex items-center gap-1.5">
+                  <span>{hasIssue ? '🎯' : '⚙️'}</span>
+                  {hasIssue ? `Issue: "${issue.trim()}"` : 'Focus on an issue (optional)'}
+                </span>
+                <span className="opacity-60">{showOptions ? '▲' : '▼'}</span>
+              </button>
+              {showOptions && (
+                <input
+                  type="text"
+                  value={issue}
+                  onChange={e => setIssue(e.target.value)}
+                  placeholder="e.g. border security, economy, education…"
+                  className="w-full text-xs border border-gray-200 rounded-xl px-3 py-2.5 mb-3 text-navy placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-gold-400"
+                />
+              )}
+            </>
           )}
 
           {error && <p className="text-xs text-red-500 mb-2">{error}</p>}
@@ -119,7 +153,7 @@ function StudioCard({ id, icon, title, subtitle, color, border, bar, tone }: typ
                 ${content ? 'px-3 border-gray-200 text-gray-400 hover:border-navy hover:text-navy' : 'w-full border-gray-200 text-gray-400 hover:bg-navy hover:text-white hover:border-navy'}`}>
               {loading
                 ? <span className="flex items-center justify-center gap-1.5"><span className="animate-spin w-3 h-3 border-2 border-current border-t-transparent rounded-full inline-block" />Writing…</span>
-                : content ? '↺' : 'Generate →'}
+                : content ? '↺' : hasIssue && !isTalkingPoints ? '🎯 Generate Focused →' : 'Generate →'}
             </button>
           </div>
         </div>

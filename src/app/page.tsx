@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db'
 import StatCard from '@/components/StatCard'
 import SentimentBadge from '@/components/SentimentBadge'
 import MorningBrief from '@/components/MorningBrief'
+import PollTracker from '@/components/PollTracker'
 import Link from 'next/link'
 
 async function getStats() {
@@ -190,6 +191,10 @@ export default async function DashboardPage() {
         </div>
 
       </div>
+
+      {/* Polling Tracker */}
+      <PollTracker />
+
     </div>
   )
 }

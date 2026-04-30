@@ -18,6 +18,10 @@ function toneInstruction(tone: string): string {
   return map[tone] ? `\n\nTONE INSTRUCTION: ${map[tone]}` : ''
 }
 
+function issueNote(issue: string): string {
+  return issue.trim() ? `\n\nFOCUS ISSUE: Lean into "${issue.trim()}" as the primary theme throughout this content.` : ''
+}
+
 async function getContext() {
   const candidate = await prisma.candidate.findFirst()
   const articles  = await prisma.article.findMany({
@@ -34,34 +38,34 @@ async function getContext() {
 
 type Ctx = { name: string; race: string; state: string; incumbent: string; headlines: string }
 
-const prompts: Record<Section, (ctx: Ctx) => [string, string]> = {
-  facebook: (ctx) => [
+const prompts: Record<Section, (ctx: Ctx, issue: string) => [string, string]> = {
+  facebook: (ctx, issue) => [
     'You are a Republican campaign social media director. Write punchy, conservative Facebook posts that energize the GOP base and appeal to patriotic values. No hashtags. Bold and direct.',
     `Candidate: ${ctx.name} (${ctx.incumbent}), running for ${ctx.race} in ${ctx.state}.
 
 Recent news coverage:
 ${ctx.headlines}
-
+${issueNote(issue)}
 Write 3 Facebook posts for the Republican campaign. For each: write a bold opening line that fires up conservatives, a 2-sentence body grounded in Republican values, and a strong call-to-action. Separate each post with ---`,
   ],
 
-  instagram: (ctx) => [
+  instagram: (ctx, issue) => [
     'You are a Republican campaign social media director. Write energizing Instagram captions with a patriotic, conservative voice and relevant hashtags.',
     `Candidate: ${ctx.name} (${ctx.incumbent}), running for ${ctx.race} in ${ctx.state}.
 
 Recent news coverage:
 ${ctx.headlines}
-
+${issueNote(issue)}
 Write 3 Instagram captions for the Republican campaign. Each should be 2-3 sentences with a conservative message, then 5 relevant hashtags (include #GOP, #Republican, and state-specific tags). Separate each with ---`,
   ],
 
-  newsletter: (ctx) => [
+  newsletter: (ctx, issue) => [
     'You are a Republican campaign communications director. Write a warm, energizing campaign newsletter that rallies the conservative base and motivates action.',
     `Candidate: ${ctx.name} (${ctx.incumbent}), running for ${ctx.race} in ${ctx.state}.
 
 Recent news coverage:
 ${ctx.headlines}
-
+${issueNote(issue)}
 Write a campaign email newsletter with:
 SUBJECT LINE:
 PREVIEW TEXT:
@@ -70,13 +74,13 @@ BODY: (3 short paragraphs — open with conservative values, connect to current 
 Keep it tight and motivating.`,
   ],
 
-  taglines: (ctx) => [
+  taglines: (ctx, issue) => [
     'You are a Republican political messaging expert. Write short, powerful campaign taglines that capture conservative values and winning energy.',
     `Candidate: ${ctx.name} (${ctx.incumbent}), running for ${ctx.race} in ${ctx.state}.
 
 Recent news coverage:
 ${ctx.headlines}
-
+${issueNote(issue)}
 Write:
 - 5 campaign taglines (short, punchy, conservative — think America, freedom, strength, common sense)
 - 3 yard sign / banner ideas (bold, ALL CAPS, 5 words or fewer)
@@ -84,13 +88,13 @@ Write:
 Label each section clearly.`,
   ],
 
-  strategy: (ctx) => [
+  strategy: (ctx, issue) => [
     'You are a senior Republican campaign strategist. Give sharp, actionable tactical advice grounded in conservative political strategy and GOP winning playbooks.',
     `Candidate: ${ctx.name} (${ctx.incumbent}), running for ${ctx.race} in ${ctx.state}.
 
 Recent news coverage:
 ${ctx.headlines}
-
+${issueNote(issue)}
 Give 4 tactical Republican strategy recommendations based on this news. For each:
 - Bold title
 - Urgency level: HIGH / MEDIUM / LOW
@@ -99,7 +103,7 @@ Give 4 tactical Republican strategy recommendations based on this news. For each
 Focus on offense — where the Republican message is strongest and where Democrats are vulnerable. Separate each with ---`,
   ],
 
-  'talking-points': (ctx) => ['', ''], // handled separately
+  'talking-points': (_ctx, _issue) => ['', ''], // handled separately
 }
 
 export async function POST(req: NextRequest) {
@@ -150,7 +154,7 @@ Separate each with ---`,
     return NextResponse.json({ error: 'no_articles' }, { status: 400 })
   }
 
-  const [system, user] = prompts[section](ctx)
+  const [system, user] = prompts[section](ctx, issue)
   const content = await ask(system + toneInstruction(tone), user, 500)
   return NextResponse.json({ content })
 }
