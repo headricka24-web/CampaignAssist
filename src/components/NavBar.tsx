@@ -8,6 +8,7 @@ const links = [
   { href: '/news',          label: 'News Tracker'  },
   { href: '/war-room',      label: '⚡ War Room'   },
   { href: '/outreach',      label: '📋 Outreach'   },
+  { href: '/voters',        label: '🗳️ Voters'     },
   { href: '/media',         label: 'Media Studio'  },
   { href: '/briefing',      label: 'Hot Buttons'   },
   { href: '/legislative',   label: "Let's Fund"    },

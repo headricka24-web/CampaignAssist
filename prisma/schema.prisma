@@ -203,3 +203,29 @@ model ContentDraft {
 
   @@index([candidateId])
 }
+
+model Voter {
+  id              String    @id @default(cuid())
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  candidateId     String?
+  firstName       String
+  lastName        String
+  address         String?
+  city            String?
+  zip             String?
+  phone           String?
+  email           String?
+  party           String?   // Republican | Democrat | Independent | Unknown
+  supportLevel    String?   // Strong Support | Lean Support | Persuadable | Opposed | Unknown
+  turnoutScore    Float?
+  precinct        String?
+  tags            String    @default("[]") // JSON array
+  notes           String?
+  lastContactedAt DateTime?
+  contactStatus   String    @default("Not Contacted") // Not Contacted | Reached | Left Message | Wrong Number | Do Not Contact | Needs Follow-Up
+
+  @@index([candidateId])
+  @@index([party])
+  @@index([contactStatus])
+}
