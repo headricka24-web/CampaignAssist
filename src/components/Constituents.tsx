@@ -7,6 +7,7 @@ import { useLocalStorage } from '@/lib/useLocalStorage'
 export default function Constituents() {
   const [profile,   setProfile]   = useLocalStorage('constituents-profile', '')
   const [stateName, setStateName] = useLocalStorage('constituents-state', '')
+  const [sources,   setSources]   = useLocalStorage<string[]>('constituents-sources', [])
   const [loading,   setLoading]   = useState(false)
   const [error,     setError]     = useState('')
   const [loaded,    setLoaded]    = useState(!!profile)
@@ -20,6 +21,7 @@ export default function Constituents() {
       if (data.error) { setError('Could not generate profile. Try again.'); return }
       setProfile(data.profile)
       setStateName(data.state ?? '')
+      setSources(data.sources ?? [])
       setLoaded(true)
     } catch { setError('Network error. Try again.') }
     finally { setLoading(false) }
@@ -90,17 +92,30 @@ export default function Constituents() {
         <div className="bg-white rounded-2xl border-2 border-navy-100 shadow-patriot overflow-hidden">
           <div className="h-1.5 bg-gold-gradient" />
           <div className="p-8">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
+            <div className="flex items-start justify-between gap-4 mb-6">
+              <div className="flex items-start gap-3">
                 <span className="text-2xl">📊</span>
                 <div>
                   <h2 className="font-display font-black text-navy uppercase tracking-wide">{stateName} Constituent Profile</h2>
-                  <p className="text-xs text-gray-400">Republican campaign intelligence</p>
+                  <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                    {sources.length > 0 ? (
+                      sources.map(src => (
+                        <span key={src} className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700">
+                          ✓ {src}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">
+                        AI estimates only
+                      </span>
+                    )}
+                    <span className="text-[10px] text-gray-400">+ strategic analysis by Claude</span>
+                  </div>
                 </div>
               </div>
               <button
                 onClick={() => { navigator.clipboard.writeText(profile) }}
-                className="text-xs font-bold px-3 py-1.5 rounded-lg bg-navy text-white hover:bg-navy-700 transition-colors"
+                className="text-xs font-bold px-3 py-1.5 rounded-lg bg-navy text-white hover:bg-navy-700 transition-colors shrink-0"
               >
                 Copy All
               </button>
