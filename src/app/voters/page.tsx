@@ -34,7 +34,7 @@ export default function VotersPage() {
             Voter <span className="text-gold-400">Command.</span>
           </h1>
           <p className="text-blue-200 text-lg max-w-xl mb-6">
-            Upload your voter file. Claude segments every contact — GOTV targets, persuadables, issue voters — so your team always knows who to call and what to say.
+            Upload existing voter files, CSV, and platform data, as well as voter API databases. CampaignAssist draws out GOTV targets, persuadables, and issue voters. Your team will always know who to call and what to say.
           </p>
           <div className="flex flex-wrap gap-3 items-center">
             {voterCount > 0 && (
