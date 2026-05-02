@@ -9,12 +9,14 @@ datasource db {
 }
 
 model User {
-  id         String      @id @default(cuid())
-  username   String      @unique
-  password   String
-  email      String?     @unique
-  createdAt  DateTime    @default(now())
-  candidates Candidate[]
+  id          String       @id @default(cuid())
+  username    String       @unique
+  password    String
+  email       String?      @unique
+  createdAt   DateTime     @default(now())
+  candidates  Candidate[]
+  articles    Article[]
+  dailyBriefs DailyBrief[]
 }
 
 model Candidate {
@@ -49,24 +51,29 @@ model Outlet {
 }
 
 model Article {
-  id           String   @id @default(cuid())
-  title        String
-  url          String   @unique
+  id            String   @id @default(cuid())
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id])
+  title         String
+  url           String
   datePublished DateTime
-  outletId     String
-  outlet       Outlet   @relation(fields: [outletId], references: [id])
-  author       String?
-  language     String   @default("en")
-  region       String?
-  sourceType   String   // News | Blog | Social | PressRelease
-  rawText      String
-  summary      String?
-  bucket       String?  // CandidateCoverage | OpponentCoverage | GeneralRace | HotButtons
-  topics       String   @default("[]") // JSON array stored as string
-  sentiment    String?  // Positive | Neutral | Negative
-  confidence   Float?
-  createdAt    DateTime @default(now())
-  binItems     BinItem[]
+  outletId      String
+  outlet        Outlet   @relation(fields: [outletId], references: [id])
+  author        String?
+  language      String   @default("en")
+  region        String?
+  sourceType    String   // News | Blog | Social | PressRelease
+  rawText       String
+  summary       String?
+  bucket        String?  // CandidateCoverage | OpponentCoverage | GeneralRace | HotButtons
+  topics        String   @default("[]") // JSON array stored as string
+  sentiment     String?  // Positive | Neutral | Negative
+  confidence    Float?
+  createdAt     DateTime @default(now())
+  binItems      BinItem[]
+
+  @@unique([url, userId])
+  @@index([userId])
 }
 
 model Bin {
@@ -131,9 +138,13 @@ model MediaPack {
 
 model DailyBrief {
   id        String   @id @default(cuid())
-  date      String   @unique // YYYY-MM-DD
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  date      String   // YYYY-MM-DD
   content   String
   createdAt DateTime @default(now())
+
+  @@unique([date, userId])
 }
 
 model AuditLog {

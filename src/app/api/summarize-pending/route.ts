@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { auth } from '@/auth'
 import { summarizeArticle } from '@/layers/summarization'
 
 export const maxDuration = 60
@@ -7,10 +8,13 @@ export const maxDuration = 60
 const delay = (ms: number) => new Promise(r => setTimeout(r, ms))
 
 export async function POST() {
+  const session = await auth()
+  const userId  = session?.user?.id ?? null
+
   const pending = await prisma.article.findMany({
-    where: { summary: null },
+    where:   { summary: null, userId: userId ?? null },
     include: { outlet: true },
-    take: 10, // small batch to respect rate limits
+    take: 10,
   })
 
   if (pending.length === 0) {
@@ -31,7 +35,7 @@ export async function POST() {
       )
       await prisma.article.update({ where: { id: article.id }, data: { summary } })
       updated++
-      await delay(800) // avoid rate limits
+      await delay(800)
     } catch (e) {
       errors++
       const msg = e instanceof Error ? e.message : String(e)
@@ -39,7 +43,9 @@ export async function POST() {
     }
   }
 
-  const totalPending = await prisma.article.count({ where: { summary: null } })
+  const totalPending = await prisma.article.count({
+    where: { summary: null, userId: userId ?? null },
+  })
 
   return NextResponse.json({
     updated,

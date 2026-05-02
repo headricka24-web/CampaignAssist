@@ -11,7 +11,7 @@ export async function ingestArticle(
   const outlet = await prisma.outlet.findUnique({ where: { id: payload.outletId } })
   if (!outlet) throw new Error(`Outlet ${payload.outletId} not found`)
 
-  const existing = await prisma.article.findUnique({ where: { url: payload.url } })
+  const existing = await prisma.article.findFirst({ where: { url: payload.url, userId: null } })
   if (existing) return existing
 
   const [classification, summary] = await Promise.all([

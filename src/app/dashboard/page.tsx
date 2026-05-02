@@ -1,21 +1,24 @@
 export const dynamic = 'force-dynamic'
 
 import { prisma } from '@/lib/db'
+import { auth } from '@/auth'
 import StatCard from '@/components/StatCard'
 import SentimentBadge from '@/components/SentimentBadge'
 import MorningBrief from '@/components/MorningBrief'
 import PollTracker from '@/components/PollTracker'
 import Link from 'next/link'
 
-async function getStats() {
+async function getStats(userId: string | null) {
   try {
     const yesterday = new Date(Date.now() - 86_400_000)
+    const where = { userId: userId ?? null }
     const [total, newToday, byBucket, bySentiment, articles] = await Promise.all([
-      prisma.article.count(),
-      prisma.article.count({ where: { createdAt: { gte: yesterday } } }),
-      prisma.article.groupBy({ by: ['bucket'], _count: true }),
-      prisma.article.groupBy({ by: ['sentiment'], _count: true }),
+      prisma.article.count({ where }),
+      prisma.article.count({ where: { ...where, createdAt: { gte: yesterday } } }),
+      prisma.article.groupBy({ by: ['bucket'], where, _count: true }),
+      prisma.article.groupBy({ by: ['sentiment'], where, _count: true }),
       prisma.article.findMany({
+        where,
         orderBy: { datePublished: 'desc' },
         take: 8,
         include: { outlet: true },
@@ -42,7 +45,9 @@ const bucketIcon: Record<string, string> = {
 }
 
 export default async function DashboardPage() {
-  const { total, newToday, byBucket, bySentiment, recentArticles } = await getStats()
+  const session = await auth()
+  const userId  = session?.user?.id ?? null
+  const { total, newToday, byBucket, bySentiment, recentArticles } = await getStats(userId)
 
   const positiveCount  = bySentiment.find(s => s.sentiment === 'Positive')?._count ?? 0
   const negativeCount  = bySentiment.find(s => s.sentiment === 'Negative')?._count ?? 0

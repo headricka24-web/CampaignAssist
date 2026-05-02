@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { auth } from '@/auth'
 import { ask } from '@/lib/claude'
 
 export const maxDuration = 60
@@ -9,25 +10,37 @@ function todayKey() {
 }
 
 export async function GET() {
-  const date = todayKey()
-  const existing = await prisma.dailyBrief.findUnique({ where: { date } })
+  const session = await auth()
+  const userId  = session?.user?.id ?? null
+
+  const date     = todayKey()
+  const existing = await prisma.dailyBrief.findFirst({
+    where: { date, userId: userId ?? null },
+  })
   if (existing) return NextResponse.json({ content: existing.content, cached: true })
   return NextResponse.json({ content: null })
 }
 
 export async function POST() {
-  const date = todayKey()
+  const session = await auth()
+  const userId  = session?.user?.id ?? null
 
-  const existing = await prisma.dailyBrief.findUnique({ where: { date } })
+  const date     = todayKey()
+  const existing = await prisma.dailyBrief.findFirst({
+    where: { date, userId: userId ?? null },
+  })
   if (existing) return NextResponse.json({ content: existing.content, cached: true })
 
-  const candidate = await prisma.candidate.findFirst()
+  const candidate = await prisma.candidate.findFirst({
+    where: userId ? { userId } : { userId: null },
+  })
   const name      = candidate?.name      ?? 'the candidate'
   const race      = candidate?.race      ?? 'this race'
   const state     = candidate?.state     ?? 'the state'
   const incumbent = candidate?.incumbent ? 'incumbent' : 'challenger'
 
   const articles = await prisma.article.findMany({
+    where:   { userId: userId ?? null },
     include: { outlet: true },
     orderBy: { datePublished: 'desc' },
     take: 40,
@@ -57,10 +70,8 @@ Here are today's news articles. Write a morning brief covering:
 Articles:\n\n${bulletList}`,
   )
 
-  await prisma.dailyBrief.upsert({
-    where:  { date },
-    create: { date, content },
-    update: { content },
+  await prisma.dailyBrief.create({
+    data: { date, userId, content },
   })
 
   return NextResponse.json({ content, cached: false })

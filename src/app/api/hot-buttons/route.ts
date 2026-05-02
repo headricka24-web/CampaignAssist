@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { auth } from '@/auth'
 import { ask } from '@/lib/claude'
 
 export const maxDuration = 60
@@ -21,15 +22,20 @@ async function fetchRSS(query: string): Promise<string[]> {
 }
 
 export async function POST(req: NextRequest) {
+  const session = await auth()
+  const userId  = session?.user?.id ?? null
+
   const { type, issues } = await req.json() as { type: 'briefing' | 'demographics'; issues?: string[] }
 
-  const candidate = await prisma.candidate.findFirst()
+  const candidate = await prisma.candidate.findFirst({
+    where: userId ? { userId } : { userId: null },
+  })
   const name      = candidate?.name      ?? 'the candidate'
   const state     = candidate?.state     ?? 'the state'
   const race      = candidate?.race      ?? 'this race'
   const incumbent = candidate?.incumbent ? 'incumbent' : 'challenger'
 
-  // ── BRIEFING: scrape + summarize hot issues ──────────────────────────────
+  // ── BRIEFING ──────────────────────────────────────────────────────────────
   if (type === 'briefing') {
     const [stateHeadlines, nationalHeadlines] = await Promise.all([
       fetchRSS(`${state} political issues legislation 2026`),
@@ -67,7 +73,7 @@ End with a one-line "Bottom Line" summary sentence focused on the Republican pat
     return NextResponse.json({ briefing, issues: issueNames, state, race })
   }
 
-  // ── DEMOGRAPHICS: voter groups + rhetorical strategy ─────────────────────
+  // ── DEMOGRAPHICS ──────────────────────────────────────────────────────────
   if (type === 'demographics') {
     const issueList = (issues ?? []).slice(0, 5).map((iss, i) => `${i + 1}. ${iss}`).join('\n')
 

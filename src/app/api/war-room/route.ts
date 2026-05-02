@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { auth } from '@/auth'
 import { ask } from '@/lib/claude'
 
 export const maxDuration = 60
 
 export async function POST(req: NextRequest) {
+  const session = await auth()
+  const userId  = session?.user?.id ?? null
+
   const body = await req.json() as { type: 'scan' | 'respond'; threat?: string }
 
-  const candidate = await prisma.candidate.findFirst()
+  const candidate = await prisma.candidate.findFirst({
+    where: userId ? { userId } : { userId: null },
+  })
   const name  = candidate?.name  ?? 'the candidate'
   const state = candidate?.state ?? 'the state'
   const race  = candidate?.race  ?? 'this race'
@@ -15,6 +21,7 @@ export async function POST(req: NextRequest) {
   // ── SCAN: analyze pre-scanned articles for threats ───────────────────────
   if (body.type === 'scan') {
     const articles = await prisma.article.findMany({
+      where:   { userId: userId ?? null },
       orderBy: { datePublished: 'desc' },
       take: 40,
       include: { outlet: true },

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { auth } from '@/auth'
 import {
   scrapeForCandidate,
   scrapeForOpponent,
@@ -19,48 +20,50 @@ async function getOrCreateOutlet(name: string) {
 }
 
 async function processArticle(
-  scraped: ScrapedArticle,
+  scraped:       ScrapedArticle,
   candidateName: string,
-  opponentName: string,
-  forcedBucket: string,
-  hasApiKey: boolean,
+  opponentName:  string,
+  forcedBucket:  string,
+  hasApiKey:     boolean,
+  userId:        string | null,
 ) {
-  const existing = await prisma.article.findUnique({ where: { url: scraped.url } })
+  // Deduplicate per user — same URL can exist for different users
+  const existing = await prisma.article.findFirst({
+    where: { url: scraped.url, userId: userId ?? null },
+  })
   if (existing) return { status: 'skipped' }
 
-  const outlet = await getOrCreateOutlet(scraped.outletName)
+  const outlet  = await getOrCreateOutlet(scraped.outletName)
   const rawText = scraped.snippet || scraped.title
 
-  let summary: string | null = null
-  let bucket = forcedBucket
-  let topics: string[] = []
+  let bucket    = forcedBucket
+  let topics:   string[] = []
   let sentiment = 'Neutral'
   let confidence = 0.5
 
   if (hasApiKey) {
     try {
-      const cls = await classifyArticle(scraped.title, rawText, candidateName, opponentName)
+      const cls  = await classifyArticle(scraped.title, rawText, candidateName, opponentName)
       bucket     = cls.bucket
       topics     = cls.topics
       sentiment  = cls.sentiment
       confidence = cls.confidence
-    } catch {
-      // Claude failed — save with defaults
-    }
+    } catch { /* save with defaults */ }
   }
 
   await prisma.article.create({
     data: {
-      title:        scraped.title,
-      url:          scraped.url,
-      datePublished:new Date(scraped.datePublished),
-      outletId:     outlet.id,
-      language:     'en',
-      sourceType:   'News',
+      userId,
+      title:         scraped.title,
+      url:           scraped.url,
+      datePublished: new Date(scraped.datePublished),
+      outletId:      outlet.id,
+      language:      'en',
+      sourceType:    'News',
       rawText,
-      summary,
+      summary:       null,
       bucket,
-      topics:       JSON.stringify(topics),
+      topics:        JSON.stringify(topics),
       sentiment,
       confidence,
     },
@@ -69,22 +72,25 @@ async function processArticle(
 }
 
 export async function POST(req: NextRequest) {
+  const session = await auth()
+  const userId  = session?.user?.id ?? null
+
   const { candidateId, opponentName, hotButtonTopics } = await req.json() as {
     candidateId: string
     opponentName?: string
     hotButtonTopics?: string[]
   }
 
-  const candidate = await prisma.candidate.findUnique({ where: { id: candidateId } })
+  const candidate = await prisma.candidate.findFirst({
+    where: { id: candidateId, userId: userId ?? undefined },
+  })
   if (!candidate) return NextResponse.json({ error: 'Candidate not found' }, { status: 404 })
 
-  const apiKey = process.env.ANTHROPIC_API_KEY ?? ''
+  const apiKey    = process.env.ANTHROPIC_API_KEY ?? ''
   const hasApiKey = apiKey.length > 0 && apiKey !== 'your_key_here' && apiKey.startsWith('sk-')
+  const opponent  = opponentName ?? ''
+  const results   = { ingested: 0, skipped: 0, errors: 0, aiEnabled: hasApiKey }
 
-  const opponent = opponentName ?? ''
-  const results = { ingested: 0, skipped: 0, errors: 0, aiEnabled: hasApiKey }
-
-  // Fetch all four buckets in parallel from Google News
   const [candidateArticles, opponentArticles, generalArticles, hotButtonArticles] =
     await Promise.allSettled([
       scrapeForCandidate(candidate.name, candidate.state, candidate.race),
@@ -102,7 +108,7 @@ export async function POST(req: NextRequest) {
 
   const allTasks = batches.flatMap(([articles, bucket]) =>
     articles.map(article =>
-      processArticle(article, candidate.name, opponent, bucket, hasApiKey)
+      processArticle(article, candidate.name, opponent, bucket, hasApiKey, userId)
         .then(r => { if (r.status === 'skipped') results.skipped++; else results.ingested++ })
         .catch(() => { results.errors++ })
     )
