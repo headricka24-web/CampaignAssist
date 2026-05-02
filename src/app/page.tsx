@@ -1,4 +1,7 @@
 import Link from 'next/link'
+import { auth } from '@/auth'
+
+export const dynamic = 'force-dynamic'
 
 const FEATURES = [
   {
@@ -51,7 +54,10 @@ const TESTIMONIALS = [
   { quote: 'We identified our persuadables in 20 minutes. Previously that analysis took us a week.', author: 'Campaign Manager, Florida' },
 ]
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const session  = await auth()
+  const loggedIn = !!session?.user
+
   return (
     <div className="min-h-screen bg-white">
 
@@ -70,14 +76,23 @@ export default function LandingPage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Link href="/login"
-                className="text-sm font-bold text-blue-300 hover:text-white transition-colors px-4 py-2">
-                Log In
-              </Link>
-              <Link href="/signup"
-                className="text-sm font-black uppercase tracking-widest bg-gold-400 hover:bg-gold-500 text-navy px-5 py-2 rounded-xl transition-colors">
-                Get Started
-              </Link>
+              {loggedIn ? (
+                <Link href="/dashboard"
+                  className="text-sm font-black uppercase tracking-widest bg-gold-400 hover:bg-gold-500 text-navy px-5 py-2 rounded-xl transition-colors">
+                  Go to Dashboard →
+                </Link>
+              ) : (
+                <>
+                  <Link href="/login"
+                    className="text-sm font-bold text-blue-300 hover:text-white transition-colors px-4 py-2">
+                    Log In
+                  </Link>
+                  <Link href="/signup"
+                    className="text-sm font-black uppercase tracking-widest bg-gold-400 hover:bg-gold-500 text-navy px-5 py-2 rounded-xl transition-colors">
+                    Get Started
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </nav>
@@ -101,16 +116,25 @@ export default function LandingPage() {
             The complete AI command center for Republican campaigns. Real-time news intelligence, voter analytics, opposition research, and outreach tools — built for candidates who play to win.
           </p>
           <div className="flex flex-wrap gap-4">
-            <Link href="/signup"
-              className="bg-gold-400 hover:bg-gold-500 text-navy font-black text-sm uppercase tracking-widest px-8 py-4 rounded-xl transition-colors shadow-lg">
-              ★ Start Free — Create Account
-            </Link>
-            <Link href="/login"
-              className="border-2 border-white/30 hover:border-white/60 text-white font-bold text-sm px-8 py-4 rounded-xl transition-colors">
-              Log In to Dashboard
-            </Link>
+            {loggedIn ? (
+              <Link href="/dashboard"
+                className="bg-gold-400 hover:bg-gold-500 text-navy font-black text-sm uppercase tracking-widest px-8 py-4 rounded-xl transition-colors shadow-lg">
+                ★ Go to Your Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link href="/signup"
+                  className="bg-gold-400 hover:bg-gold-500 text-navy font-black text-sm uppercase tracking-widest px-8 py-4 rounded-xl transition-colors shadow-lg">
+                  ★ Start Free — Create Account
+                </Link>
+                <Link href="/login"
+                  className="border-2 border-white/30 hover:border-white/60 text-white font-bold text-sm px-8 py-4 rounded-xl transition-colors">
+                  Log In to Dashboard
+                </Link>
+              </>
+            )}
           </div>
-          <p className="text-blue-300/60 text-sm mt-5">No credit card required to get started.</p>
+          {!loggedIn && <p className="text-blue-300/60 text-sm mt-5">No credit card required to get started.</p>}
         </div>
       </section>
 
@@ -172,10 +196,17 @@ export default function LandingPage() {
           <p className="text-blue-200 text-lg mb-8">
             Create your account and have your intelligence dashboard running in under five minutes.
           </p>
-          <Link href="/signup"
-            className="inline-block bg-gold-400 hover:bg-gold-500 text-navy font-black text-sm uppercase tracking-widest px-10 py-4 rounded-xl transition-colors shadow-lg">
-            ★ Create Your Free Account
-          </Link>
+          {loggedIn ? (
+            <Link href="/dashboard"
+              className="inline-block bg-gold-400 hover:bg-gold-500 text-navy font-black text-sm uppercase tracking-widest px-10 py-4 rounded-xl transition-colors shadow-lg">
+              ★ Go to Your Dashboard
+            </Link>
+          ) : (
+            <Link href="/signup"
+              className="inline-block bg-gold-400 hover:bg-gold-500 text-navy font-black text-sm uppercase tracking-widest px-10 py-4 rounded-xl transition-colors shadow-lg">
+              ★ Create Your Free Account
+            </Link>
+          )}
         </div>
       </section>
 
