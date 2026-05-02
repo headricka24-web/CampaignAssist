@@ -10,7 +10,7 @@ export default function LoginPage() {
   const searchParams = useSearchParams()
   const callbackUrl  = searchParams.get('callbackUrl') ?? '/dashboard'
 
-  const [email,    setEmail]    = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error,    setError]    = useState('')
   const [loading,  setLoading]  = useState(false)
@@ -21,14 +21,14 @@ export default function LoginPage() {
     setError('')
 
     const result = await signIn('credentials', {
-      email,
+      username,
       password,
       redirect: false,
     })
 
     setLoading(false)
     if (result?.error) {
-      setError('Invalid email or password.')
+      setError('Invalid username or password.')
     } else {
       router.push(callbackUrl)
       router.refresh()
@@ -60,14 +60,15 @@ export default function LoginPage() {
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Email</label>
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Username</label>
                   <input
-                    type="email"
+                    type="text"
                     required
                     autoFocus
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    placeholder="you@campaign.com"
+                    autoComplete="username"
+                    value={username}
+                    onChange={e => setUsername(e.target.value)}
+                    placeholder="your_username"
                     className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 text-navy placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-gold-400"
                   />
                 </div>
@@ -76,6 +77,7 @@ export default function LoginPage() {
                   <input
                     type="password"
                     required
+                    autoComplete="current-password"
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     placeholder="••••••••"

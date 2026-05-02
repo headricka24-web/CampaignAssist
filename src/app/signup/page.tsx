@@ -8,8 +8,7 @@ import Link from 'next/link'
 export default function SignupPage() {
   const router = useRouter()
 
-  const [name,     setName]     = useState('')
-  const [email,    setEmail]    = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [confirm,  setConfirm]  = useState('')
   const [error,    setError]    = useState('')
@@ -23,17 +22,13 @@ export default function SignupPage() {
       setError('Passwords do not match.')
       return
     }
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters.')
-      return
-    }
 
     setLoading(true)
 
     const res = await fetch('/api/auth/signup', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ email, password, name }),
+      body:    JSON.stringify({ username, password }),
     })
     const data = await res.json()
 
@@ -43,15 +38,14 @@ export default function SignupPage() {
       return
     }
 
-    // Auto-sign in after successful registration
-    const result = await signIn('credentials', { email, password, redirect: false })
+    // Auto sign-in after registration
+    const result = await signIn('credentials', { username, password, redirect: false })
     setLoading(false)
 
     if (result?.error) {
-      setError('Account created — please sign in.')
       router.push('/login')
     } else {
-      router.push('/settings')  // Send new users to settings to create their first candidate
+      router.push('/settings')
       router.refresh()
     }
   }
@@ -77,36 +71,29 @@ export default function SignupPage() {
             <div className="h-1.5 bg-gold-gradient" />
             <div className="p-8">
               <h1 className="font-display text-2xl font-black text-navy mb-1">Create your account.</h1>
-              <p className="text-gray-400 text-sm mb-8">Get your campaign intelligence dashboard running in minutes.</p>
+              <p className="text-gray-400 text-sm mb-8">Pick a username and password to get started.</p>
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Your Name</label>
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Username *</label>
                   <input
                     type="text"
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    placeholder="Jane Smith"
-                    className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 text-navy placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-gold-400"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Email *</label>
-                  <input
-                    type="email"
                     required
                     autoFocus
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    placeholder="you@campaign.com"
+                    autoComplete="username"
+                    value={username}
+                    onChange={e => setUsername(e.target.value)}
+                    placeholder="smithfor2026"
                     className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 text-navy placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-gold-400"
                   />
+                  <p className="text-[10px] text-gray-400 mt-1">Letters, numbers, underscores, and hyphens only.</p>
                 </div>
                 <div>
                   <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Password *</label>
                   <input
                     type="password"
                     required
+                    autoComplete="new-password"
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     placeholder="At least 8 characters"
@@ -118,6 +105,7 @@ export default function SignupPage() {
                   <input
                     type="password"
                     required
+                    autoComplete="new-password"
                     value={confirm}
                     onChange={e => setConfirm(e.target.value)}
                     placeholder="••••••••"
