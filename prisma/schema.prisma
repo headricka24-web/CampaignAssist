@@ -8,8 +8,19 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id         String      @id @default(cuid())
+  email      String      @unique
+  password   String
+  name       String?
+  createdAt  DateTime    @default(now())
+  candidates Candidate[]
+}
+
 model Candidate {
   id           String   @id @default(cuid())
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id])
   name         String
   race         String
   state        String
@@ -24,6 +35,8 @@ model Candidate {
   zip          String?  // ZIP code for hyper-local targeting
   opponentName String?  // opponent name for news tracking & analysis
   bins         Bin[]
+
+  @@index([userId])
 }
 
 model Outlet {
