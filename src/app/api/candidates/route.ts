@@ -7,11 +7,42 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const { name, race, state, party, incumbent } = await req.json()
+  const { name, race, state, party, incumbent, raceLevel, district, county, city, zip, opponentName } = await req.json()
   const candidate = await prisma.candidate.create({
-    data: { name, race, state, party, incumbent: incumbent ?? false },
+    data: {
+      name, race, state, party,
+      incumbent:    incumbent    ?? false,
+      raceLevel:    raceLevel    ?? null,
+      district:     district     ?? null,
+      county:       county       ?? null,
+      city:         city         ?? null,
+      zip:          zip          ?? null,
+      opponentName: opponentName ?? null,
+    },
   })
   return NextResponse.json(candidate, { status: 201 })
+}
+
+export async function PATCH(req: NextRequest) {
+  const { id, name, race, state, party, incumbent, raceLevel, district, county, city, zip, opponentName } = await req.json()
+  if (!id) return NextResponse.json({ error: 'missing id' }, { status: 400 })
+  const candidate = await prisma.candidate.update({
+    where: { id },
+    data: {
+      ...(name         !== undefined && { name }),
+      ...(race         !== undefined && { race }),
+      ...(state        !== undefined && { state }),
+      ...(party        !== undefined && { party }),
+      ...(incumbent    !== undefined && { incumbent }),
+      ...(raceLevel    !== undefined && { raceLevel }),
+      ...(district     !== undefined && { district:     district     || null }),
+      ...(county       !== undefined && { county:       county       || null }),
+      ...(city         !== undefined && { city:         city         || null }),
+      ...(zip          !== undefined && { zip:          zip          || null }),
+      ...(opponentName !== undefined && { opponentName: opponentName || null }),
+    },
+  })
+  return NextResponse.json(candidate)
 }
 
 export async function DELETE(req: NextRequest) {

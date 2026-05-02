@@ -9,14 +9,21 @@ datasource db {
 }
 
 model Candidate {
-  id        String   @id @default(cuid())
-  name      String
-  race      String
-  state     String
-  party     String
-  incumbent Boolean  @default(false)
-  createdAt DateTime @default(now())
-  bins      Bin[]
+  id           String   @id @default(cuid())
+  name         String
+  race         String
+  state        String
+  party        String
+  incumbent    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  // Geographic targeting
+  raceLevel    String?  // federal | state | county | municipal
+  district     String?  // CD number or state legislative district number
+  county       String?  // county name
+  city         String?  // city or municipality name
+  zip          String?  // ZIP code for hyper-local targeting
+  opponentName String?  // opponent name for news tracking & analysis
+  bins         Bin[]
 }
 
 model Outlet {

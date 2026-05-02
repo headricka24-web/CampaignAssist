@@ -42,6 +42,33 @@ function getFips(state: string): string | null {
   return abbr ? (STATE_FIPS[abbr] ?? null) : null
 }
 
+// ── ACS variable list ─────────────────────────────────────────────────────────
+
+const ACS_VARS = [
+  'B01003_001E',  // Total population
+  'B01002_001E',  // Median age
+  'B19013_001E',  // Median household income
+  'B02001_002E',  // White alone
+  'B02001_003E',  // Black/AA alone
+  'B02001_005E',  // Asian alone
+  'B03003_003E',  // Hispanic/Latino
+  'B15003_001E',  // Pop 25+ (education denominator)
+  'B15003_022E',  // Bachelor's
+  'B15003_023E',  // Master's
+  'B15003_024E',  // Professional degree
+  'B15003_025E',  // Doctorate
+  'B17001_001E',  // Poverty universe
+  'B17001_002E',  // Below poverty level
+  'B25003_001E',  // Total occupied housing units
+  'B25003_002E',  // Owner-occupied
+  'B21001_001E',  // Veterans universe (civilian 18+)
+  'B21001_002E',  // Veterans
+  'B05002_001E',  // Nativity universe
+  'B05002_013E',  // Foreign born
+  'B23025_002E',  // In labor force
+  'B23025_005E',  // Unemployed
+].join(',')
+
 // ── 1. Census ACS ─────────────────────────────────────────────────────────────
 
 type CensusData = {
@@ -60,85 +87,168 @@ type CensusData = {
   pctForeignBorn:   number
   pctUnemployed:    number
   source:           string
+  geoLabel:         string
 }
 
-async function fetchCensusData(fips: string): Promise<CensusData | null> {
+type GeoParams = {
+  raceLevel: string | null
+  district:  string | null
+  county:    string | null
+  city:      string | null
+  stateFips: string
+  apiKey:    string
+}
+
+// Look up FIPS code for a county by fuzzy-matching the county name
+async function lookupCountyFips(stateFips: string, countyName: string, apiKey: string): Promise<string | null> {
+  try {
+    const url = `https://api.census.gov/data/2022/acs/acs5?get=NAME&for=county:*&in=state:${stateFips}&key=${apiKey}`
+    const res = await fetch(url, { next: { revalidate: 86400 } })
+    if (!res.ok) return null
+    const json: string[][] = await res.json()
+    // Each row: [NAME, state, county] — NAME looks like "Hillsborough County, New Hampshire"
+    const target = countyName.toLowerCase().replace(/\s+county$/i, '').trim()
+    const match = json.slice(1).find(row => row[0].toLowerCase().includes(target))
+    return match ? match[2] : null  // county FIPS is 3-digit code in column index 2
+  } catch { return null }
+}
+
+// Look up FIPS code for a place (city/municipality) by fuzzy-matching
+async function lookupPlaceFips(stateFips: string, cityName: string, apiKey: string): Promise<string | null> {
+  try {
+    const url = `https://api.census.gov/data/2022/acs/acs5?get=NAME&for=place:*&in=state:${stateFips}&key=${apiKey}`
+    const res = await fetch(url, { next: { revalidate: 86400 } })
+    if (!res.ok) return null
+    const json: string[][] = await res.json()
+    const target = cityName.toLowerCase().trim()
+    // Match by city name — NAME looks like "Manchester city, New Hampshire"
+    const match = json.slice(1).find(row => row[0].toLowerCase().startsWith(target))
+    return match ? match[2] : null  // place FIPS in column index 2
+  } catch { return null }
+}
+
+// Build ACS 5-year URL for sub-state geographies
+async function buildSubStateUrl(base: string, geo: GeoParams): Promise<{ url: string; geoLabel: string } | null> {
+  const { raceLevel, district, county, city, stateFips, apiKey } = geo
+
+  if (raceLevel === 'federal' && district) {
+    const distNum = district.trim().padStart(2, '0')
+    return {
+      url: `${base}&for=congressional+district:${distNum}&in=state:${stateFips}&key=${apiKey}`,
+      geoLabel: `Congressional District ${district}`,
+    }
+  }
+
+  if (raceLevel === 'state' && district) {
+    const distNum = district.trim().padStart(2, '0')
+    // Try upper chamber first, then lower chamber
+    return {
+      url: `${base}&for=state+legislative+district+(upper+chamber):${distNum}&in=state:${stateFips}&key=${apiKey}`,
+      geoLabel: `State Legislative District ${district}`,
+    }
+  }
+
+  if (raceLevel === 'county' && county) {
+    const countyFips = await lookupCountyFips(stateFips, county, apiKey)
+    if (!countyFips) return null
+    return {
+      url: `${base}&for=county:${countyFips}&in=state:${stateFips}&key=${apiKey}`,
+      geoLabel: county,
+    }
+  }
+
+  if (raceLevel === 'municipal' && city) {
+    const placeFips = await lookupPlaceFips(stateFips, city, apiKey)
+    if (!placeFips) return null
+    return {
+      url: `${base}&for=place:${placeFips}&in=state:${stateFips}&key=${apiKey}`,
+      geoLabel: city,
+    }
+  }
+
+  return null
+}
+
+function parseACSRow(json: string[][]): CensusData | null {
+  if (!json || json.length < 2) return null
+  const [headers, row] = [json[0], json[1]]
+  const n = (v: string) => Math.max(0, parseInt(row[headers.indexOf(v)]) || 0)
+
+  const pop      = n('B01003_001E') || 1
+  const white    = n('B02001_002E')
+  const black    = n('B02001_003E')
+  const asian    = n('B02001_005E')
+  const hispanic = n('B03003_003E')
+  const edPop    = n('B15003_001E') || 1
+  const bachelors = n('B15003_022E') + n('B15003_023E') + n('B15003_024E') + n('B15003_025E')
+  const povUniverse  = n('B17001_001E') || 1
+  const housingTotal = n('B25003_001E') || 1
+  const vetUniverse  = n('B21001_001E') || 1
+  const natUniverse  = n('B05002_001E') || 1
+  const laborForce   = n('B23025_002E') || 1
+
+  return {
+    population:       pop,
+    medianIncome:     n('B19013_001E'),
+    medianAge:        parseInt(row[headers.indexOf('B01002_001E')]) || 0,
+    pctWhite:         Math.round((white    / pop)          * 1000) / 10,
+    pctBlack:         Math.round((black    / pop)          * 1000) / 10,
+    pctHispanic:      Math.round((hispanic / pop)          * 1000) / 10,
+    pctAsian:         Math.round((asian    / pop)          * 1000) / 10,
+    pctOther:         Math.round(((pop - white - black - asian) / pop) * 1000) / 10,
+    pctBachelors:     Math.round((bachelors           / edPop)        * 1000) / 10,
+    pctPoverty:       Math.round((n('B17001_002E')    / povUniverse)  * 1000) / 10,
+    pctOwnerOccupied: Math.round((n('B25003_002E')    / housingTotal) * 1000) / 10,
+    pctVeterans:      Math.round((n('B21001_002E')    / vetUniverse)  * 1000) / 10,
+    pctForeignBorn:   Math.round((n('B05002_013E')    / natUniverse)  * 1000) / 10,
+    pctUnemployed:    Math.round((n('B23025_005E')    / laborForce)   * 1000) / 10,
+    source:           '',  // set by caller
+    geoLabel:         '',  // set by caller
+  }
+}
+
+async function fetchCensusData(
+  stateFips: string,
+  raceLevel: string | null,
+  district:  string | null,
+  county:    string | null,
+  city:      string | null,
+): Promise<CensusData | null> {
   const apiKey = process.env.CENSUS_API_KEY ?? 'DEMO_KEY'
+  const base5  = `https://api.census.gov/data/2022/acs/acs5?get=NAME,${ACS_VARS}`
+  const base1  = `https://api.census.gov/data/2023/acs/acs1?get=NAME,${ACS_VARS}`
 
-  // Variables: demographics + poverty + housing + veterans + foreign-born + education
-  const vars = [
-    'B01003_001E',  // Total population
-    'B01002_001E',  // Median age
-    'B19013_001E',  // Median household income
-    'B02001_002E',  // White alone
-    'B02001_003E',  // Black/AA alone
-    'B02001_005E',  // Asian alone
-    'B03003_003E',  // Hispanic/Latino
-    'B15003_001E',  // Pop 25+ (education denominator)
-    'B15003_022E',  // Bachelor's
-    'B15003_023E',  // Master's
-    'B15003_024E',  // Professional degree
-    'B15003_025E',  // Doctorate
-    'B17001_001E',  // Poverty universe
-    'B17001_002E',  // Below poverty level
-    'B25003_001E',  // Total occupied housing units
-    'B25003_002E',  // Owner-occupied
-    'B21001_001E',  // Veterans universe (civilian 18+)
-    'B21001_002E',  // Veterans
-    'B05002_001E',  // Nativity universe
-    'B05002_013E',  // Foreign born
-    'B23025_002E',  // In labor force
-    'B23025_005E',  // Unemployed
-  ].join(',')
+  // Try sub-state geography first if candidate has targeting configured
+  const subStateGeo = await buildSubStateUrl(base5, { raceLevel, district, county, city, stateFips, apiKey })
 
-  // Try 1-year (most recent), fall back to 5-year (covers small-population states)
-  const urls = [
-    `https://api.census.gov/data/2023/acs/acs1?get=NAME,${vars}&for=state:${fips}&key=${apiKey}`,
-    `https://api.census.gov/data/2022/acs/acs5?get=NAME,${vars}&for=state:${fips}&key=${apiKey}`,
+  // State-level fall-through URLs (1-year preferred, 5-year fallback)
+  const stateUrls = [
+    { url: `${base1}&for=state:${stateFips}&key=${apiKey}`, year: '2023 ACS 1-Year', geo: '' },
+    { url: `${base5}&for=state:${stateFips}&key=${apiKey}`, year: '2022 ACS 5-Year', geo: '' },
   ]
 
-  for (const url of urls) {
+  // If we have a sub-state URL, try it first (uses 5-year for reliability)
+  const urlsToTry = subStateGeo
+    ? [
+        { url: subStateGeo.url, year: '2022 ACS 5-Year', geo: subStateGeo.geoLabel },
+        // Also try lower chamber if upper failed (state races)
+        ...(raceLevel === 'state' && district
+          ? [{ url: `${base5}&for=state+legislative+district+(lower+chamber):${district.trim().padStart(2,'0')}&in=state:${stateFips}&key=${apiKey}`, year: '2022 ACS 5-Year', geo: `State Legislative District ${district}` }]
+          : []),
+        ...stateUrls,
+      ]
+    : stateUrls
+
+  for (const { url, year, geo } of urlsToTry) {
     try {
       const res = await fetch(url, { next: { revalidate: 86400 } })
       if (!res.ok) continue
       const json: string[][] = await res.json()
-      if (!json || json.length < 2) continue
-
-      const [headers, row] = [json[0], json[1]]
-      const n = (v: string) => Math.max(0, parseInt(row[headers.indexOf(v)]) || 0)
-
-      const pop      = n('B01003_001E') || 1
-      const white    = n('B02001_002E')
-      const black    = n('B02001_003E')
-      const asian    = n('B02001_005E')
-      const hispanic = n('B03003_003E')
-      const edPop    = n('B15003_001E') || 1
-      const bachelors = n('B15003_022E') + n('B15003_023E') + n('B15003_024E') + n('B15003_025E')
-      const povUniverse  = n('B17001_001E') || 1
-      const housingTotal = n('B25003_001E') || 1
-      const vetUniverse  = n('B21001_001E') || 1
-      const natUniverse  = n('B05002_001E') || 1
-      const laborForce   = n('B23025_002E') || 1
-
-      const dataYear = url.includes('acs1') ? '2023 ACS 1-Year' : '2022 ACS 5-Year'
-
-      return {
-        population:       pop,
-        medianIncome:     n('B19013_001E'),
-        medianAge:        parseInt(row[headers.indexOf('B01002_001E')]) || 0,
-        pctWhite:         Math.round((white    / pop)          * 1000) / 10,
-        pctBlack:         Math.round((black    / pop)          * 1000) / 10,
-        pctHispanic:      Math.round((hispanic / pop)          * 1000) / 10,
-        pctAsian:         Math.round((asian    / pop)          * 1000) / 10,
-        pctOther:         Math.round(((pop - white - black - asian) / pop) * 1000) / 10,
-        pctBachelors:     Math.round((bachelors           / edPop)        * 1000) / 10,
-        pctPoverty:       Math.round((n('B17001_002E')    / povUniverse)  * 1000) / 10,
-        pctOwnerOccupied: Math.round((n('B25003_002E')    / housingTotal) * 1000) / 10,
-        pctVeterans:      Math.round((n('B21001_002E')    / vetUniverse)  * 1000) / 10,
-        pctForeignBorn:   Math.round((n('B05002_013E')    / natUniverse)  * 1000) / 10,
-        pctUnemployed:    Math.round((n('B23025_005E')    / laborForce)   * 1000) / 10,
-        source: `U.S. Census Bureau, ${dataYear} Estimates`,
-      }
+      const data = parseACSRow(json)
+      if (!data) continue
+      data.source   = `U.S. Census Bureau, ${year} Estimates`
+      data.geoLabel = geo
+      return data
     } catch { continue }
   }
   return null
@@ -149,7 +259,6 @@ async function fetchCensusData(fips: string): Promise<CensusData | null> {
 type BLSData = { rate: number; month: string; year: string; preliminary: boolean }
 
 async function fetchBLSUnemployment(fips: string): Promise<BLSData | null> {
-  // LAUS state-level unemployment rate series
   const seriesId = `LASST${fips.padStart(2, '0')}0000000000003`
   const url = `https://api.bls.gov/publicAPI/v1/timeseries/data/${seriesId}`
   try {
@@ -180,7 +289,7 @@ function detectFECOffice(race: string): 'S' | 'H' | 'P' | null {
   return null
 }
 
-async function fetchFECResults(stateAbbr: string, race: string): Promise<FECData | null> {
+async function fetchFECResults(stateAbbr: string, race: string, district: string | null): Promise<FECData | null> {
   const office = detectFECOffice(race)
   if (!office) return null
 
@@ -188,7 +297,8 @@ async function fetchFECResults(stateAbbr: string, race: string): Promise<FECData
 
   for (const cycle of [2024, 2022, 2020]) {
     try {
-      const url = `https://api.fec.gov/v1/elections/?state=${stateAbbr}&cycle=${cycle}&office=${office}&sort=-votes&api_key=${apiKey}&per_page=10`
+      const districtParam = (office === 'H' && district) ? `&district=${district.trim().padStart(2,'0')}` : ''
+      const url = `https://api.fec.gov/v1/elections/?state=${stateAbbr}&cycle=${cycle}&office=${office}${districtParam}&sort=-votes&api_key=${apiKey}&per_page=10`
       const res = await fetch(url, { next: { revalidate: 86400 } })
       if (!res.ok) continue
       const json = await res.json()
@@ -215,6 +325,7 @@ async function fetchFECResults(stateAbbr: string, race: string): Promise<FECData
 
 function buildDataBlock(
   state:    string,
+  geoLabel: string,
   census:   CensusData | null,
   bls:      BLSData    | null,
   fec:      FECData    | null,
@@ -222,9 +333,11 @@ function buildDataBlock(
   const sections: string[] = []
   const sources: string[]  = []
 
+  const geoTitle = geoLabel ? `${geoLabel.toUpperCase()}, ${state.toUpperCase()}` : state.toUpperCase()
+
   if (census) {
     sources.push(census.source)
-    sections.push(`=== CENSUS BUREAU DEMOGRAPHICS (${census.source}) ===
+    sections.push(`=== CENSUS BUREAU DEMOGRAPHICS — ${geoTitle} (${census.source}) ===
 - Population: ${census.population.toLocaleString()}
 - Median household income: $${census.medianIncome.toLocaleString()}
 - Median age: ${census.medianAge}
@@ -255,7 +368,7 @@ function buildDataBlock(
   }
 
   return {
-    block:   sections.length ? `VERIFIED GOVERNMENT DATA FOR ${state.toUpperCase()}:\n\n${sections.join('\n\n')}` : '',
+    block:   sections.length ? `VERIFIED GOVERNMENT DATA FOR ${geoTitle}:\n\n${sections.join('\n\n')}` : '',
     sources,
   }
 }
@@ -263,40 +376,52 @@ function buildDataBlock(
 // ── Route handler ─────────────────────────────────────────────────────────────
 
 export async function GET() {
-  const candidate   = await prisma.candidate.findFirst()
-  const name        = candidate?.name  ?? 'the candidate'
-  const state       = candidate?.state ?? 'the state'
-  const race        = candidate?.race  ?? 'this race'
-  const party       = candidate?.party ?? 'Republican'
+  const candidate = await prisma.candidate.findFirst()
+  const name      = candidate?.name      ?? 'the candidate'
+  const state     = candidate?.state     ?? 'the state'
+  const race      = candidate?.race      ?? 'this race'
+  const party     = candidate?.party     ?? 'Republican'
+  const raceLevel = candidate?.raceLevel ?? null
+  const district  = candidate?.district  ?? null
+  const county    = candidate?.county    ?? null
+  const city      = candidate?.city      ?? null
 
   const fips      = getFips(state)
   const stateAbbr = getAbbr(state)
 
-  // Fetch all sources in parallel; failures are silently skipped
   const [censusResult, blsResult, fecResult] = await Promise.allSettled([
-    fips      ? fetchCensusData(fips)                         : Promise.resolve(null),
-    fips      ? fetchBLSUnemployment(fips)                    : Promise.resolve(null),
-    stateAbbr ? fetchFECResults(stateAbbr, race)              : Promise.resolve(null),
+    fips      ? fetchCensusData(fips, raceLevel, district, county, city) : Promise.resolve(null),
+    fips      ? fetchBLSUnemployment(fips)                               : Promise.resolve(null),
+    stateAbbr ? fetchFECResults(stateAbbr, race, district)               : Promise.resolve(null),
   ])
 
   const census = censusResult.status === 'fulfilled' ? censusResult.value : null
   const bls    = blsResult.status    === 'fulfilled' ? blsResult.value    : null
   const fec    = fecResult.status    === 'fulfilled' ? fecResult.value    : null
 
-  const { block: dataBlock, sources } = buildDataBlock(state, census, bls, fec)
+  const geoLabel = census?.geoLabel ?? ''
+  const { block: dataBlock, sources } = buildDataBlock(state, geoLabel, census, bls, fec)
   const hasRealData = sources.length > 0
 
+  const geoContext = geoLabel
+    ? `${geoLabel}, ${state}`
+    : state
+
   const systemPrompt = hasRealData
-    ? `You are a senior political strategist and demographer. You have been given verified, real data from U.S. government sources for ${state}. Use these numbers as your factual foundation — do not contradict, round away, or ignore them. Your job is to interpret the data strategically and provide political context (voter blocs, persuasion targets, messaging strategy) that the raw data alone cannot reveal. Where the data is silent (e.g., election history not covered by FEC results), draw on your knowledge but clearly distinguish analysis from fact.`
+    ? `You are a senior political strategist and demographer. You have been given verified, real data from U.S. government sources for ${geoContext}. Use these numbers as your factual foundation — do not contradict, round away, or ignore them. Your job is to interpret the data strategically and provide political context (voter blocs, persuasion targets, messaging strategy) that the raw data alone cannot reveal. Where the data is silent, draw on your knowledge but clearly distinguish analysis from fact.`
     : `You are a senior political strategist and demographer with deep knowledge of U.S. state-level demographics, voting patterns, and electoral history. Be specific with real data. Use actual statistics from the most recent census and election data you have.`
 
-  const userPrompt = `Generate a comprehensive constituent intelligence profile for a ${party} candidate running for ${race} in ${state}.
+  const geographyDesc = geoLabel
+    ? `${geoLabel} in ${state}`
+    : state
+
+  const userPrompt = `Generate a comprehensive constituent intelligence profile for a ${party} candidate running for ${race} in ${geographyDesc}.
 ${dataBlock ? `\n${dataBlock}\n` : ''}
 Structure your response using these exact section headers:
 
-## STATE OVERVIEW
+## OVERVIEW
 ${hasRealData
-  ? `Using the verified figures above, describe the state's size, economic character, cost of living, and geographic/urban-rural breakdown. Add top industries and major employers not captured in the data.`
+  ? `Using the verified figures above, describe the ${geoLabel ? 'district/area' : 'state'}'s size, economic character, cost of living, and geographic/urban-rural breakdown. Add top industries and major employers not captured in the data.`
   : `Population, median income, cost of living, urban/rural split, top industries and employers. Use specific numbers.`
 }
 
@@ -308,26 +433,26 @@ ${census
 
 ## ECONOMIC CONDITIONS
 ${bls
-  ? `Use the BLS unemployment figure (${bls.rate}% as of ${bls.month} ${bls.year}) as your baseline. Describe the broader economic conditions, cost pressures, top employer sectors, and what economic issues voters feel most acutely in ${state}.`
+  ? `Use the BLS unemployment figure (${bls.rate}% as of ${bls.month} ${bls.year}) as your baseline. Describe the broader economic conditions, cost pressures, top employer sectors, and what economic issues voters feel most acutely in ${geographyDesc}.`
   : `Current unemployment, major industries, economic pressures, cost of living concerns, and what economic issues voters feel most acutely.`
 }
 
 ## VOTING PATTERNS & RECENT ELECTION HISTORY
 ${fec
-  ? `Use the FEC ${fec.cycle} results provided above as your factual anchor for the most recent federal race. Extend the analysis to cover the last 3 election cycles, overall partisan lean, and trajectory. Is this a red/blue/purple state and why?`
-  : `Last 3 election cycles for this race type in ${state} — who won, margins, trends. Is this a red/blue/purple state and why?`
+  ? `Use the FEC ${fec.cycle} results provided above as your factual anchor for the most recent federal race. Extend the analysis to cover the last 3 election cycles, overall partisan lean, and trajectory. Is this a red/blue/purple ${geoLabel ? 'district' : 'state'} and why?`
+  : `Last 3 election cycles for this race type in ${geographyDesc} — who won, margins, trends. Is this a red/blue/purple ${geoLabel ? 'district' : 'state'} and why?`
 }
 
 ## KEY VOTER BLOCS FOR ${party.toUpperCase()}S
-The 4–5 groups that are the strongest base for a ${party} candidate in ${state}. For each group: estimated share of electorate, geographic concentration, top 2–3 issues they care about, and what message keeps them energized.
+The 4–5 groups that are the strongest base for a ${party} candidate in ${geographyDesc}. For each group: estimated share of electorate, geographic concentration within the ${geoLabel ? 'district' : 'state'}, top 2–3 issues they care about, and what message keeps them energized.
 
 ## SWING VOTERS TO TARGET
-The 3–4 groups most persuadable in ${state} right now. For each: who they are demographically, what they currently believe, what specific message or issue would move them toward a ${party} candidate.
+The 3–4 groups most persuadable in ${geographyDesc} right now. For each: who they are demographically, what they currently believe, and what specific message or issue would move them toward a ${party} candidate.
 
 ## CAMPAIGN STRATEGY RECOMMENDATION
-Based on all of the above: where should ${name}'s campaign concentrate resources? Prioritize by geography (specific regions/counties if known), demographic targets, and the 3 highest-leverage issues for this race. Be specific and direct.`
+Based on all of the above: where should ${name}'s campaign concentrate resources? Prioritize by geography (specific areas/precincts if known), demographic targets, and the 3 highest-leverage issues for this race. Be specific and direct.`
 
-  const profile = await ask(systemPrompt, userPrompt, 2500)
+  const profile = await ask(systemPrompt, userPrompt, 3000)
 
   return NextResponse.json({ profile, state, name, race, sources })
 }
