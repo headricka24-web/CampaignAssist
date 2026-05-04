@@ -104,7 +104,7 @@ type GeoParams = {
 async function lookupCountyFips(stateFips: string, countyName: string, apiKey: string): Promise<string | null> {
   try {
     const url = `https://api.census.gov/data/2022/acs/acs5?get=NAME&for=county:*&in=state:${stateFips}&key=${apiKey}`
-    const res = await fetch(url, { next: { revalidate: 86400 } })
+    const res = await fetch(url, { next: { revalidate: 86400 }, signal: AbortSignal.timeout(8000) })
     if (!res.ok) return null
     const json: string[][] = await res.json()
     // Each row: [NAME, state, county] — NAME looks like "Hillsborough County, New Hampshire"
@@ -118,7 +118,7 @@ async function lookupCountyFips(stateFips: string, countyName: string, apiKey: s
 async function lookupPlaceFips(stateFips: string, cityName: string, apiKey: string): Promise<string | null> {
   try {
     const url = `https://api.census.gov/data/2022/acs/acs5?get=NAME&for=place:*&in=state:${stateFips}&key=${apiKey}`
-    const res = await fetch(url, { next: { revalidate: 86400 } })
+    const res = await fetch(url, { next: { revalidate: 86400 }, signal: AbortSignal.timeout(8000) })
     if (!res.ok) return null
     const json: string[][] = await res.json()
     const target = cityName.toLowerCase().trim()
@@ -242,7 +242,7 @@ async function fetchCensusData(
 
   for (const { url, year, geo } of urlsToTry) {
     try {
-      const res = await fetch(url, { next: { revalidate: 86400 } })
+      const res = await fetch(url, { next: { revalidate: 86400 }, signal: AbortSignal.timeout(8000) })
       if (!res.ok) continue
       const json: string[][] = await res.json()
       const data = parseACSRow(json)
@@ -263,7 +263,7 @@ async function fetchBLSUnemployment(fips: string): Promise<BLSData | null> {
   const seriesId = `LASST${fips.padStart(2, '0')}0000000000003`
   const url = `https://api.bls.gov/publicAPI/v1/timeseries/data/${seriesId}`
   try {
-    const res = await fetch(url, { next: { revalidate: 3600 } })
+    const res = await fetch(url, { next: { revalidate: 3600 }, signal: AbortSignal.timeout(8000) })
     if (!res.ok) return null
     const json = await res.json()
     const dataPoint = json?.Results?.series?.[0]?.data?.[0]
@@ -300,7 +300,7 @@ async function fetchFECResults(stateAbbr: string, race: string, district: string
     try {
       const districtParam = (office === 'H' && district) ? `&district=${district.trim().padStart(2,'0')}` : ''
       const url = `https://api.fec.gov/v1/elections/?state=${stateAbbr}&cycle=${cycle}&office=${office}${districtParam}&sort=-votes&api_key=${apiKey}&per_page=10`
-      const res = await fetch(url, { next: { revalidate: 86400 } })
+      const res = await fetch(url, { next: { revalidate: 86400 }, signal: AbortSignal.timeout(8000) })
       if (!res.ok) continue
       const json = await res.json()
       if (!json?.results?.length) continue
@@ -457,7 +457,7 @@ The 3–4 groups most persuadable in ${geographyDesc} right now. For each: who t
 ## CAMPAIGN STRATEGY RECOMMENDATION
 Based on all of the above: where should ${name}'s campaign concentrate resources? Prioritize by geography (specific areas/precincts if known), demographic targets, and the 3 highest-leverage issues for this race. Be specific and direct.`
 
-  const profile = await ask(systemPrompt, userPrompt, 3000)
+  const profile = await ask(systemPrompt, userPrompt, 1800)
 
   return NextResponse.json({ profile, state, name, race, sources })
 }
