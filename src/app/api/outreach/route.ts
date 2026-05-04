@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { auth } from '@/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,7 +18,11 @@ function monthStart(d: Date) {
 }
 
 export async function GET() {
-  const candidate  = await prisma.candidate.findFirst()
+  const session    = await auth()
+  const userId     = session?.user?.id ?? null
+  const candidate  = await prisma.candidate.findFirst({
+    where: userId ? { userId } : { userId: null },
+  })
   const cid        = candidate?.id ?? null
 
   const now        = new Date()

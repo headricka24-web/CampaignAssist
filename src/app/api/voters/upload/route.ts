@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server'
 import * as XLSX from 'xlsx'
 import Anthropic from '@anthropic-ai/sdk'
 import { prisma } from '@/lib/db'
+import { auth } from '@/auth'
 
 // ── Normalization ─────────────────────────────────────────────────────────────
 
@@ -100,7 +101,11 @@ export async function POST(req: NextRequest) {
 
   if (rows.length === 0) return NextResponse.json({ error: 'File appears to be empty' }, { status: 400 })
 
-  const candidate = await prisma.candidate.findFirst()
+  const session     = await auth()
+  const userId      = session?.user?.id ?? null
+  const candidate   = await prisma.candidate.findFirst({
+    where: userId ? { userId } : { userId: null },
+  })
   const candidateId = candidate?.id ?? null
 
   type VoterRow = {

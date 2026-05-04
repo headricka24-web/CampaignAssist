@@ -1,13 +1,18 @@
 import { NextResponse } from 'next/server'
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/db'
+import { auth } from '@/auth'
 
 export async function POST(req: NextRequest) {
   const { name, email, phone, role, shiftDate, shiftStart, shiftEnd, status, notes } = await req.json()
   if (!name?.trim())  return NextResponse.json({ error: 'name required' }, { status: 400 })
   if (!shiftDate)     return NextResponse.json({ error: 'shiftDate required' }, { status: 400 })
 
-  const candidate = await prisma.candidate.findFirst()
+  const session   = await auth()
+  const userId    = session?.user?.id ?? null
+  const candidate = await prisma.candidate.findFirst({
+    where: userId ? { userId } : { userId: null },
+  })
 
   const volunteer = await prisma.volunteer.create({
     data: {

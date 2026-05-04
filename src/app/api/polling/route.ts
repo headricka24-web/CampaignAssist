@@ -1,11 +1,17 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { ask } from '@/lib/claude'
+import { auth } from '@/auth'
 
 export const maxDuration = 60
 
 export async function POST() {
-  const candidate = await prisma.candidate.findFirst()
+  const session = await auth()
+  const userId  = session?.user?.id ?? null
+
+  const candidate = await prisma.candidate.findFirst({
+    where: userId ? { userId } : { userId: null },
+  })
   const name  = candidate?.name  ?? 'the candidate'
   const state = candidate?.state ?? 'the state'
   const race  = candidate?.race  ?? 'this race'
@@ -13,6 +19,7 @@ export async function POST() {
   // Find articles that likely contain polling data
   const articles = await prisma.article.findMany({
     where: {
+      userId: userId ?? null,
       OR: [
         { title: { contains: 'poll' } },
         { title: { contains: 'Poll' } },

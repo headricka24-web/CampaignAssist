@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { ask } from '@/lib/claude'
+import { auth } from '@/auth'
 
 export const maxDuration = 60
 
@@ -17,9 +18,15 @@ function toneInstruction(tone: string): string {
 const TYPES = ['email', 'directmail', 'callscript', 'textscript', 'majordonor', 'thankyou'] as const
 type FundType = typeof TYPES[number]
 
-async function getContext() {
-  const candidate = await prisma.candidate.findFirst()
-  const articles  = await prisma.article.findMany({ orderBy: { datePublished: 'desc' }, take: 8 })
+async function getContext(userId: string | null) {
+  const candidate = await prisma.candidate.findFirst({
+    where: userId ? { userId } : { userId: null },
+  })
+  const articles  = await prisma.article.findMany({
+    where: { userId: userId ?? null },
+    orderBy: { datePublished: 'desc' },
+    take: 8,
+  })
   const name      = candidate?.name      ?? 'our candidate'
   const race      = candidate?.race      ?? 'this race'
   const state     = candidate?.state     ?? 'our state'
@@ -117,7 +124,9 @@ export async function POST(req: NextRequest) {
   }
   if (!TYPES.includes(type)) return NextResponse.json({ error: 'invalid_type' }, { status: 400 })
 
-  const ctx = await getContext()
+  const session = await auth()
+  const userId  = session?.user?.id ?? null
+  const ctx = await getContext(userId)
   const [system, user] = prompts[type](ctx, demographic, issue)
   const content = await ask(system + toneInstruction(tone), user, 500)
   return NextResponse.json({ content })

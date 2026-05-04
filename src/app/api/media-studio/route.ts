@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/db'
 import { ask } from '@/lib/claude'
+import { auth } from '@/auth'
 
 export const maxDuration = 60
 
@@ -22,9 +23,12 @@ function issueNote(issue: string): string {
   return issue.trim() ? `\n\nFOCUS ISSUE: Lean into "${issue.trim()}" as the primary theme throughout this content.` : ''
 }
 
-async function getContext() {
-  const candidate = await prisma.candidate.findFirst()
+async function getContext(userId: string | null) {
+  const candidate = await prisma.candidate.findFirst({
+    where: userId ? { userId } : { userId: null },
+  })
   const articles  = await prisma.article.findMany({
+    where: { userId: userId ?? null },
     orderBy: { datePublished: 'desc' },
     take: 10,
   })
@@ -116,7 +120,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'invalid_section' }, { status: 400 })
   }
 
-  const ctx = await getContext()
+  const session = await auth()
+  const userId  = session?.user?.id ?? null
+  const ctx = await getContext(userId)
 
   // Talking points: scrape news for the issue then generate points
   if (section === 'talking-points') {
