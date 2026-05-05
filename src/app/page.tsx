@@ -178,8 +178,8 @@ export default async function LandingPage() {
                     🚀 Let's get your campaign up and running!
                   </Link>
                   <Link href="/what-we-offer"
-                    className="border-2 border-white/20 hover:border-white/50 text-white font-medium text-sm px-8 py-4 rounded-xl transition-colors">
-                    What is CampaignAssist? →
+                    className="btn-what inline-flex items-center gap-2 px-8 py-4 rounded-xl text-sm uppercase tracking-widest">
+                    ✨ What is CampaignAssist?
                   </Link>
                 </>
               )}
