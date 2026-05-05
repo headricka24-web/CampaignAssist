@@ -7,11 +7,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { id } = await params
 
   // Verify the voter belongs to the current user via candidateId
-  const session = await auth()
-  const userId  = session?.user?.id ?? null
-  const voter   = await prisma.voter.findUnique({ where: { id }, select: { candidateId: true } })
-  if (voter?.candidateId) {
-    const cand = await prisma.candidate.findUnique({ where: { id: voter.candidateId }, select: { userId: true } })
+  const session   = await auth()
+  const userId    = session?.user?.id ?? null
+  const existing  = await prisma.voter.findUnique({ where: { id }, select: { candidateId: true } })
+  if (existing?.candidateId) {
+    const cand = await prisma.candidate.findUnique({ where: { id: existing.candidateId }, select: { userId: true } })
     if (cand && cand.userId !== userId) return NextResponse.json({ error: 'not found' }, { status: 404 })
   }
 
