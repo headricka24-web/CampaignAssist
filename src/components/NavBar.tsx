@@ -15,10 +15,17 @@ const links = [
   { href: '/briefing',     label: 'Hot Buttons'   },
   { href: '/legislative',  label: "Let's Fund"    },
   { href: '/constituents', label: 'Constituents'  },
-  { href: '/settings',     label: 'Settings'      },
 ]
 
-export default function NavBar({ userEmail, userName }: { userEmail: string; userName: string }) {
+export default function NavBar({
+  userEmail,
+  userName,
+  candidateName,
+}: {
+  userEmail: string
+  userName: string
+  candidateName?: string
+}) {
   const pathname = usePathname()
   const router   = useRouter()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -33,16 +40,18 @@ export default function NavBar({ userEmail, userName }: { userEmail: string; use
     ? userName.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2)
     : userEmail.slice(0, 2).toUpperCase()
 
+  const isMyCandidateActive = pathname === '/my-candidate'
+
   return (
     <header className="sticky top-0 z-40">
       <div className="h-1 bg-red-gradient" />
       <nav className="bg-navy/95 backdrop-blur-sm text-white px-6 py-0 border-b border-navy-500/50" aria-label="Main navigation">
-        <div className="container mx-auto max-w-7xl flex items-center justify-between h-16">
+        <div className="container mx-auto max-w-7xl flex items-center justify-between h-16 gap-3">
 
           {/* Logo */}
-          <Link href="/dashboard" className="flex items-center gap-3 group focus:outline-none">
+          <Link href="/dashboard" className="flex items-center gap-3 group focus:outline-none shrink-0">
             <div className="flex items-center justify-center w-9 h-9 rounded-full bg-red-gradient shadow-glow-red text-lg font-bold select-none shrink-0">★</div>
-            <div className="leading-tight">
+            <div className="leading-tight hidden sm:block">
               <span className="font-display font-bold text-xl tracking-widest uppercase text-white">
                 Campaign<span className="text-gold-400">Assist</span>
               </span>
@@ -50,8 +59,8 @@ export default function NavBar({ userEmail, userName }: { userEmail: string; use
             </div>
           </Link>
 
-          {/* Links */}
-          <div className="flex items-center gap-0.5 overflow-x-auto">
+          {/* Nav links */}
+          <div className="flex items-center gap-0.5 overflow-x-auto flex-1 justify-center">
             {links.map((l) => {
               const isActive = pathname === l.href || (l.href !== '/dashboard' && pathname.startsWith(l.href))
               return (
@@ -66,10 +75,32 @@ export default function NavBar({ userEmail, userName }: { userEmail: string; use
                 </Link>
               )
             })}
+
+            {/* MY CANDIDATE — always gold, more prominent */}
+            <Link href="/my-candidate"
+              className={`relative px-3 py-1.5 text-sm font-black rounded-lg transition-all whitespace-nowrap uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-gold-400 ${
+                isMyCandidateActive
+                  ? 'text-navy bg-gold-400'
+                  : 'text-gold-400 hover:text-navy hover:bg-gold-400 border border-gold-400/40 hover:border-gold-400'
+              }`}>
+              ★ My Candidate
+              {isMyCandidateActive && <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-navy rounded-full" />}
+            </Link>
           </div>
 
-          {/* User menu */}
-          <div className="relative flex items-center gap-3 shrink-0">
+          {/* Right side: candidate button + user menu */}
+          <div className="relative flex items-center gap-2 shrink-0">
+
+            {/* Persistent candidate name button */}
+            <Link
+              href="/my-candidate"
+              className="hidden lg:flex items-center gap-1.5 bg-gold-400/10 hover:bg-gold-400/20 border border-gold-400/30 hover:border-gold-400/60 text-gold-400 text-xs font-black uppercase tracking-wide px-3 py-1.5 rounded-xl transition-all max-w-[160px] truncate"
+              title={candidateName ?? 'Add your candidate'}
+            >
+              <span className="shrink-0">★</span>
+              <span className="truncate">{candidateName ?? 'Add Candidate'}</span>
+            </Link>
+
             <div className="hidden sm:flex items-center gap-1.5 border border-navy-400/60 px-2.5 py-1 rounded-full text-xs text-blue-300/80">
               <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse-slow" aria-hidden="true" />
               <span className="font-bold tracking-widest uppercase text-green-400">Live</span>
@@ -82,7 +113,7 @@ export default function NavBar({ userEmail, userName }: { userEmail: string; use
               <div className="w-7 h-7 rounded-full bg-gold-400 flex items-center justify-center text-navy text-xs font-black select-none">
                 {initials}
               </div>
-              <span className="text-xs text-blue-200 hidden md:block max-w-[120px] truncate">{userName || userEmail}</span>
+              <span className="text-xs text-blue-200 hidden md:block max-w-[100px] truncate">{userName || userEmail}</span>
               <span className="text-blue-400 text-xs">▾</span>
             </button>
 
@@ -92,10 +123,10 @@ export default function NavBar({ userEmail, userName }: { userEmail: string; use
                   <p className="text-xs font-black text-navy uppercase tracking-wide truncate">{userName || 'Account'}</p>
                   <p className="text-xs text-gray-400 truncate">{userEmail}</p>
                 </div>
-                <Link href="/settings"
+                <Link href="/my-candidate"
                   onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-2 px-4 py-2.5 text-sm text-navy hover:bg-gray-50 transition-colors">
-                  ⚙️ Settings
+                  className="flex items-center gap-2 px-4 py-2.5 text-sm text-navy hover:bg-gold-50 font-semibold transition-colors">
+                  ★ My Candidate
                 </Link>
                 <button
                   onClick={handleSignOut}

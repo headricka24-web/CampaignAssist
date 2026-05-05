@@ -3,15 +3,25 @@ import './globals.css'
 import NavBar from '@/components/NavBar'
 import AuthProvider from '@/components/AuthProvider'
 import { auth } from '@/auth'
+import { prisma } from '@/lib/db'
 
 export const metadata: Metadata = {
-  title: 'CampaignAssist — Political Intelligence Platform for Republican Campaigns',
-  description: 'The AI-powered command center built for GOP campaigns. Real-time news intelligence, opposition research, fundraising content, and voter strategy — all in one platform.',
+  title: 'CampaignAssist — AI-Powered Campaign Intelligence Platform',
+  description: 'The all-in-one platform for modern political campaigns. Real-time news intelligence, constituent profiles, voter strategy, and AI-powered tools — built for every candidate.',
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
   const isLoggedIn = !!session?.user
+
+  let candidateName: string | undefined
+  if (isLoggedIn && session.user?.id) {
+    const candidate = await prisma.candidate.findFirst({
+      where:  { userId: session.user.id },
+      select: { name: true },
+    })
+    candidateName = candidate?.name ?? undefined
+  }
 
   return (
     <html lang="en">
@@ -22,7 +32,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             Skip to main content
           </a>
 
-          {isLoggedIn && <NavBar userEmail={session.user.email ?? ''} userName={session.user.name ?? ''} />}
+          {isLoggedIn && <NavBar userEmail={session.user.email ?? ''} userName={session.user.name ?? ''} candidateName={candidateName} />}
 
           <main id="main-content" className="flex-1 container mx-auto px-4 py-8 max-w-7xl">
             {children}
