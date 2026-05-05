@@ -102,6 +102,10 @@ export default async function LandingPage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <Link href="/what-we-offer"
+                className="text-sm font-bold text-blue-200 hover:text-gold-400 transition-colors uppercase tracking-widest px-3 py-2">
+                What We Offer
+              </Link>
               {loggedIn ? (
                 <Link href="/dashboard"
                   className="text-sm font-bold bg-gold-400 hover:bg-gold-500 text-navy px-5 py-2 rounded-xl transition-colors uppercase tracking-wide">
@@ -173,9 +177,9 @@ export default async function LandingPage() {
                     className="bg-gold-400 hover:bg-gold-500 text-navy font-black text-sm px-10 py-4 rounded-xl transition-all shadow-xl hover:shadow-2xl hover:-translate-y-0.5">
                     🚀 Let's get your campaign up and running!
                   </Link>
-                  <Link href="/login"
+                  <Link href="/what-we-offer"
                     className="border-2 border-white/20 hover:border-white/50 text-white font-medium text-sm px-8 py-4 rounded-xl transition-colors">
-                    Sign In →
+                    What is CampaignAssist? →
                   </Link>
                 </>
               )}
