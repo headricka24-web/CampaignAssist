@@ -3,52 +3,65 @@ import { auth } from '@/auth'
 
 export const dynamic = 'force-dynamic'
 
-const PLAYBOOK = [
-  {
-    number: '01',
-    phase: 'Know Your Battlefield',
-    headline: 'Intelligence Before Action.',
-    body: 'Every morning, AI scans hundreds of news sources and drops a classified brief on your desk. Track every story about your candidate, your opponent, and your district — classified, scored, and ranked by threat level.',
-    tools: ['Morning Brief', 'News Intelligence', 'War Room Threat Scanner'],
-    color: 'from-blue-600 to-blue-800',
-    accent: 'bg-blue-500',
-  },
-  {
-    number: '02',
-    phase: 'Know Your Voters',
-    headline: 'Data Wins Races.',
-    body: 'Pull real Census Bureau demographics, BLS employment numbers, and FEC election history for your exact district. Upload your voter file and instantly know your GOTV targets, your persuadables, and your base.',
-    tools: ['Constituent Profiles', 'Voter Intelligence', 'District Demographics'],
-    color: 'from-red-600 to-red-800',
-    accent: 'bg-red-500',
-  },
-  {
-    number: '03',
-    phase: 'Win the Race',
-    headline: 'Execute With Precision.',
-    body: 'Manage donors, volunteers, and contacts. Generate press releases, fundraising emails, and social copy in seconds. From first knock to election night — one dashboard runs it all.',
-    tools: ['Campaign Outreach', 'Media Studio', 'Rapid Response'],
-    color: 'from-yellow-500 to-gold-500',
-    accent: 'bg-gold-400',
-  },
-]
-
 const FEATURES = [
-  { icon: '📰', title: 'News Intelligence',    blurb: 'Every story. Every outlet. Classified and scored in real time.' },
-  { icon: '⚡', title: 'War Room',             blurb: 'AI rebuttals, talking points, and press statements in seconds.' },
-  { icon: '🗳️', title: 'Voter Intelligence',   blurb: 'Segments, GOTV lists, and persuadables from your own voter file.' },
-  { icon: '📋', title: 'Campaign Outreach',    blurb: 'Donors, volunteers, contacts — goals tracked and goals hit.' },
-  { icon: '🗺️', title: 'Constituent Profiles', blurb: 'Real Census, BLS, and FEC data for your exact race geography.' },
-  { icon: '🏛️', title: 'Media Studio',         blurb: 'Press releases, emails, and social copy on-demand.' },
-  { icon: '🔥', title: 'Hot Button Briefing',  blurb: "Today's top issues and how to frame every single one." },
-  { icon: '💰', title: "Let's Fund",           blurb: 'AI-written fundraising copy that actually converts.' },
+  {
+    icon: '🗺️',
+    title: 'Constituent Profiles',
+    blurb: 'Real Census Bureau demographics, BLS employment data, and FEC election history — pulled automatically for your exact race geography.',
+  },
+  {
+    icon: '📰',
+    title: 'News Intelligence',
+    blurb: 'Monitor every story about your candidate, your opponent, and your district across hundreds of outlets. Classified and scored daily.',
+  },
+  {
+    icon: '🗳️',
+    title: 'Voter Intelligence',
+    blurb: 'Upload your voter file and instantly segment GOTV targets, persuadables, and your base. AI-tagged by issue and contact priority.',
+  },
+  {
+    icon: '⚡',
+    title: 'War Room',
+    blurb: 'Rapid-response rebuttals, talking points, and press statements drafted in seconds from live news coverage.',
+  },
+  {
+    icon: '📋',
+    title: 'Campaign Outreach',
+    blurb: 'Track donors, volunteers, and voter contacts. Log activity, set follow-up reminders, and watch your numbers climb.',
+  },
+  {
+    icon: '🏛️',
+    title: 'Media Studio',
+    blurb: 'On-demand social posts, newsletters, email scripts, and taglines — tailored to your candidate, your race, and your tone.',
+  },
+  {
+    icon: '🔥',
+    title: 'Hot Button Briefing',
+    blurb: "Today's top issues summarized and framed — so you always know what voters are talking about and how to respond.",
+  },
+  {
+    icon: '💰',
+    title: "Fundraising Tools",
+    blurb: 'AI-written fundraising emails, call scripts, direct mail copy, and major donor asks — built around your race and message.',
+  },
 ]
 
-const STATS = [
-  { value: '6', label: 'AI-powered tools' },
-  { value: '100+', label: 'sources monitored' },
-  { value: '50+', label: 'Census data points' },
-  { value: '1', label: 'dashboard to rule them all' },
+const HOW_IT_WORKS = [
+  {
+    step: '01',
+    title: 'Set up your race',
+    body: 'Add your candidate, your district, and your opponent. CampaignAssist immediately pulls real demographic and election data for your geography.',
+  },
+  {
+    step: '02',
+    title: 'Know your constituents',
+    body: 'Get a full intelligence profile: who lives in your district, how they vote, what issues they care about, and where your persuadable voters are.',
+  },
+  {
+    step: '03',
+    title: 'Run your campaign',
+    body: 'Monitor news, manage outreach, generate content, and track everything — all from a single dashboard built for modern campaigns.',
+  },
 ]
 
 export default async function LandingPage() {
@@ -60,33 +73,31 @@ export default async function LandingPage() {
 
       {/* ── Nav ── */}
       <header className="sticky top-0 z-40">
-        <div className="h-1.5 bg-gradient-to-r from-red-600 via-white to-blue-700" />
-        <nav className="bg-navy/95 backdrop-blur-sm border-b border-navy-500/50">
+        <nav className="bg-white border-b border-gray-100 shadow-sm">
           <div className="container mx-auto max-w-7xl px-6 h-16 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-red-gradient flex items-center justify-center text-lg font-bold text-white select-none shrink-0 shadow-glow-red">★</div>
-              <div className="leading-tight">
-                <span className="font-display font-bold text-xl tracking-widest uppercase text-white">
-                  Campaign<span className="text-gold-400">Assist</span>
-                </span>
-                <p className="text-[9px] uppercase tracking-[0.2em] text-blue-300/70 -mt-0.5">Intelligence · Strategy · Victory</p>
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-navy flex items-center justify-center shrink-0">
+                <span className="text-gold-400 font-black text-sm">C</span>
               </div>
+              <span className="font-bold text-lg text-navy tracking-tight">
+                Campaign<span className="text-blue-500">Assist</span>
+              </span>
             </div>
             <div className="flex items-center gap-3">
               {loggedIn ? (
                 <Link href="/dashboard"
-                  className="text-sm font-black uppercase tracking-widest bg-gold-400 hover:bg-gold-500 text-navy px-5 py-2 rounded-xl transition-colors">
-                  Dashboard →
+                  className="text-sm font-semibold bg-navy hover:bg-navy-700 text-white px-5 py-2 rounded-lg transition-colors">
+                  Go to Dashboard →
                 </Link>
               ) : (
                 <>
                   <Link href="/login"
-                    className="text-sm font-bold text-blue-300 hover:text-white transition-colors px-4 py-2">
-                    Log In
+                    className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors px-3 py-2">
+                    Log in
                   </Link>
                   <Link href="/signup"
-                    className="text-sm font-black uppercase tracking-widest bg-gold-400 hover:bg-gold-500 text-navy px-5 py-2 rounded-xl transition-colors">
-                    Get Started Free
+                    className="text-sm font-semibold bg-navy hover:bg-navy-700 text-white px-5 py-2 rounded-lg transition-colors">
+                    Get started free
                   </Link>
                 </>
               )}
@@ -96,132 +107,111 @@ export default async function LandingPage() {
       </header>
 
       {/* ── Hero ── */}
-      <section className="relative overflow-hidden bg-hero-gradient min-h-[90vh] flex items-center">
-        <div className="absolute inset-0 bg-stripe-pattern opacity-25" />
+      <section className="bg-white py-24 md:py-32">
+        <div className="container mx-auto max-w-5xl px-6 text-center">
+          <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 text-xs font-semibold px-3 py-1.5 rounded-full mb-8 border border-blue-100">
+            <span className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
+            AI-powered campaign intelligence
+          </div>
 
-        {/* Giant background stars */}
-        <div className="absolute -top-10 -right-10 text-white opacity-[0.03] text-[400px] font-black leading-none select-none pointer-events-none">★</div>
-        <div className="absolute bottom-0 -left-20 text-white opacity-[0.02] text-[300px] font-black leading-none select-none pointer-events-none">★</div>
+          <h1 className="font-display font-black text-navy text-5xl md:text-6xl lg:text-7xl leading-tight mb-6 tracking-tight">
+            Campaigning just got<br />
+            <span className="text-blue-500">a software update.</span>
+          </h1>
 
-        {/* Star field */}
-        <div className="absolute top-12 left-1/4 text-gold-400 opacity-20 text-3xl select-none">★</div>
-        <div className="absolute top-24 right-1/3 text-white opacity-10 text-xl select-none">★</div>
-        <div className="absolute bottom-20 right-1/4 text-gold-400 opacity-15 text-2xl select-none">★</div>
-        <div className="absolute bottom-32 left-1/3 text-white opacity-10 text-lg select-none">★</div>
+          <p className="text-gray-500 text-xl md:text-2xl max-w-2xl mx-auto mb-10 leading-relaxed">
+            The all-in-one platform that gives every candidate — from city council to U.S. Senate — the data, tools, and intelligence to run a modern campaign.
+          </p>
 
-        <div className="relative container mx-auto max-w-7xl px-6 py-20">
-          <div className="max-w-4xl">
-            <div className="inline-flex items-center gap-2 bg-red-500 text-white text-xs font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-8 shadow-glow-red">
-              <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
-              Now Live — AI Campaign Intelligence
-            </div>
-
-            <h1 className="font-display font-black text-white leading-[0.9] mb-8">
-              <span className="block text-6xl md:text-8xl lg:text-[110px]">WIN</span>
-              <span className="block text-4xl md:text-6xl lg:text-7xl text-gold-400">YOUR RACE.</span>
-            </h1>
-
-            <p className="text-blue-100 text-xl md:text-2xl max-w-2xl mb-4 leading-relaxed font-medium">
-              The AI command center that gives every Republican campaign — from city council to U.S. Senate — the intelligence firepower of a top-tier operation.
-            </p>
-            <p className="text-blue-300/70 text-base mb-12">
-              Real data. Real news. Real results. ★ Built for candidates who refuse to lose.
-            </p>
-
-            <div className="flex flex-wrap gap-4 items-center">
-              {loggedIn ? (
-                <Link href="/dashboard"
-                  className="bg-gold-400 hover:bg-gold-500 text-navy font-black text-base uppercase tracking-widest px-10 py-4 rounded-xl transition-all shadow-xl hover:shadow-2xl hover:-translate-y-0.5">
-                  ★ Your Dashboard
+          <div className="flex flex-wrap gap-3 justify-center items-center">
+            {loggedIn ? (
+              <Link href="/dashboard"
+                className="bg-navy hover:bg-navy-700 text-white font-semibold px-8 py-3.5 rounded-xl transition-all hover:-translate-y-0.5 hover:shadow-lg text-sm">
+                Go to your dashboard →
+              </Link>
+            ) : (
+              <>
+                <Link href="/signup"
+                  className="bg-navy hover:bg-navy-700 text-white font-semibold px-8 py-3.5 rounded-xl transition-all hover:-translate-y-0.5 hover:shadow-lg text-sm">
+                  Create your free account
                 </Link>
-              ) : (
-                <>
-                  <Link href="/signup"
-                    className="bg-gold-400 hover:bg-gold-500 text-navy font-black text-base uppercase tracking-widest px-10 py-4 rounded-xl transition-all shadow-xl hover:shadow-2xl hover:-translate-y-0.5">
-                    ★ Launch Your Campaign
-                  </Link>
-                  <Link href="/login"
-                    className="border-2 border-white/20 hover:border-white/50 text-white font-bold text-sm px-8 py-4 rounded-xl transition-colors">
-                    Sign In →
-                  </Link>
-                </>
-              )}
-            </div>
-            {!loggedIn && <p className="text-blue-400/50 text-sm mt-4">Free to start. No credit card needed.</p>}
+                <Link href="/login"
+                  className="text-gray-500 hover:text-gray-900 font-medium text-sm px-5 py-3.5 rounded-xl border border-gray-200 hover:border-gray-300 transition-colors">
+                  Sign in
+                </Link>
+              </>
+            )}
           </div>
+          {!loggedIn && <p className="text-gray-400 text-xs mt-4">No credit card required.</p>}
         </div>
       </section>
 
-      {/* ── Stats Banner ── */}
-      <section className="bg-red-600 py-5">
+      {/* ── Constituent Intelligence Spotlight ── */}
+      <section className="bg-navy py-20 md:py-28">
         <div className="container mx-auto max-w-7xl px-6">
-          <div className="flex flex-wrap justify-center md:justify-between gap-6 md:gap-0 divide-y md:divide-y-0 md:divide-x divide-red-500">
-            {STATS.map(s => (
-              <div key={s.label} className="flex-1 min-w-[140px] text-center px-6 py-1">
-                <div className="font-display font-black text-4xl text-white leading-none">{s.value}</div>
-                <div className="text-red-200 text-xs uppercase tracking-widest font-bold mt-1">{s.label}</div>
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div>
+              <div className="inline-flex items-center gap-2 bg-white/10 text-blue-200 text-xs font-semibold px-3 py-1.5 rounded-full mb-6">
+                Core feature
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Manifesto ── */}
-      <section className="bg-navy py-20 relative overflow-hidden">
-        <div className="absolute inset-0 bg-stripe-pattern opacity-10" />
-        <div className="absolute right-0 top-0 bottom-0 w-1/2 opacity-[0.03] flex items-center justify-end pr-12 select-none pointer-events-none">
-          <span className="text-white font-black" style={{ fontSize: '28rem', lineHeight: 1 }}>🦅</span>
-        </div>
-        <div className="relative container mx-auto max-w-4xl px-6 text-center">
-          <div className="text-gold-400 text-3xl mb-6 tracking-widest">★ ★ ★</div>
-          <h2 className="font-display font-black text-white text-4xl md:text-5xl leading-tight mb-6">
-            The Best Candidates Deserve<br />
-            <span className="text-gold-400">The Best Intelligence.</span>
-          </h2>
-          <p className="text-blue-200 text-lg md:text-xl leading-relaxed max-w-2xl mx-auto mb-6">
-            We built CampaignAssist so a first-time city council candidate has the same data firepower as a U.S. Senate operation. The playing field just got level. America deserves candidates who fight with everything they've got — and now you have the tools to do exactly that.
-          </p>
-          <p className="text-gold-400/80 font-black text-sm uppercase tracking-[0.3em]">
-            Intelligence · Strategy · Victory · God Bless America
-          </p>
-        </div>
-      </section>
-
-      {/* ── The Playbook ── */}
-      <section className="py-24 bg-gray-50">
-        <div className="container mx-auto max-w-7xl px-6">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 bg-navy text-gold-400 text-xs font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-4">
-              ✦ The Winning Playbook
+              <h2 className="font-display font-black text-white text-4xl md:text-5xl leading-tight mb-6">
+                Know your district<br />
+                <span className="text-gold-400">before you knock<br />a single door.</span>
+              </h2>
+              <p className="text-blue-200 text-lg leading-relaxed mb-6">
+                Most campaigns guess at who their voters are. CampaignAssist pulls real data from the U.S. Census Bureau, Bureau of Labor Statistics, and FEC to build a complete demographic and electoral profile of your exact race geography.
+              </p>
+              <ul className="space-y-3">
+                {[
+                  'Population, income, age, and education breakdowns',
+                  'Current unemployment from BLS live data',
+                  'Election results from the last 3 cycles via FEC',
+                  'AI analysis of your base, swing voters, and persuadables',
+                ].map(item => (
+                  <li key={item} className="flex items-start gap-3 text-blue-100 text-sm">
+                    <span className="text-gold-400 mt-0.5 shrink-0">✓</span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
             </div>
-            <h2 className="font-display text-4xl md:text-5xl font-black text-navy">
-              Three Phases. One Mission.
+
+            <div className="grid grid-cols-2 gap-4">
+              {[
+                { label: 'Demographic Data Points', value: '50+', sub: 'from U.S. Census Bureau' },
+                { label: 'News Sources Monitored', value: '100+', sub: 'updated daily' },
+                { label: 'AI Tools', value: '8', sub: 'across every campaign function' },
+                { label: 'Setup Time', value: '< 2 min', sub: 'before your first briefing' },
+              ].map(stat => (
+                <div key={stat.label} className="bg-white/5 border border-white/10 rounded-2xl p-5">
+                  <div className="font-display font-black text-3xl text-gold-400 mb-1">{stat.value}</div>
+                  <div className="text-white text-sm font-semibold mb-0.5">{stat.label}</div>
+                  <div className="text-blue-400 text-xs">{stat.sub}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── How It Works ── */}
+      <section className="py-20 bg-gray-50">
+        <div className="container mx-auto max-w-7xl px-6">
+          <div className="text-center mb-14">
+            <h2 className="font-display font-black text-navy text-3xl md:text-4xl mb-3">
+              Up and running in minutes.
             </h2>
+            <p className="text-gray-400 text-base max-w-xl mx-auto">
+              Add your race and CampaignAssist gets to work immediately — no setup required.
+            </p>
           </div>
 
-          <div className="space-y-6">
-            {PLAYBOOK.map((p) => (
-              <div key={p.number} className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-                <div className={`h-1.5 bg-gradient-to-r ${p.color}`} />
-                <div className="p-8 flex flex-col md:flex-row gap-8 items-start">
-                  <div className="shrink-0">
-                    <div className={`font-display font-black text-7xl leading-none bg-gradient-to-br ${p.color} bg-clip-text text-transparent`}>
-                      {p.number}
-                    </div>
-                    <div className="text-xs font-black uppercase tracking-widest text-gray-400 mt-1">{p.phase}</div>
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-display font-black text-navy text-2xl mb-3">{p.headline}</h3>
-                    <p className="text-gray-500 leading-relaxed mb-4">{p.body}</p>
-                    <div className="flex flex-wrap gap-2">
-                      {p.tools.map(t => (
-                        <span key={t} className={`${p.accent} text-white text-xs font-black uppercase tracking-wider px-3 py-1 rounded-full`}>
-                          {t}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+          <div className="grid md:grid-cols-3 gap-6">
+            {HOW_IT_WORKS.map((step) => (
+              <div key={step.step} className="bg-white rounded-2xl p-7 border border-gray-100 shadow-sm">
+                <div className="font-display font-black text-5xl text-gray-100 leading-none mb-4">{step.step}</div>
+                <h3 className="font-bold text-navy text-lg mb-2">{step.title}</h3>
+                <p className="text-gray-500 text-sm leading-relaxed">{step.body}</p>
               </div>
             ))}
           </div>
@@ -232,17 +222,20 @@ export default async function LandingPage() {
       <section className="py-20 bg-white">
         <div className="container mx-auto max-w-7xl px-6">
           <div className="text-center mb-12">
-            <h2 className="font-display text-3xl font-black text-navy mb-3">
-              Every Tool Your Campaign Needs
+            <h2 className="font-display font-black text-navy text-3xl md:text-4xl mb-3">
+              Every tool your campaign needs.
             </h2>
-            <p className="text-gray-400 text-sm uppercase tracking-widest font-bold">All under one roof. All powered by AI.</p>
+            <p className="text-gray-400 text-sm max-w-lg mx-auto">
+              From the first door knock to election night — one platform covers every function of a modern campaign.
+            </p>
           </div>
+
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {FEATURES.map(f => (
               <div key={f.title}
-                className="group bg-gray-50 hover:bg-navy rounded-2xl p-5 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg cursor-default border border-gray-100 hover:border-navy">
-                <div className="text-3xl mb-3">{f.icon}</div>
-                <h3 className="font-black text-navy group-hover:text-gold-400 text-sm uppercase tracking-wide mb-1 transition-colors">{f.title}</h3>
+                className="group bg-gray-50 hover:bg-navy rounded-2xl p-5 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg border border-gray-100 hover:border-navy cursor-default">
+                <div className="text-2xl mb-3">{f.icon}</div>
+                <h3 className="font-bold text-navy group-hover:text-gold-400 text-sm mb-1.5 transition-colors">{f.title}</h3>
                 <p className="text-gray-400 group-hover:text-blue-200 text-xs leading-relaxed transition-colors">{f.blurb}</p>
               </div>
             ))}
@@ -250,62 +243,53 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* ── Battle Cry CTA ── */}
-      <section className="relative overflow-hidden bg-hero-gradient py-24">
-        <div className="absolute inset-0 bg-stripe-pattern opacity-20" />
-        <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] select-none pointer-events-none">
-          <span className="text-white font-black" style={{ fontSize: '32rem', lineHeight: 1 }}>★</span>
-        </div>
-
-        <div className="relative container mx-auto max-w-3xl px-6 text-center">
-          <div className="text-gold-400 text-2xl mb-6">★ ★ ★ ★ ★</div>
-          <h2 className="font-display text-5xl md:text-6xl font-black text-white mb-4 leading-tight">
-            Ready to Fight?
+      {/* ── CTA ── */}
+      <section className="bg-gray-50 border-t border-gray-100 py-24">
+        <div className="container mx-auto max-w-2xl px-6 text-center">
+          <h2 className="font-display font-black text-navy text-4xl md:text-5xl mb-4 leading-tight">
+            Your campaign deserves<br />better tools.
           </h2>
-          <p className="text-blue-200 text-xl mb-10 leading-relaxed">
-            Create your account in 30 seconds and have your campaign intelligence dashboard live before lunch.
+          <p className="text-gray-500 text-lg mb-10 leading-relaxed">
+            Set up your account in two minutes. Add your candidate and race, and CampaignAssist starts working immediately.
           </p>
           {loggedIn ? (
             <Link href="/dashboard"
-              className="inline-block bg-gold-400 hover:bg-gold-500 text-navy font-black text-base uppercase tracking-widest px-12 py-5 rounded-xl transition-all shadow-2xl hover:-translate-y-0.5">
-              ★ Back to Your Dashboard
+              className="inline-block bg-navy hover:bg-navy-700 text-white font-semibold px-10 py-4 rounded-xl transition-all hover:-translate-y-0.5 hover:shadow-lg text-sm">
+              Back to your dashboard →
             </Link>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               <Link href="/signup"
-                className="inline-block bg-gold-400 hover:bg-gold-500 text-navy font-black text-base uppercase tracking-widest px-12 py-5 rounded-xl transition-all shadow-2xl hover:-translate-y-0.5">
-                ★ Launch Your Free Campaign Dashboard
+                className="inline-block bg-navy hover:bg-navy-700 text-white font-semibold px-10 py-4 rounded-xl transition-all hover:-translate-y-0.5 hover:shadow-lg text-sm">
+                Create your free account
               </Link>
-              <p className="text-blue-300/50 text-sm">No credit card. No commitment. Just victory.</p>
+              <p className="text-gray-400 text-xs">No credit card required. Free to start.</p>
             </div>
           )}
         </div>
       </section>
 
       {/* ── Footer ── */}
-      <footer className="bg-navy">
-        <div className="h-1.5 bg-gradient-to-r from-red-600 via-white/20 to-blue-700 opacity-60" />
+      <footer className="bg-navy border-t border-white/5">
         <div className="container mx-auto max-w-7xl px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-red-gradient flex items-center justify-center text-base text-white font-bold shadow-glow-red">★</div>
-            <div>
-              <span className="font-display font-bold tracking-widest uppercase text-white text-lg">
-                Campaign<span className="text-gold-400">Assist</span>
-              </span>
-              <p className="text-blue-400/60 text-[10px] uppercase tracking-widest">Intelligence · Strategy · Victory</p>
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
+              <span className="text-gold-400 font-black text-xs">C</span>
             </div>
+            <span className="font-bold text-white tracking-tight">
+              Campaign<span className="text-blue-400">Assist</span>
+            </span>
           </div>
-          <div className="text-center">
-            <p className="text-blue-300/40 text-xs">Built for Republican campaigns. Built to win.</p>
-            <p className="text-gold-400/40 text-xs mt-0.5">★ God Bless America · © {new Date().getFullYear()}</p>
-          </div>
-          <div className="flex gap-4 text-xs text-blue-400/50 font-bold uppercase tracking-widest">
-            <Link href="/login"  className="hover:text-white transition-colors">Log In</Link>
-            <Link href="/signup" className="hover:text-gold-400 transition-colors">Sign Up</Link>
+          <p className="text-blue-400/50 text-xs text-center">
+            Built for modern political campaigns. © {new Date().getFullYear()} CampaignAssist.
+          </p>
+          <div className="flex gap-4 text-xs text-blue-400/60 font-medium">
+            <Link href="/login"  className="hover:text-white transition-colors">Log in</Link>
+            <Link href="/signup" className="hover:text-white transition-colors">Sign up</Link>
           </div>
         </div>
-        <div className="h-1 bg-red-gradient opacity-40" />
       </footer>
+
     </div>
   )
 }
