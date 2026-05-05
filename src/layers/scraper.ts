@@ -42,7 +42,7 @@ async function fetchRSS(query: string): Promise<ScrapedArticle[]> {
   const items: ScrapedArticle[] = []
   const itemMatches = xml.match(/<item>[\s\S]*?<\/item>/g) ?? []
 
-  for (const item of itemMatches.slice(0, 15)) {
+  for (const item of itemMatches.slice(0, 50)) {
     const title     = extractTag(item, 'title')
     const link      = cleanGoogleUrl(extractTag(item, 'link').replace(/<!\[CDATA\[|\]\]>/g, '').trim())
     const pubDate   = extractTag(item, 'pubDate')
@@ -73,21 +73,38 @@ function filterRelevant(articles: ScrapedArticle[], keywords: string[], titleOnl
 }
 
 export async function scrapeForCandidate(candidateName: string, state: string, _race: string) {
-  const results = await fetchRSS(`"${candidateName}" ${state}`)
-  // Candidate name in title or snippet is fine; state check is title-only to avoid false positives
-  return results.filter(a => {
-    const title   = a.title.toLowerCase()
-    const full    = (a.title + ' ' + a.snippet).toLowerCase()
-    return full.includes(candidateName.toLowerCase()) || title.includes(state.toLowerCase())
+  const lastName  = candidateName.trim().split(/\s+/).pop() ?? candidateName
+  const [byFull, byLast] = await Promise.all([
+    fetchRSS(`"${candidateName}" ${state}`),
+    fetchRSS(`"${lastName}" ${state} politics`),
+  ])
+
+  const seen = new Set<string>()
+  const merged = [...byFull, ...byLast].filter(a => {
+    if (seen.has(a.url)) return false
+    seen.add(a.url)
+    return true
+  })
+
+  const nameLower  = candidateName.toLowerCase()
+  const lastLower  = lastName.toLowerCase()
+  const stateLower = state.toLowerCase()
+
+  return merged.filter(a => {
+    const full = (a.title + ' ' + a.snippet).toLowerCase()
+    return full.includes(nameLower) || full.includes(lastLower) || full.includes(stateLower)
   })
 }
 
 export async function scrapeForOpponent(opponentName: string, state: string, _race: string) {
-  const results = await fetchRSS(`"${opponentName}" ${state}`)
+  const lastName = opponentName.trim().split(/\s+/).pop() ?? opponentName
+  const results  = await fetchRSS(`"${opponentName}" ${state}`)
+  const nameLower  = opponentName.toLowerCase()
+  const lastLower  = lastName.toLowerCase()
+  const stateLower = state.toLowerCase()
   return results.filter(a => {
-    const title = a.title.toLowerCase()
-    const full  = (a.title + ' ' + a.snippet).toLowerCase()
-    return full.includes(opponentName.toLowerCase()) || title.includes(state.toLowerCase())
+    const full = (a.title + ' ' + a.snippet).toLowerCase()
+    return full.includes(nameLower) || full.includes(lastLower) || full.includes(stateLower)
   })
 }
 
