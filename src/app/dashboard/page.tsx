@@ -113,7 +113,7 @@ export default async function DashboardPage() {
               <div className="flex gap-3">
                 <Link href="/my-candidate"
                   className="bg-gold-400 hover:bg-gold-500 text-navy font-black px-6 py-2.5 rounded-lg text-sm tracking-wide transition-colors focus:outline-none focus:ring-2 focus:ring-white">
-                  ★ Set Up Your Candidate
+                  ★ My Candidate
                 </Link>
                 <Link href="/news"
                   className="border border-white/30 text-white hover:bg-white/10 font-bold px-6 py-2.5 rounded-lg text-sm tracking-wide transition-colors">

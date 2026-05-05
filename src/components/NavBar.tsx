@@ -6,15 +6,15 @@ import { signOut } from 'next-auth/react'
 import { useState } from 'react'
 
 const links = [
-  { href: '/dashboard',    label: 'Dashboard'     },
-  { href: '/news',         label: 'News Tracker'  },
-  { href: '/war-room',     label: '⚡ War Room'   },
-  { href: '/outreach',     label: '📋 Outreach'   },
-  { href: '/voters',       label: '🗳️ Voters'     },
-  { href: '/media',        label: 'Media Studio'  },
-  { href: '/briefing',     label: 'Hot Buttons'   },
-  { href: '/legislative',  label: "Let's Fund"    },
-  { href: '/constituents', label: 'Constituents'  },
+  { href: '/dashboard',    label: 'Dashboard'    },
+  { href: '/news',         label: 'News'         },
+  { href: '/war-room',     label: 'War Room'     },
+  { href: '/outreach',     label: 'Outreach'     },
+  { href: '/voters',       label: 'Voters'       },
+  { href: '/media',        label: 'Media'        },
+  { href: '/briefing',     label: 'Hot Buttons'  },
+  { href: '/legislative',  label: "Let's Fund"   },
+  { href: '/constituents', label: 'Constituents' },
 ]
 
 export default function NavBar({
@@ -58,31 +58,31 @@ export default function NavBar({
           </Link>
 
           {/* Nav links */}
-          <div className="flex items-center gap-0.5 overflow-x-auto flex-1 justify-center">
+          <div className="flex items-center gap-0 overflow-x-auto flex-1 justify-center">
             {links.map((l) => {
               const isActive = pathname === l.href || (l.href !== '/dashboard' && pathname.startsWith(l.href))
               return (
                 <Link key={l.href} href={l.href}
-                  className={`relative px-3 py-1.5 text-sm font-medium rounded-lg transition-all whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-gold-400 ${
+                  className={`relative px-2 py-1.5 text-xs font-medium rounded-md transition-all whitespace-nowrap focus:outline-none focus:ring-1 focus:ring-gold-400 ${
                     isActive
                       ? 'text-white bg-navy-500/80'
                       : 'text-blue-300 hover:text-white hover:bg-navy-500/50'
                   }`}>
                   {l.label}
-                  {isActive && <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-gold-400 rounded-full" />}
+                  {isActive && <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-gold-400 rounded-full" />}
                 </Link>
               )
             })}
 
             {/* MY CANDIDATE — always gold, more prominent */}
             <Link href="/my-candidate"
-              className={`relative px-3 py-1.5 text-sm font-black rounded-lg transition-all whitespace-nowrap uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-gold-400 ${
+              className={`relative px-2 py-1.5 text-xs font-black rounded-md transition-all whitespace-nowrap uppercase tracking-wide focus:outline-none focus:ring-1 focus:ring-gold-400 ${
                 isMyCandidateActive
                   ? 'text-navy bg-gold-400'
                   : 'text-gold-400 hover:text-navy hover:bg-gold-400 border border-gold-400/40 hover:border-gold-400'
               }`}>
               ★ My Candidate
-              {isMyCandidateActive && <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-navy rounded-full" />}
+              {isMyCandidateActive && <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-navy rounded-full" />}
             </Link>
           </div>
 
