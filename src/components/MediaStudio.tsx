@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import RichText from './RichText'
 import { useLocalStorage } from '@/lib/useLocalStorage'
+import { usePersistedContent } from '@/lib/usePersistedContent'
 
 type Section = 'facebook' | 'instagram' | 'newsletter' | 'taglines' | 'strategy' | 'talking-points'
 
@@ -57,7 +58,7 @@ function Modal({ title, icon, content, onClose, onRegenerate }: {
 }
 
 function StudioCard({ id, icon, title, subtitle, color, border, bar, tone }: typeof CARDS[0] & { tone: Tone }) {
-  const [content,     setContent]     = useLocalStorage(`media-studio-${id}`, '')
+  const [content, saveContent, { clear: clearContent }] = usePersistedContent(`media-studio-${id}`, '')
   const [loading,     setLoading]     = useState(false)
   const [error,       setError]       = useState('')
   const [open,        setOpen]        = useState(false)
@@ -80,7 +81,7 @@ function StudioCard({ id, icon, title, subtitle, color, border, bar, tone }: typ
       if (data.error === 'no_articles') setError('No articles yet — run a news scan first.')
       else if (data.error === 'no_issue') setError('Enter a hot button issue first.')
       else if (data.error) setError('Something went wrong. Try again.')
-      else { setContent(data.content); setOpen(true) }
+      else { saveContent(data.content); setOpen(true) }
     } catch {
       setError('Network error. Try again.')
     } finally {
@@ -143,10 +144,16 @@ function StudioCard({ id, icon, title, subtitle, color, border, bar, tone }: typ
 
           <div className="mt-auto flex gap-2">
             {content && (
-              <button onClick={() => setOpen(true)}
-                className={`flex-1 py-2 rounded-xl border-2 text-xs font-bold uppercase tracking-widest transition-all bg-gradient-to-r ${bar} text-white border-transparent`}>
-                View Results ↗
-              </button>
+              <>
+                <button onClick={() => setOpen(true)}
+                  className={`flex-1 py-2 rounded-xl border-2 text-xs font-bold uppercase tracking-widest transition-all bg-gradient-to-r ${bar} text-white border-transparent`}>
+                  View Results ↗
+                </button>
+                <button onClick={() => clearContent()} title="Clear saved result"
+                  className="px-2 py-2 rounded-xl border-2 border-dashed border-gray-200 text-gray-300 hover:text-red-400 hover:border-red-200 text-xs transition-all">
+                  ✕
+                </button>
+              </>
             )}
             <button onClick={generate} disabled={loading}
               className={`py-2 rounded-xl border-2 border-dashed text-xs font-bold uppercase tracking-widest transition-all disabled:opacity-50

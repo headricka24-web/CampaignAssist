@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import RichText from './RichText'
 import { useLocalStorage } from '@/lib/useLocalStorage'
+import { usePersistedContent } from '@/lib/usePersistedContent'
 
 type Threat = {
   raw: string
@@ -148,10 +149,9 @@ function ThreatCard({ threat, index }: { threat: Threat; index: number }) {
 }
 
 export default function WarRoom() {
-  const [threats,  setThreats]  = useLocalStorage<Threat[]>('war-room-threats', [])
-  const [loading,  setLoading]  = useState(false)
-  const [error,    setError]    = useState('')
-  const [scanned,  setScanned]  = useLocalStorage('war-room-scanned', false)
+  const [threats, saveThreats, { clear: clearThreats }] = usePersistedContent<Threat[]>('war-room-threats', [])
+  const [loading, setLoading] = useState(false)
+  const [error,   setError]   = useState('')
 
   async function handleScan() {
     setLoading(true)
@@ -166,8 +166,7 @@ export default function WarRoom() {
       if (data.error === 'no_articles') { setError('No articles found — run a News Tracker scan first.'); return }
       if (data.error) { setError('Scan failed. Try again.'); return }
       const blocks = (data.threats as string).split('---').map((b: string) => b.trim()).filter(Boolean)
-      setThreats(blocks.map(parseThreat))
-      setScanned(true)
+      saveThreats(blocks.map(parseThreat))
     } catch { setError('Scan failed. Check your connection.') }
     finally { setLoading(false) }
   }
@@ -199,14 +198,14 @@ export default function WarRoom() {
             className="bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white font-black px-8 py-3 rounded-xl text-sm tracking-widest uppercase shadow-glow-red transition-colors focus:outline-none focus:ring-2 focus:ring-gold-400">
             {loading
               ? <span className="flex items-center gap-2"><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block" />Scanning for threats…</span>
-              : scanned ? '↺ Rescan Threats' : '🚨 Scan for Threats'}
+              : threats.length > 0 ? '↺ Rescan Threats' : '🚨 Scan for Threats'}
           </button>
           {error && <p className="mt-3 text-red-300 text-sm">{error}</p>}
         </div>
       </div>
 
       {/* Threat summary bar */}
-      {scanned && threats.length > 0 && (
+      {threats.length > 0 && (
         <div className="grid grid-cols-3 gap-4">
           <div className="bg-white rounded-2xl border-2 border-red-100 p-4 text-center">
             <div className="text-3xl font-black text-red-600">{highCount}</div>
@@ -230,6 +229,10 @@ export default function WarRoom() {
             <div className="h-px flex-1 bg-gradient-to-r from-red-200 to-transparent" />
             <h2 className="text-xs font-black uppercase tracking-[0.3em] text-red-400">Active Threats</h2>
             <div className="h-px flex-1 bg-gradient-to-l from-red-200 to-transparent" />
+            <button onClick={() => clearThreats()}
+              className="text-xs text-gray-300 hover:text-red-400 font-bold transition-colors" title="Clear threats">
+              ✕ Clear
+            </button>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {threats.map((t, i) => <ThreatCard key={i} threat={t} index={i} />)}
@@ -238,7 +241,7 @@ export default function WarRoom() {
       )}
 
       {/* Empty state before scan */}
-      {!scanned && !loading && (
+      {threats.length === 0 && !loading && (
         <div className="bg-white rounded-2xl border-2 border-dashed border-gray-200 py-16 text-center">
           <div className="text-5xl mb-4 opacity-30">🚨</div>
           <p className="text-gray-500 font-semibold">No scan run yet.</p>

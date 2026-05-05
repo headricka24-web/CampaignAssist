@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import RichText from './RichText'
 import { useLocalStorage } from '@/lib/useLocalStorage'
+import { usePersistedContent } from '@/lib/usePersistedContent'
 
 type FundType = 'email' | 'directmail' | 'callscript' | 'textscript' | 'majordonor' | 'thankyou'
 
@@ -74,7 +75,7 @@ function Modal({ card, content, targeting, onClose, onRegen }: {
 }
 
 function FundCard(card: typeof CARDS[0] & { tone: Tone }) {
-  const [content,     setContent]     = useLocalStorage(`lets-fund-${card.id}`, '')
+  const [content, saveContent, { clear: clearContent }] = usePersistedContent(`lets-fund-${card.id}`, '')
   const [loading,     setLoading]     = useState(false)
   const [error,       setError]       = useState('')
   const [open,        setOpen]        = useState(false)
@@ -104,7 +105,7 @@ function FundCard(card: typeof CARDS[0] & { tone: Tone }) {
       })
       const data = await res.json()
       if (data.error) setError('Generation failed. Try again.')
-      else { setContent(data.content); setOpen(true) }
+      else { saveContent(data.content); setOpen(true) }
     } catch {
       setError('Network error. Try again.')
     } finally {
@@ -176,10 +177,16 @@ function FundCard(card: typeof CARDS[0] & { tone: Tone }) {
           {/* Action buttons */}
           <div className="mt-auto flex gap-2">
             {content && (
-              <button onClick={() => setOpen(true)}
-                className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest text-white bg-gradient-to-r ${card.bar} transition-all hover:opacity-90`}>
-                View ↗
-              </button>
+              <>
+                <button onClick={() => setOpen(true)}
+                  className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest text-white bg-gradient-to-r ${card.bar} transition-all hover:opacity-90`}>
+                  View ↗
+                </button>
+                <button onClick={() => clearContent()} title="Clear saved result"
+                  className="px-2 py-2.5 rounded-xl border-2 border-dashed border-gray-200 text-gray-300 hover:text-red-400 hover:border-red-200 text-xs transition-all">
+                  ✕
+                </button>
+              </>
             )}
             <button onClick={generate} disabled={loading}
               className={`py-2.5 rounded-xl border-2 border-dashed text-xs font-bold uppercase tracking-widest transition-all disabled:opacity-50

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import RichText from './RichText'
-import { useLocalStorage } from '@/lib/useLocalStorage'
+import { usePersistedContent } from '@/lib/usePersistedContent'
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false)
@@ -64,9 +64,9 @@ function DemographicCard({ title, body }: { title: string; body: string }) {
 }
 
 export default function HotButtons() {
-  const [briefing,     setBriefing]     = useLocalStorage('hot-buttons-briefing', '')
-  const [issues,       setIssues]       = useLocalStorage<string[]>('hot-buttons-issues', [])
-  const [demographics, setDemographics] = useLocalStorage('hot-buttons-demographics', '')
+  const [briefing,     saveBriefing,     { setLocal: setBriefing,     clear: clearBriefing     }] = usePersistedContent('hot-buttons-briefing', '')
+  const [issues,       saveIssues,       { setLocal: setIssues                                  }] = usePersistedContent<string[]>('hot-buttons-issues', [])
+  const [demographics, saveDemographics, { setLocal: setDemographics, clear: clearDemographics }] = usePersistedContent('hot-buttons-demographics', '')
   const [loadingBrief, setLoadingBrief] = useState(false)
   const [loadingDemog, setLoadingDemog] = useState(false)
   const [briefError,   setBriefError]   = useState('')
@@ -86,7 +86,7 @@ export default function HotButtons() {
     const data = await res.json()
     if (data.error === 'no_news') setBriefError('Could not find news for your state. Make sure a candidate is set up in Settings.')
     else if (data.error) setBriefError('Something went wrong. Try again.')
-    else { setBriefing(data.briefing); setIssues(data.issues ?? []) }
+    else { saveBriefing(data.briefing); saveIssues(data.issues ?? []) }
     setLoadingBrief(false)
   }
 
@@ -101,7 +101,7 @@ export default function HotButtons() {
     })
     const data = await res.json()
     if (data.error) setDemogError('Something went wrong generating demographics. Try again.')
-    else setDemographics(data.demographics)
+    else saveDemographics(data.demographics)
     setLoadingDemog(false)
   }
 
@@ -150,7 +150,13 @@ export default function HotButtons() {
                 <h2 className="font-display font-black text-navy uppercase tracking-wide text-sm">Hot Button Issues Briefing</h2>
                 <p className="text-xs text-gray-400">Generated from live Google News · {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
               </div>
-              <CopyButton text={briefing} />
+              <div className="flex items-center gap-2">
+                <CopyButton text={briefing} />
+                <button onClick={() => { clearBriefing(); clearDemographics(); setIssues([]) }}
+                  className="text-xs font-bold text-gray-300 hover:text-red-400 transition-colors px-2 py-1.5 rounded-lg hover:bg-red-50" title="Clear briefing">
+                  ✕ Clear
+                </button>
+              </div>
             </div>
             <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
               <RichText text={briefing} />
