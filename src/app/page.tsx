@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { auth } from '@/auth'
-import { HeroActivityCard, NewsTicker, DonorTicker } from '@/components/LandingAnimations'
+import { HeroBackgroundToasts, NewsTicker, DonorTicker } from '@/components/LandingAnimations'
 
 export const dynamic = 'force-dynamic'
 
@@ -147,58 +147,48 @@ export default async function LandingPage() {
         <div className="absolute bottom-40 right-16 text-gold-400 opacity-20 text-2xl select-none">★</div>
         <div className="absolute top-2/3 left-12 text-white opacity-10 text-lg select-none">★</div>
 
-        <div className="relative container mx-auto max-w-7xl px-6 py-16 lg:py-20">
-          <div className="flex flex-col lg:flex-row lg:items-center gap-10 lg:gap-16">
+        {/* Background toast notifications — fade in/out behind the text */}
+        <HeroBackgroundToasts />
 
-            {/* Left: text + CTAs */}
-            <div className="flex-1 max-w-2xl">
-              <div className="inline-flex items-center gap-2 bg-red-500/80 text-white text-xs font-black tracking-widest uppercase px-4 py-1.5 rounded-full mb-8 shadow-glow-red">
-                <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                ★ AI-Powered Campaign Intelligence
-              </div>
+        <div className="relative container mx-auto max-w-7xl px-6 py-20">
+          <div className="max-w-4xl">
+            <div className="inline-flex items-center gap-2 bg-red-500/80 text-white text-xs font-black tracking-widest uppercase px-4 py-1.5 rounded-full mb-8 shadow-glow-red">
+              <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
+              ★ AI-Powered Campaign Intelligence
+            </div>
 
-              <h1 className="font-display font-black text-white leading-[0.95] mb-8">
-                <span className="block text-4xl md:text-5xl lg:text-6xl mb-3 text-blue-200 font-bold tracking-wide">Campaigning just got</span>
-                <span className="block text-5xl md:text-7xl lg:text-[82px] tracking-tight">a software update.</span>
-              </h1>
+            <h1 className="font-display font-black text-white leading-[0.95] mb-8">
+              <span className="block text-4xl md:text-5xl lg:text-6xl mb-3 text-blue-200 font-bold tracking-wide">Campaigning just got</span>
+              <span className="block text-5xl md:text-7xl lg:text-[90px] tracking-tight">a software update.</span>
+            </h1>
 
-              <p className="text-blue-100 text-xl md:text-2xl mb-4 leading-relaxed font-medium">
-                The all-in-one platform that gives every candidate — from city council to U.S. Senate — the intelligence and tools to run a modern, data-driven campaign.
-              </p>
-              <p className="text-blue-300/60 text-sm mb-10 uppercase tracking-[0.2em] font-semibold">
-                ★ Real data · Real news · Built for every campaign ★
-              </p>
+            <p className="text-blue-100 text-xl md:text-2xl max-w-2xl mb-4 leading-relaxed font-medium">
+              The all-in-one platform that gives every candidate — from city council to U.S. Senate — the intelligence and tools to run a modern, data-driven campaign.
+            </p>
+            <p className="text-blue-300/60 text-sm mb-12 uppercase tracking-[0.2em] font-semibold">
+              ★ Real data · Real news · Built for every campaign ★
+            </p>
 
-              <div className="flex flex-wrap gap-4 items-center">
-                {loggedIn ? (
-                  <Link href="/dashboard"
-                    className="bg-gold-400 hover:bg-gold-500 text-navy font-black text-sm uppercase tracking-widest px-10 py-4 rounded-xl transition-all shadow-xl hover:shadow-2xl hover:-translate-y-0.5">
-                    ★ Go to Your Dashboard
+            <div className="flex flex-wrap gap-4 items-center">
+              {loggedIn ? (
+                <Link href="/dashboard"
+                  className="bg-gold-400 hover:bg-gold-500 text-navy font-black text-sm uppercase tracking-widest px-10 py-4 rounded-xl transition-all shadow-xl hover:shadow-2xl hover:-translate-y-0.5">
+                  ★ Go to Your Dashboard
+                </Link>
+              ) : (
+                <>
+                  <Link href="/signup"
+                    className="bg-gold-400 hover:bg-gold-500 text-navy font-black text-sm px-10 py-4 rounded-xl transition-all shadow-xl hover:shadow-2xl hover:-translate-y-0.5">
+                    🚀 Let's get your campaign up and running!
                   </Link>
-                ) : (
-                  <>
-                    <Link href="/signup"
-                      className="bg-gold-400 hover:bg-gold-500 text-navy font-black text-sm px-10 py-4 rounded-xl transition-all shadow-xl hover:shadow-2xl hover:-translate-y-0.5">
-                      🚀 Let's get your campaign up and running!
-                    </Link>
-                    <Link href="/what-we-offer"
-                      className="btn-what inline-flex items-center gap-2 px-8 py-4 rounded-xl text-sm uppercase tracking-widest">
-                      ✨ What is CampaignAssist?
-                    </Link>
-                  </>
-                )}
-              </div>
-              {!loggedIn && <p className="text-blue-400/50 text-xs mt-4">Free to start. No credit card needed.</p>}
+                  <Link href="/what-we-offer"
+                    className="btn-what inline-flex items-center gap-2 px-8 py-4 rounded-xl text-sm uppercase tracking-widest">
+                    ✨ What is CampaignAssist?
+                  </Link>
+                </>
+              )}
             </div>
-
-            {/* Right: live activity card (desktop only) */}
-            <div className="hidden lg:flex shrink-0 flex-col items-center gap-4">
-              <HeroActivityCard />
-              <p className="text-blue-400/35 text-[10px] uppercase tracking-widest text-center">
-                Sample campaign activity
-              </p>
-            </div>
-
+            {!loggedIn && <p className="text-blue-400/50 text-xs mt-4">Free to start. No credit card needed.</p>}
           </div>
         </div>
       </section>

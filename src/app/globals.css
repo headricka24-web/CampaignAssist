@@ -71,6 +71,13 @@ h1, h2, h3 { letter-spacing: -0.01em; }
 }
 .activity-slide-in { animation: slideInTop 0.38s ease forwards; }
 
+/* ── Background hero toast notifications ─────────────────────────── */
+@keyframes notifCycle {
+  0%, 8%    { opacity: 0; transform: translateY(10px) scale(0.96); }
+  18%, 70%  { opacity: 0.72; transform: translateY(0) scale(1); }
+  82%, 100% { opacity: 0; transform: translateY(-5px) scale(0.97); }
+}
+
 /* ── "What is CampaignAssist?" hero button ───────────────────────── */
 @keyframes float {
   0%, 100% { transform: translateY(0px); }

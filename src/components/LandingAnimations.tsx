@@ -2,6 +2,37 @@
 
 import { useEffect, useState } from 'react'
 
+const BG_TOASTS = [
+  { icon: '💰', text: '$500 donation received',    sub: 'James R. · Chicago, IL',        delay: '0s',   right: 'right-8',   top: 'top-[13%]'  },
+  { icon: '📰', text: 'New article detected',      sub: '"Smith leads 52–44 in poll"',    delay: '1.6s', right: 'right-28',  top: 'top-[32%]'  },
+  { icon: '🗳️', text: '42 GOTV voters tagged',     sub: 'Precinct 7 · sorted & flagged',  delay: '3.2s', right: 'right-10',  top: 'top-[53%]'  },
+  { icon: '⚡', text: 'War Room alert',            sub: 'Opponent statement flagged',      delay: '4.8s', right: 'right-36',  top: 'top-[70%]'  },
+  { icon: '🙋', text: 'New volunteer signup',      sub: 'Sarah K. · door knocking',        delay: '6.4s', right: 'right-14',  top: 'top-[23%]'  },
+  { icon: '💰', text: '$1,000 pledge logged',      sub: 'Major donor · follow-up sent',    delay: '8s',   right: 'right-24',  top: 'top-[82%]'  },
+]
+
+export function HeroBackgroundToasts() {
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden hidden xl:block">
+      {BG_TOASTS.map((t, i) => (
+        <div
+          key={i}
+          className={`absolute ${t.right} ${t.top}`}
+          style={{ animation: 'notifCycle 9.6s ease-in-out infinite', animationDelay: t.delay, opacity: 0 }}
+        >
+          <div className="flex items-center gap-2.5 bg-white/8 backdrop-blur-sm border border-white/12 rounded-xl px-3.5 py-2.5 shadow-xl">
+            <span className="text-base shrink-0">{t.icon}</span>
+            <div>
+              <div className="text-white text-[11px] font-bold leading-tight whitespace-nowrap">{t.text}</div>
+              <div className="text-blue-300/55 text-[10px] whitespace-nowrap mt-0.5">{t.sub}</div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 const ACTIVITIES = [
   { icon: '💰', title: 'Donation received',       detail: 'James R.  ·  $500  ·  Chicago, IL',               badge: 'DONOR',    bg: 'bg-green-500/20',  text: 'text-green-400',  border: 'border-green-500/30' },
   { icon: '📰', title: 'New article detected',     detail: '"Smith leads 52–44 in latest district poll"',      badge: 'NEWS',     bg: 'bg-blue-500/20',   text: 'text-blue-400',   border: 'border-blue-500/30'  },
