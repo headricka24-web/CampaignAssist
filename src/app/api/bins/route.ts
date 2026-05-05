@@ -1,9 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { generateBinDigest } from '@/layers/summarization'
+import { auth } from '@/auth'
 
 export async function GET() {
+  const session = await auth()
+  const userId  = session?.user?.id ?? null
+
+  const userCandidates = await prisma.candidate.findMany({
+    where:  userId ? { userId } : { userId: null },
+    select: { id: true },
+  })
+  const candidateIds = userCandidates.map(c => c.id)
+
   const bins = await prisma.bin.findMany({
+    where:   { candidateId: { in: candidateIds } },
     include: { candidate: true, _count: { select: { items: true } } },
     orderBy: { dateCreated: 'desc' },
   })
@@ -11,11 +22,20 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const session = await auth()
+  const userId  = session?.user?.id ?? null
+
   const { candidateId, name, articleIds } = await req.json() as {
     candidateId: string
     name: string
     articleIds: string[]
   }
+
+  // Verify the candidate belongs to this user
+  const candidate = await prisma.candidate.findFirst({
+    where: { id: candidateId, ...(userId ? { userId } : { userId: null }) },
+  })
+  if (!candidate) return NextResponse.json({ error: 'Candidate not found' }, { status: 404 })
 
   const bin = await prisma.bin.create({
     data: {

@@ -2,15 +2,22 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { exportBin } from '@/layers/packaging'
 import type { ExportFormat } from '@/lib/types'
+import { auth } from '@/auth'
 
 export async function POST(req: NextRequest) {
+  const session = await auth()
+  const userId  = session?.user?.id ?? null
+
   const { binId, format } = await req.json() as { binId: string; format: ExportFormat }
 
   const bin = await prisma.bin.findUnique({
     where: { id: binId },
-    include: { items: { include: { article: { include: { outlet: true } } }, orderBy: { sortOrder: 'asc' } } },
+    include: {
+      candidate: { select: { userId: true } },
+      items: { include: { article: { include: { outlet: true } } }, orderBy: { sortOrder: 'asc' } },
+    },
   })
-  if (!bin) return NextResponse.json({ error: 'Bin not found' }, { status: 404 })
+  if (!bin || bin.candidate.userId !== userId) return NextResponse.json({ error: 'Bin not found' }, { status: 404 })
 
   const content = exportBin(bin, format)
 

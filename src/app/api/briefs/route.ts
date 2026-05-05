@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { generateDailyDigest, generateIssueBrief, generateNewsletter } from '@/layers/content-generation'
 import type { BriefType } from '@/lib/types'
+import { auth } from '@/auth'
 
 export async function POST(req: NextRequest) {
+  const session = await auth()
+  const userId  = session?.user?.id ?? null
+
   const { binId, type, topic } = await req.json() as { binId: string; type: BriefType; topic?: string }
 
   const bin = await prisma.bin.findUnique({
@@ -14,6 +18,7 @@ export async function POST(req: NextRequest) {
     },
   })
   if (!bin) return NextResponse.json({ error: 'Bin not found' }, { status: 404 })
+  if (bin.candidate.userId !== userId) return NextResponse.json({ error: 'Bin not found' }, { status: 404 })
 
   const summaries = bin.items
     .map((i) => i.article.summary)
@@ -37,8 +42,18 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  const session = await auth()
+  const userId  = session?.user?.id ?? null
+
   const { searchParams } = new URL(req.url)
   const binId = searchParams.get('binId')
+
+  // If a specific bin is requested, verify ownership
+  if (binId) {
+    const bin = await prisma.bin.findUnique({ where: { id: binId }, include: { candidate: { select: { userId: true } } } })
+    if (!bin || bin.candidate.userId !== userId) return NextResponse.json([])
+  }
+
   const briefs = await prisma.brief.findMany({
     where: binId ? { binId } : {},
     orderBy: { createdAt: 'desc' },

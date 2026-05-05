@@ -1,9 +1,20 @@
 import { NextResponse } from 'next/server'
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/db'
+import { auth } from '@/auth'
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
+
+  // Verify the voter belongs to the current user via candidateId
+  const session = await auth()
+  const userId  = session?.user?.id ?? null
+  const voter   = await prisma.voter.findUnique({ where: { id }, select: { candidateId: true } })
+  if (voter?.candidateId) {
+    const cand = await prisma.candidate.findUnique({ where: { id: voter.candidateId }, select: { userId: true } })
+    if (cand && cand.userId !== userId) return NextResponse.json({ error: 'not found' }, { status: 404 })
+  }
+
   const body = await req.json() as {
     contactStatus?: string
     tags?: string[]

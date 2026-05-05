@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/db'
 import { Prisma } from '@prisma/client'
+import { auth } from '@/auth'
 
 const PRESET_SEGMENTS = [
   'Strong Republican',
@@ -18,6 +19,16 @@ const PRESET_SEGMENTS = [
 ]
 
 export async function GET(req: NextRequest) {
+  const session = await auth()
+  const userId  = session?.user?.id ?? null
+
+  // Scope to this user's candidates only
+  const userCandidates = await prisma.candidate.findMany({
+    where:  userId ? { userId } : { userId: null },
+    select: { id: true },
+  })
+  const candidateIds = userCandidates.map(c => c.id)
+
   const { searchParams } = new URL(req.url)
   const segment     = searchParams.get('segment') ?? ''
   const party       = searchParams.get('party') ?? ''
@@ -27,7 +38,9 @@ export async function GET(req: NextRequest) {
   const limit       = Math.min(100, parseInt(searchParams.get('limit') ?? '50'))
   const skip        = (page - 1) * limit
 
-  const where: Prisma.VoterWhereInput = {}
+  const where: Prisma.VoterWhereInput = {
+    candidateId: { in: candidateIds },
+  }
 
   if (party)  where.party = party
   if (status) where.contactStatus = status
@@ -53,8 +66,11 @@ export async function GET(req: NextRequest) {
     prisma.voter.count({ where }),
   ])
 
-  // Segment counts for sidebar
-  const allVoters = await prisma.voter.findMany({ select: { tags: true, contactStatus: true } })
+  // Segment counts for sidebar (scoped to same user)
+  const allVoters = await prisma.voter.findMany({
+    where:  { candidateId: { in: candidateIds } },
+    select: { tags: true, contactStatus: true },
+  })
   const segmentCounts: Record<string, number> = {
     'All Voters':     allVoters.length,
     'Needs Follow-Up': allVoters.filter(v => v.contactStatus === 'Needs Follow-Up').length,
