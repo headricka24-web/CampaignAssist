@@ -91,14 +91,14 @@ export default async function LandingPage() {
       <header className="sticky top-0 z-40">
         <div className="h-1.5 bg-gradient-to-r from-red-600 via-white to-blue-700" />
         <nav className="bg-navy/95 backdrop-blur-sm border-b border-navy-500/50">
-          <div className="container mx-auto max-w-7xl px-6 h-16 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-red-gradient flex items-center justify-center text-lg font-bold text-white select-none shrink-0 shadow-glow-red">★</div>
+          <div className="container mx-auto max-w-7xl px-6 h-20 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-red-gradient flex items-center justify-center text-2xl font-bold text-white select-none shrink-0 shadow-glow-red">★</div>
               <div className="leading-tight">
-                <span className="font-display font-bold text-xl tracking-widest uppercase text-white">
+                <span className="font-display font-black text-3xl tracking-widest uppercase text-white">
                   Campaign<span className="text-gold-400">Assist</span>
                 </span>
-                <p className="text-[9px] uppercase tracking-[0.2em] text-blue-300/70 -mt-0.5">Intelligence · Strategy · Victory</p>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-blue-300/70 -mt-0.5">Intelligence · Strategy · Victory</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -125,44 +125,53 @@ export default async function LandingPage() {
       </header>
 
       {/* ── Hero ── */}
-      <section className="relative overflow-hidden bg-hero-gradient min-h-[88vh] flex items-center">
-        <div className="absolute inset-0 bg-stripe-pattern opacity-20" />
-        <div className="absolute -top-10 -right-10 text-white opacity-[0.03] text-[400px] font-black leading-none select-none pointer-events-none">★</div>
-        <div className="absolute bottom-0 -left-20 text-white opacity-[0.02] text-[300px] font-black leading-none select-none pointer-events-none">★</div>
-        <div className="absolute top-16 left-1/4 text-gold-400 opacity-20 text-3xl select-none">★</div>
-        <div className="absolute top-28 right-1/3 text-white opacity-10 text-xl select-none">★</div>
-        <div className="absolute bottom-24 right-1/4 text-gold-400 opacity-15 text-2xl select-none">★</div>
+      <section className="relative overflow-hidden bg-hero-gradient min-h-[90vh] flex items-center">
+        <div className="absolute inset-0 bg-stripe-pattern opacity-30" />
+
+        {/* Big background stars */}
+        <div className="absolute -top-10 -right-10 text-white opacity-[0.04] text-[500px] font-black leading-none select-none pointer-events-none">★</div>
+        <div className="absolute bottom-0 -left-20 text-white opacity-[0.03] text-[350px] font-black leading-none select-none pointer-events-none">★</div>
+
+        {/* Scattered star field */}
+        <div className="absolute top-10 left-16 text-gold-400 opacity-30 text-4xl select-none">★</div>
+        <div className="absolute top-20 right-24 text-white opacity-15 text-2xl select-none">★</div>
+        <div className="absolute top-1/3 left-1/4 text-gold-400 opacity-20 text-xl select-none">★</div>
+        <div className="absolute top-1/4 right-1/3 text-white opacity-10 text-3xl select-none">★</div>
+        <div className="absolute bottom-28 right-1/4 text-gold-400 opacity-25 text-3xl select-none">★</div>
+        <div className="absolute bottom-16 left-1/3 text-white opacity-10 text-xl select-none">★</div>
+        <div className="absolute bottom-40 right-16 text-gold-400 opacity-20 text-2xl select-none">★</div>
+        <div className="absolute top-2/3 left-12 text-white opacity-10 text-lg select-none">★</div>
 
         <div className="relative container mx-auto max-w-7xl px-6 py-20">
           <div className="max-w-4xl">
-            <div className="inline-flex items-center gap-2 bg-white/10 text-blue-100 text-xs font-semibold tracking-widest uppercase px-4 py-1.5 rounded-full mb-8 border border-white/10">
-              <span className="w-1.5 h-1.5 bg-gold-400 rounded-full animate-pulse" />
-              AI-Powered Campaign Intelligence
+            <div className="inline-flex items-center gap-2 bg-red-500/80 text-white text-xs font-black tracking-widest uppercase px-4 py-1.5 rounded-full mb-8 shadow-glow-red">
+              <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
+              ★ AI-Powered Campaign Intelligence
             </div>
 
-            <h1 className="font-display font-black text-white leading-tight mb-6">
-              <span className="block text-4xl md:text-5xl lg:text-6xl mb-2 text-blue-200 font-bold">Campaigning just got</span>
-              <span className="block text-5xl md:text-7xl lg:text-8xl">a software update.</span>
+            <h1 className="font-display font-black text-white leading-[0.95] mb-8">
+              <span className="block text-4xl md:text-5xl lg:text-6xl mb-3 text-blue-200 font-bold tracking-wide">Campaigning just got</span>
+              <span className="block text-5xl md:text-7xl lg:text-[90px] tracking-tight">a software update.</span>
             </h1>
 
-            <p className="text-blue-100 text-xl md:text-2xl max-w-2xl mb-4 leading-relaxed">
+            <p className="text-blue-100 text-xl md:text-2xl max-w-2xl mb-4 leading-relaxed font-medium">
               The all-in-one platform that gives every candidate — from city council to U.S. Senate — the intelligence and tools to run a modern, data-driven campaign.
             </p>
-            <p className="text-blue-300/60 text-sm mb-12 uppercase tracking-widest font-medium">
-              Real data · Real news · Built for every campaign
+            <p className="text-blue-300/60 text-sm mb-12 uppercase tracking-[0.2em] font-semibold">
+              ★ Real data · Real news · Built for every campaign ★
             </p>
 
             <div className="flex flex-wrap gap-4 items-center">
               {loggedIn ? (
                 <Link href="/dashboard"
-                  className="bg-gold-400 hover:bg-gold-500 text-navy font-bold text-sm uppercase tracking-widest px-10 py-4 rounded-xl transition-all shadow-xl hover:shadow-2xl hover:-translate-y-0.5">
-                  Go to Your Dashboard →
+                  className="bg-gold-400 hover:bg-gold-500 text-navy font-black text-sm uppercase tracking-widest px-10 py-4 rounded-xl transition-all shadow-xl hover:shadow-2xl hover:-translate-y-0.5">
+                  ★ Go to Your Dashboard
                 </Link>
               ) : (
                 <>
                   <Link href="/signup"
-                    className="bg-gold-400 hover:bg-gold-500 text-navy font-bold text-sm uppercase tracking-widest px-10 py-4 rounded-xl transition-all shadow-xl hover:shadow-2xl hover:-translate-y-0.5">
-                    Start for Free
+                    className="bg-gold-400 hover:bg-gold-500 text-navy font-black text-sm px-10 py-4 rounded-xl transition-all shadow-xl hover:shadow-2xl hover:-translate-y-0.5">
+                    🚀 Let's get your campaign up and running!
                   </Link>
                   <Link href="/login"
                     className="border-2 border-white/20 hover:border-white/50 text-white font-medium text-sm px-8 py-4 rounded-xl transition-colors">
@@ -320,8 +329,8 @@ export default async function LandingPage() {
           ) : (
             <div className="space-y-4">
               <Link href="/signup"
-                className="inline-block bg-gold-400 hover:bg-gold-500 text-navy font-bold text-sm uppercase tracking-widest px-12 py-5 rounded-xl transition-all shadow-2xl hover:-translate-y-0.5">
-                Start for Free
+                className="inline-block bg-gold-400 hover:bg-gold-500 text-navy font-black text-sm px-12 py-5 rounded-xl transition-all shadow-2xl hover:-translate-y-0.5">
+                🚀 Let's get your campaign up and running!
               </Link>
               <p className="text-blue-300/50 text-sm">No credit card. No commitment.</p>
             </div>
