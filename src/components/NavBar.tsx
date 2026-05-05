@@ -20,11 +20,9 @@ const links = [
 export default function NavBar({
   userEmail,
   userName,
-  candidateName,
 }: {
   userEmail: string
   userName: string
-  candidateName?: string
 }) {
   const pathname = usePathname()
   const router   = useRouter()
@@ -88,18 +86,8 @@ export default function NavBar({
             </Link>
           </div>
 
-          {/* Right side: candidate button + user menu */}
+          {/* Right side: user menu */}
           <div className="relative flex items-center gap-2 shrink-0">
-
-            {/* Persistent candidate name button */}
-            <Link
-              href="/my-candidate"
-              className="hidden lg:flex items-center gap-1.5 bg-gold-400/10 hover:bg-gold-400/20 border border-gold-400/30 hover:border-gold-400/60 text-gold-400 text-xs font-black uppercase tracking-wide px-3 py-1.5 rounded-xl transition-all max-w-[160px] truncate"
-              title={candidateName ?? 'Add your candidate'}
-            >
-              <span className="shrink-0">★</span>
-              <span className="truncate">{candidateName ?? 'Add Candidate'}</span>
-            </Link>
 
             <div className="hidden sm:flex items-center gap-1.5 border border-navy-400/60 px-2.5 py-1 rounded-full text-xs text-blue-300/80">
               <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse-slow" aria-hidden="true" />

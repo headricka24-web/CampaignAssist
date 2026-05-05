@@ -45,8 +45,12 @@ const bucketIcon: Record<string, string> = {
 }
 
 export default async function DashboardPage() {
-  const session = await auth()
-  const userId  = session?.user?.id ?? null
+  const session   = await auth()
+  const userId    = session?.user?.id ?? null
+  const candidate = await prisma.candidate.findFirst({
+    where:  userId ? { userId } : { userId: null },
+    select: { id: true, name: true, race: true, state: true },
+  })
   const { total, newToday, byBucket, bySentiment, recentArticles } = await getStats(userId)
 
   const positiveCount  = bySentiment.find(s => s.sentiment === 'Positive')?._count ?? 0
@@ -60,7 +64,6 @@ export default async function DashboardPage() {
       {/* Hero Banner */}
       <div className="relative rounded-2xl overflow-hidden bg-hero-gradient shadow-patriot">
         <div className="absolute inset-0 bg-stripe-pattern opacity-50" />
-        {/* Stars decoration */}
         <div className="absolute top-4 right-6 text-white opacity-10 text-7xl select-none leading-none">
           ★★★<br/>★★★★<br/>★★★
         </div>
@@ -69,23 +72,56 @@ export default async function DashboardPage() {
             <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
             Live Intelligence Feed
           </div>
-          <h1 className="font-display text-4xl font-bold text-white leading-tight mb-3">
-            Know Your Race.<br />
-            <span className="text-gold-400">Own the Narrative.</span>
-          </h1>
-          <p className="text-blue-200 text-lg max-w-xl mb-2">
-            The command center Republican campaigns use to monitor every story, outmaneuver the opposition, and turn today's news into tomorrow's win.
-          </p>
-          <div className="flex gap-3 mt-6">
-            <Link href="/news"
-              className="bg-red-500 hover:bg-red-600 text-white font-bold px-6 py-2.5 rounded-lg text-sm tracking-wide transition-colors shadow-glow-red focus:outline-none focus:ring-2 focus:ring-gold-400">
-              ★ Run Intelligence Scan
-            </Link>
-            <Link href="/war-room"
-              className="border border-gold-400 text-gold-400 hover:bg-gold-400 hover:text-navy font-bold px-6 py-2.5 rounded-lg text-sm tracking-wide transition-colors focus:outline-none focus:ring-2 focus:ring-gold-400">
-              Enter War Room
-            </Link>
-          </div>
+
+          {candidate ? (
+            <>
+              <div className="flex items-start justify-between gap-4 flex-wrap">
+                <div>
+                  <h1 className="font-display text-4xl font-bold text-white leading-tight">
+                    {candidate.name}
+                  </h1>
+                  {(candidate.race || candidate.state) && (
+                    <p className="text-blue-300 text-sm mt-1 font-medium">
+                      {[candidate.race, candidate.state].filter(Boolean).join(' · ')}
+                    </p>
+                  )}
+                </div>
+                <Link href="/my-candidate"
+                  className="shrink-0 inline-flex items-center gap-1.5 border border-gold-400/50 hover:border-gold-400 text-gold-400 hover:bg-gold-400/10 text-xs font-black uppercase tracking-widest px-4 py-2 rounded-lg transition-all mt-1">
+                  ★ My Candidate
+                </Link>
+              </div>
+              <div className="flex gap-3 mt-6">
+                <Link href="/news"
+                  className="bg-red-500 hover:bg-red-600 text-white font-bold px-6 py-2.5 rounded-lg text-sm tracking-wide transition-colors shadow-glow-red focus:outline-none focus:ring-2 focus:ring-gold-400">
+                  ★ Run Intelligence Scan
+                </Link>
+                <Link href="/war-room"
+                  className="border border-gold-400 text-gold-400 hover:bg-gold-400 hover:text-navy font-bold px-6 py-2.5 rounded-lg text-sm tracking-wide transition-colors focus:outline-none focus:ring-2 focus:ring-gold-400">
+                  Enter War Room
+                </Link>
+              </div>
+            </>
+          ) : (
+            <>
+              <h1 className="font-display text-4xl font-bold text-white leading-tight mb-3">
+                Campaign Intelligence HQ
+              </h1>
+              <p className="text-blue-200 text-base max-w-xl mb-6">
+                Add your candidate to personalize your intelligence feed, constituent profiles, and voter analysis.
+              </p>
+              <div className="flex gap-3">
+                <Link href="/my-candidate"
+                  className="bg-gold-400 hover:bg-gold-500 text-navy font-black px-6 py-2.5 rounded-lg text-sm tracking-wide transition-colors focus:outline-none focus:ring-2 focus:ring-white">
+                  ★ Set Up Your Candidate
+                </Link>
+                <Link href="/news"
+                  className="border border-white/30 text-white hover:bg-white/10 font-bold px-6 py-2.5 rounded-lg text-sm tracking-wide transition-colors">
+                  Run Intelligence Scan
+                </Link>
+              </div>
+            </>
+          )}
         </div>
       </div>
 

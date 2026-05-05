@@ -3,8 +3,6 @@ import './globals.css'
 import NavBar from '@/components/NavBar'
 import AuthProvider from '@/components/AuthProvider'
 import { auth } from '@/auth'
-import { prisma } from '@/lib/db'
-
 export const metadata: Metadata = {
   title: 'CampaignAssist — AI-Powered Campaign Intelligence Platform',
   description: 'The all-in-one platform for modern political campaigns. Real-time news intelligence, constituent profiles, voter strategy, and AI-powered tools — built for every candidate.',
@@ -14,14 +12,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const session = await auth()
   const isLoggedIn = !!session?.user
 
-  let candidateName: string | undefined
-  if (isLoggedIn && session.user?.id) {
-    const candidate = await prisma.candidate.findFirst({
-      where:  { userId: session.user.id },
-      select: { name: true },
-    })
-    candidateName = candidate?.name ?? undefined
-  }
 
   return (
     <html lang="en">
@@ -32,7 +22,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             Skip to main content
           </a>
 
-          {isLoggedIn && <NavBar userEmail={session.user.email ?? ''} userName={session.user.name ?? ''} candidateName={candidateName} />}
+          {isLoggedIn && <NavBar userEmail={session.user.email ?? ''} userName={session.user.name ?? ''} />}
 
           <main id="main-content" className="flex-1 container mx-auto px-4 py-8 max-w-7xl">
             {children}
