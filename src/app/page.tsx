@@ -158,8 +158,8 @@ export default async function LandingPage() {
             </div>
 
             <h1 className="font-display font-black text-white leading-[0.95] mb-8">
-              <span className="block text-4xl md:text-5xl lg:text-6xl mb-3 text-blue-200 font-bold tracking-wide">Campaigning just got</span>
-              <span className="block text-5xl md:text-7xl lg:text-[90px] tracking-tight">a software update.</span>
+              <span className="block text-4xl md:text-5xl lg:text-6xl mb-3 text-blue-200 font-bold tracking-wide">Take your Campaign</span>
+              <span className="block text-5xl md:text-7xl lg:text-[90px] tracking-tight">to the Next Level.</span>
             </h1>
 
             <p className="text-blue-100 text-xl md:text-2xl max-w-2xl mb-4 leading-relaxed font-medium">
