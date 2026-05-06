@@ -25,11 +25,11 @@ async function processArticle(
   opponentName:  string,
   forcedBucket:  string,
   hasApiKey:     boolean,
-  userId:        string | null,
+  userId:        string,
 ) {
   // Deduplicate per user — same URL can exist for different users
   const existing = await prisma.article.findFirst({
-    where: { url: scraped.url, userId: userId ?? null },
+    where: { url: scraped.url, userId },
   })
   if (existing) return { status: 'skipped' }
 
@@ -73,7 +73,8 @@ async function processArticle(
 
 export async function POST(req: NextRequest) {
   const session = await auth()
-  const userId  = session?.user?.id ?? null
+  const userId  = session?.user?.id
+  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   const { candidateId, opponentName, hotButtonTopics } = await req.json() as {
     candidateId: string
@@ -82,7 +83,7 @@ export async function POST(req: NextRequest) {
   }
 
   const candidate = await prisma.candidate.findFirst({
-    where: { id: candidateId, userId: userId ?? undefined },
+    where: { id: candidateId, userId },
   })
   if (!candidate) return NextResponse.json({ error: 'Candidate not found' }, { status: 404 })
 

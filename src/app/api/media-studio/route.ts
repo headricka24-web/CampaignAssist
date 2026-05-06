@@ -23,12 +23,12 @@ function issueNote(issue: string): string {
   return issue.trim() ? `\n\nFOCUS ISSUE: Lean into "${issue.trim()}" as the primary theme throughout this content.` : ''
 }
 
-async function getContext(userId: string | null) {
+async function getContext(userId: string) {
   const candidate = await prisma.candidate.findFirst({
-    where: userId ? { userId } : { userId: null },
+    where: { userId },
   })
   const articles  = await prisma.article.findMany({
-    where: { userId: userId ?? null },
+    where: { userId },
     orderBy: { datePublished: 'desc' },
     take: 10,
   })
@@ -121,7 +121,8 @@ export async function POST(req: NextRequest) {
   }
 
   const session = await auth()
-  const userId  = session?.user?.id ?? null
+  const userId  = session?.user?.id
+  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   const ctx = await getContext(userId)
 
   // Talking points: scrape news for the issue then generate points

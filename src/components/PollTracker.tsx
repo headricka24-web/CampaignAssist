@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useLocalStorage } from '@/lib/useLocalStorage'
+import { usePersistedContent } from '@/lib/usePersistedContent'
 
 type PollEntry = { label: string; value: number; isOurs: boolean }
 type Poll = { title: string; date: string; source: string; entries: PollEntry[] }
@@ -57,7 +57,7 @@ function PollCard({ poll }: { poll: Poll }) {
 }
 
 export default function PollTracker() {
-  const [data,    setData]    = useLocalStorage<PollData | null>('poll-tracker-data', null)
+  const [data, saveData, { clear: clearData }] = usePersistedContent<PollData | null>('poll-tracker-data', null)
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState('')
 
@@ -69,7 +69,7 @@ export default function PollTracker() {
       const json = await res.json()
       if (json.error === 'no_polling_data') { setError('No polling data found in your news feed. Run a scan and try again.'); return }
       if (json.error) { setError('Could not load polling data. Try again.'); return }
-      setData(json)
+      saveData(json)
     } catch { setError('Network error. Try again.') }
     finally { setLoading(false) }
   }
@@ -83,15 +83,24 @@ export default function PollTracker() {
             <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400">Polling Tracker</h2>
             {data && <p className="text-[11px] text-gray-300 mt-0.5">Synthesized from scanned news coverage</p>}
           </div>
-          <button
-            onClick={fetchPolls}
-            disabled={loading}
-            className="shrink-0 text-xs font-black uppercase tracking-widest px-4 py-2 rounded-xl bg-navy text-white hover:bg-navy-700 disabled:opacity-50 transition-all"
-          >
-            {loading
-              ? <span className="flex items-center gap-1.5"><span className="animate-spin w-3 h-3 border-2 border-white border-t-transparent rounded-full inline-block" />Loading…</span>
-              : data ? '↺ Refresh' : '📊 Load Polls'}
-          </button>
+          <div className="flex items-center gap-2">
+            {data && (
+              <button onClick={() => clearData()}
+                className="text-xs font-bold text-gray-300 hover:text-red-400 transition-colors px-2 py-1.5 rounded-lg hover:bg-red-50"
+                title="Clear polling data">
+                ✕
+              </button>
+            )}
+            <button
+              onClick={fetchPolls}
+              disabled={loading}
+              className="shrink-0 text-xs font-black uppercase tracking-widest px-4 py-2 rounded-xl bg-navy text-white hover:bg-navy-700 disabled:opacity-50 transition-all"
+            >
+              {loading
+                ? <span className="flex items-center gap-1.5"><span className="animate-spin w-3 h-3 border-2 border-white border-t-transparent rounded-full inline-block" />Loading…</span>
+                : data ? '↺ Refresh' : '📊 Load Polls'}
+            </button>
+          </div>
         </div>
 
         {error && <p className="text-xs text-red-500 mb-3">{error}</p>}

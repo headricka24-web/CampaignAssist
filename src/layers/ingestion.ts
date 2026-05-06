@@ -7,11 +7,12 @@ export async function ingestArticle(
   payload: IngestPayload,
   candidateName: string,
   opponentName?: string,
+  userId?: string,
 ) {
   const outlet = await prisma.outlet.findUnique({ where: { id: payload.outletId } })
   if (!outlet) throw new Error(`Outlet ${payload.outletId} not found`)
 
-  const existing = await prisma.article.findFirst({ where: { url: payload.url, userId: null } })
+  const existing = await prisma.article.findFirst({ where: { url: payload.url, userId: userId ?? null } })
   if (existing) return existing
 
   const [classification, summary] = await Promise.all([
@@ -21,6 +22,7 @@ export async function ingestArticle(
 
   const article = await prisma.article.create({
     data: {
+      userId: userId ?? null,
       title: payload.title,
       url: payload.url,
       datePublished: new Date(payload.datePublished),

@@ -18,12 +18,12 @@ function toneInstruction(tone: string): string {
 const TYPES = ['email', 'directmail', 'callscript', 'textscript', 'majordonor', 'thankyou'] as const
 type FundType = typeof TYPES[number]
 
-async function getContext(userId: string | null) {
+async function getContext(userId: string) {
   const candidate = await prisma.candidate.findFirst({
-    where: userId ? { userId } : { userId: null },
+    where: { userId },
   })
   const articles  = await prisma.article.findMany({
-    where: { userId: userId ?? null },
+    where: { userId },
     orderBy: { datePublished: 'desc' },
     take: 8,
   })
@@ -125,7 +125,8 @@ export async function POST(req: NextRequest) {
   if (!TYPES.includes(type)) return NextResponse.json({ error: 'invalid_type' }, { status: 400 })
 
   const session = await auth()
-  const userId  = session?.user?.id ?? null
+  const userId  = session?.user?.id
+  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   const ctx = await getContext(userId)
   const [system, user] = prompts[type](ctx, demographic, issue)
   const content = await ask(system + toneInstruction(tone), user, 500)

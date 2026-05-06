@@ -7,12 +7,13 @@ export const maxDuration = 60
 
 export async function POST(req: NextRequest) {
   const session = await auth()
-  const userId  = session?.user?.id ?? null
+  const userId  = session?.user?.id
+  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   const body = await req.json() as { type: 'scan' | 'respond'; threat?: string }
 
   const candidate = await prisma.candidate.findFirst({
-    where: userId ? { userId } : { userId: null },
+    where: { userId },
   })
   const name  = candidate?.name  ?? 'the candidate'
   const state = candidate?.state ?? 'the state'
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
   // ── SCAN: analyze pre-scanned articles for threats ───────────────────────
   if (body.type === 'scan') {
     const articles = await prisma.article.findMany({
-      where:   { userId: userId ?? null },
+      where:   { userId },
       orderBy: { datePublished: 'desc' },
       take: 40,
       include: { outlet: true },

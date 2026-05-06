@@ -7,10 +7,11 @@ export const maxDuration = 60
 
 export async function POST() {
   const session = await auth()
-  const userId  = session?.user?.id ?? null
+  const userId  = session?.user?.id
+  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   const candidate = await prisma.candidate.findFirst({
-    where: userId ? { userId } : { userId: null },
+    where: { userId },
   })
   const name  = candidate?.name  ?? 'the candidate'
   const state = candidate?.state ?? 'the state'
@@ -19,7 +20,7 @@ export async function POST() {
   // Find articles that likely contain polling data
   const articles = await prisma.article.findMany({
     where: {
-      userId: userId ?? null,
+      userId,
       OR: [
         { title: { contains: 'poll' } },
         { title: { contains: 'Poll' } },

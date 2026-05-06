@@ -2,15 +2,77 @@
 
 import { useState } from 'react'
 import RichText from './RichText'
-import { useLocalStorage } from '@/lib/useLocalStorage'
+import { usePersistedContent } from '@/lib/usePersistedContent'
+
+type BlocSection = { title: string; body: string }
+
+function parseBlocSections(text: string): BlocSection[] {
+  return text.split(/\n?---\n?/).map(chunk => {
+    const trimmed = chunk.trim()
+    if (!trimmed) return null
+    const lines = trimmed.split('\n')
+    const titleLine = lines.find(l => l.startsWith('###'))
+    const title = titleLine ? titleLine.replace(/^###\s*/, '').trim() : lines[0].trim()
+    const body  = lines.filter(l => !l.startsWith('###')).join('\n').trim()
+    return { title, body }
+  }).filter((s): s is BlocSection => !!s?.title && !!s?.body)
+}
+
+const PRIORITY_STYLE: Record<string, { badge: string; border: string; bar: string }> = {
+  HIGH:   { badge: 'bg-red-100 text-red-700',    border: 'border-red-200',    bar: 'from-red-500 to-red-700'      },
+  MEDIUM: { badge: 'bg-yellow-100 text-yellow-700', border: 'border-yellow-200', bar: 'from-yellow-400 to-orange-500' },
+  LOW:    { badge: 'bg-blue-100 text-blue-700',   border: 'border-blue-200',   bar: 'from-blue-400 to-blue-600'    },
+}
+
+function BlocCard({ title, body }: BlocSection) {
+  const [open, setOpen] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  const priorityMatch = body.match(/\*\*Outreach priority:\*\*\s*(HIGH|MEDIUM|LOW)/i)
+  const priority = (priorityMatch?.[1]?.toUpperCase() ?? 'MEDIUM') as keyof typeof PRIORITY_STYLE
+  const s = PRIORITY_STYLE[priority] ?? PRIORITY_STYLE.MEDIUM
+
+  return (
+    <div className={`bg-white rounded-2xl border-2 ${s.border} shadow-sm overflow-hidden`}>
+      <div className={`h-1.5 bg-gradient-to-r ${s.bar}`} />
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors text-left"
+      >
+        <div className="flex items-center gap-3">
+          <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${s.badge}`}>
+            {priority}
+          </span>
+          <span className="font-display font-black text-navy text-sm">{title}</span>
+        </div>
+        <span className="text-gray-400 text-sm shrink-0 ml-2">{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div className="px-5 pb-5 border-t border-gray-100">
+          <div className="pt-4">
+            <RichText text={body} />
+          </div>
+          <button
+            onClick={() => { navigator.clipboard.writeText(`${title}\n\n${body}`); setCopied(true); setTimeout(() => setCopied(false), 2000) }}
+            className="mt-4 text-xs font-bold px-3 py-1.5 rounded-lg bg-navy text-white hover:bg-navy-700 transition-colors"
+          >
+            {copied ? '✓ Copied' : 'Copy'}
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function Constituents() {
-  const [profile,   setProfile]   = useLocalStorage('constituents-profile', '')
-  const [stateName, setStateName] = useLocalStorage('constituents-state', '')
-  const [sources,   setSources]   = useLocalStorage<string[]>('constituents-sources', [])
-  const [loading,   setLoading]   = useState(false)
-  const [error,     setError]     = useState('')
-  const [loaded,    setLoaded]    = useState(!!profile)
+  const [profile,   saveProfile,   { clear: clearProfile   }] = usePersistedContent('constituents-profile', '')
+  const [blocs,     saveBlocs,     { clear: clearBlocs     }] = usePersistedContent('constituents-blocs', '')
+  const [stateName, saveStateName, { clear: clearStateName }] = usePersistedContent('constituents-state', '')
+  const [sources,   saveSources,   { clear: clearSources   }] = usePersistedContent<string[]>('constituents-sources', [])
+  const [loading, setLoading] = useState(false)
+  const [error,   setError]   = useState('')
+
+  const loaded = !!profile
 
   async function generate() {
     setLoading(true)
@@ -19,13 +81,21 @@ export default function Constituents() {
       const res  = await fetch('/api/constituents')
       const data = await res.json()
       if (data.error) { setError('Could not generate profile. Try again.'); return }
-      setProfile(data.profile)
-      setStateName(data.state ?? '')
-      setSources(data.sources ?? [])
-      setLoaded(true)
+      await Promise.all([
+        saveProfile(data.profile),
+        saveBlocs(data.blocs ?? ''),
+        saveStateName(data.state ?? ''),
+        saveSources(data.sources ?? []),
+      ])
     } catch { setError('Network error. Try again.') }
     finally { setLoading(false) }
   }
+
+  async function clearAll() {
+    await Promise.all([clearProfile(), clearBlocs(), clearStateName(), clearSources()])
+  }
+
+  const blocSections = blocs ? parseBlocSections(blocs) : []
 
   const STAT_CARDS = [
     { icon: '🗺️', label: 'State Profile',        color: 'border-blue-100',   bar: 'from-blue-500 to-blue-700'     },
@@ -113,14 +183,49 @@ export default function Constituents() {
                   </div>
                 </div>
               </div>
-              <button
-                onClick={() => { navigator.clipboard.writeText(profile) }}
-                className="text-xs font-bold px-3 py-1.5 rounded-lg bg-navy text-white hover:bg-navy-700 transition-colors shrink-0"
-              >
-                Copy All
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => { navigator.clipboard.writeText(profile) }}
+                  className="text-xs font-bold px-3 py-1.5 rounded-lg bg-navy text-white hover:bg-navy-700 transition-colors"
+                >
+                  Copy All
+                </button>
+                <button
+                  onClick={clearAll}
+                  className="text-xs font-bold text-gray-300 hover:text-red-400 transition-colors px-2 py-1.5 rounded-lg hover:bg-red-50"
+                  title="Clear profile"
+                >
+                  ✕ Clear
+                </button>
+              </div>
             </div>
             <RichText text={profile} />
+          </div>
+        </div>
+      )}
+
+      {/* Key Voter Blocs — outreach strategy */}
+      {loaded && blocSections.length > 0 && (
+        <div>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="h-px flex-1 bg-gradient-to-r from-red-200 to-transparent" />
+            <div className="flex items-center gap-2">
+              <span className="text-red-400 text-xs">🎯</span>
+              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-red-400">Key Voter Blocs & Outreach Strategy</h2>
+            </div>
+            <div className="h-px flex-1 bg-gradient-to-l from-red-200 to-transparent" />
+          </div>
+          <div className="bg-white rounded-2xl border-2 border-red-100 shadow-sm overflow-hidden mb-4">
+            <div className="h-1 bg-gradient-to-r from-red-500 to-red-700" />
+            <div className="px-5 py-3 flex items-center gap-2.5">
+              <span className="text-lg">🗳️</span>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                Each bloc is ranked by outreach priority based on voting history, party lean, and policy fit. Expand to see recommended channels and tactical notes.
+              </p>
+            </div>
+          </div>
+          <div className="space-y-3">
+            {blocSections.map((bloc, i) => <BlocCard key={i} {...bloc} />)}
           </div>
         </div>
       )}

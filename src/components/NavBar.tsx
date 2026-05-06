@@ -3,7 +3,8 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { signOut } from 'next-auth/react'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 
 const links = [
   { href: '/dashboard',    label: 'Dashboard'    },
@@ -24,11 +25,17 @@ export default function NavBar({
   userEmail: string
   userName: string
 }) {
-  const pathname = usePathname()
-  const router   = useRouter()
+  const pathname   = usePathname()
+  const router     = useRouter()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [mounted,  setMounted]  = useState(false)
+  const buttonRef  = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => { setMounted(true) }, [])
+  useEffect(() => { setMenuOpen(false) }, [pathname])
 
   async function handleSignOut() {
+    setMenuOpen(false)
     await signOut({ redirect: false })
     router.push('/')
     router.refresh()
@@ -41,7 +48,7 @@ export default function NavBar({
   const isMyCandidateActive = pathname === '/my-candidate'
 
   return (
-    <header className="sticky top-0 z-40">
+    <header className="sticky top-0 z-50">
       <div className="h-1 bg-red-gradient" />
       <nav className="bg-navy/95 backdrop-blur-sm text-white px-6 py-0 border-b border-navy-500/50" aria-label="Main navigation">
         <div className="container mx-auto max-w-7xl flex items-center justify-between h-16 gap-3">
@@ -86,15 +93,15 @@ export default function NavBar({
             </Link>
           </div>
 
-          {/* Right side: user menu */}
-          <div className="relative flex items-center gap-2 shrink-0">
-
+          {/* Right side: user menu trigger */}
+          <div className="flex items-center gap-2 shrink-0">
             <div className="hidden sm:flex items-center gap-1.5 border border-navy-400/60 px-2.5 py-1 rounded-full text-xs text-blue-300/80">
               <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse-slow" aria-hidden="true" />
               <span className="font-bold tracking-widest uppercase text-green-400">Live</span>
             </div>
 
             <button
+              ref={buttonRef}
               onClick={() => setMenuOpen(o => !o)}
               className="flex items-center gap-2 bg-navy-500/50 hover:bg-navy-500 border border-navy-400/50 rounded-xl px-3 py-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-gold-400"
             >
@@ -104,30 +111,35 @@ export default function NavBar({
               <span className="text-xs text-blue-200 hidden md:block max-w-[100px] truncate">{userName || userEmail}</span>
               <span className="text-blue-400 text-xs">▾</span>
             </button>
-
-            {menuOpen && (
-              <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-50">
-                <div className="px-4 py-3 border-b border-gray-100">
-                  <p className="text-xs font-black text-navy uppercase tracking-wide truncate">{userName || 'Account'}</p>
-                  <p className="text-xs text-gray-400 truncate">{userEmail}</p>
-                </div>
-                <Link href="/my-candidate"
-                  onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-2 px-4 py-2.5 text-sm text-navy hover:bg-gold-50 font-semibold transition-colors">
-                  ★ My Candidate
-                </Link>
-                <button
-                  onClick={handleSignOut}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors border-t border-gray-100"
-                >
-                  ↩ Sign Out
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </nav>
       <div className="h-px bg-gold-gradient opacity-40" />
+
+      {/* Portal: renders directly into document.body, escaping all stacking contexts */}
+      {mounted && menuOpen && createPortal(
+        <>
+          <div className="fixed inset-0 z-[9998]" onClick={() => setMenuOpen(false)} />
+          <div className="fixed right-6 top-[4.5rem] w-52 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-[9999]">
+            <div className="px-4 py-3 border-b border-gray-100">
+              <p className="text-xs font-black text-navy uppercase tracking-wide truncate">{userName || 'Account'}</p>
+              <p className="text-xs text-gray-400 truncate">{userEmail}</p>
+            </div>
+            <Link href="/my-candidate"
+              onClick={() => setMenuOpen(false)}
+              className="flex items-center gap-2 px-4 py-2.5 text-sm text-navy hover:bg-gold-50 font-semibold transition-colors">
+              ★ My Candidate
+            </Link>
+            <button
+              onClick={handleSignOut}
+              className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors border-t border-gray-100"
+            >
+              ↩ Sign Out
+            </button>
+          </div>
+        </>,
+        document.body
+      )}
     </header>
   )
 }

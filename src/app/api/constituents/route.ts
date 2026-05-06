@@ -378,9 +378,10 @@ function buildDataBlock(
 
 export async function GET() {
   const session   = await auth()
-  const userId    = session?.user?.id ?? null
+  const userId    = session?.user?.id
+  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   const candidate = await prisma.candidate.findFirst({
-    where: userId ? { userId } : { userId: null },
+    where: { userId },
   })
   const name      = candidate?.name      ?? 'the candidate'
   const state     = candidate?.state     ?? 'the state'
@@ -457,7 +458,29 @@ The 3–4 groups most persuadable in ${geographyDesc} right now. For each: who t
 ## CAMPAIGN STRATEGY RECOMMENDATION
 Based on all of the above: where should ${name}'s campaign concentrate resources? Prioritize by geography (specific areas/precincts if known), demographic targets, and the 3 highest-leverage issues for this race. Be specific and direct.`
 
-  const profile = await ask(systemPrompt, userPrompt, 1800)
+  const blocsSystemPrompt = `You are a veteran Republican campaign field director and targeting strategist. You have deep hands-on experience running ground games, digital programs, and mail programs for federal, state, and local races. You will receive real demographic and election data for a geography and produce a highly practical outreach plan by voter bloc.`
 
-  return NextResponse.json({ profile, state, name, race, sources })
+  const blocsPrompt = `Using the data below, produce a Key Voter Blocs Outreach Plan for ${name}, a ${party} candidate running for ${race} in ${geographyDesc}.
+${dataBlock ? `\n${dataBlock}\n` : ''}
+Identify 5–6 of the most important voter segments for this race. For each bloc, provide the following — be specific, practical, and opinionated:
+
+---
+### [BLOC NAME]
+**Who they are:** 1–2 sentences on demographics and geography within ${geographyDesc}.
+**Voting history:** How this group has voted in the last 2–3 cycles. Are they reliable Rs, ticket-splitters, or occasional dropoffs?
+**Party lean:** Strong R | Lean R | True Swing | Lean D
+**Top issues:** The 2–3 policy issues that actually drive their vote in this race.
+**Outreach priority:** HIGH / MEDIUM / LOW — one sentence why.
+**Best methods (ranked):** List the 3–4 most effective channels for this group in order — e.g. Door-to-door canvassing, Targeted digital (Facebook/YouTube), Direct mail, Phone banking, Earned media, Endorsement outreach, Community events.
+**Tactical note:** One specific, actionable tip — a message angle, timing insight, geographic concentration, or channel nuance that makes outreach to this group more effective.
+---
+
+Repeat that block for each of the 5–6 blocs. Separate each bloc with ---. Start immediately with the first ---.`
+
+  const [profile, blocs] = await Promise.all([
+    ask(systemPrompt, userPrompt, 1800),
+    ask(blocsSystemPrompt, blocsPrompt, 1200),
+  ])
+
+  return NextResponse.json({ profile, blocs, state, name, race, sources })
 }

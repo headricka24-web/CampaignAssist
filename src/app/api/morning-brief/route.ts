@@ -11,11 +11,12 @@ function todayKey() {
 
 export async function GET() {
   const session = await auth()
-  const userId  = session?.user?.id ?? null
+  const userId  = session?.user?.id
+  if (!userId) return NextResponse.json({ content: null })
 
   const date     = todayKey()
   const existing = await prisma.dailyBrief.findFirst({
-    where: { date, userId: userId ?? null },
+    where: { date, userId },
   })
   if (existing) return NextResponse.json({ content: existing.content, cached: true })
   return NextResponse.json({ content: null })
@@ -23,16 +24,17 @@ export async function GET() {
 
 export async function POST() {
   const session = await auth()
-  const userId  = session?.user?.id ?? null
+  const userId  = session?.user?.id
+  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   const date     = todayKey()
   const existing = await prisma.dailyBrief.findFirst({
-    where: { date, userId: userId ?? null },
+    where: { date, userId },
   })
   if (existing) return NextResponse.json({ content: existing.content, cached: true })
 
   const candidate = await prisma.candidate.findFirst({
-    where: userId ? { userId } : { userId: null },
+    where: { userId },
   })
   const name      = candidate?.name      ?? 'the candidate'
   const race      = candidate?.race      ?? 'this race'
@@ -40,7 +42,7 @@ export async function POST() {
   const incumbent = candidate?.incumbent ? 'incumbent' : 'challenger'
 
   const articles = await prisma.article.findMany({
-    where:   { userId: userId ?? null },
+    where:   { userId },
     include: { outlet: true },
     orderBy: { datePublished: 'desc' },
     take: 40,
