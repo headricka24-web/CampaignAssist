@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/auth'
 import { ask } from '@/lib/claude'
+import { buildRaceContext } from '@/lib/raceContext'
 
 export const maxDuration = 60
 
@@ -14,10 +15,12 @@ export async function POST(req: NextRequest) {
 
   const candidate = await prisma.candidate.findFirst({
     where: { userId },
+    select: { name: true, race: true, state: true, incumbent: true, raceLevel: true, district: true, county: true, city: true },
   })
-  const name  = candidate?.name  ?? 'the candidate'
-  const state = candidate?.state ?? 'the state'
-  const race  = candidate?.race  ?? 'this race'
+  const name     = candidate?.name  ?? 'the candidate'
+  const state    = candidate?.state ?? 'the state'
+  const race     = candidate?.race  ?? 'this race'
+  const raceCtx  = candidate ? buildRaceContext({ ...candidate, name, race, state, incumbent: candidate.incumbent ?? false }) : `CANDIDATE: ${name}, running for ${race} in ${state}.`
 
   // ── SCAN: analyze pre-scanned articles for threats ───────────────────────
   if (body.type === 'scan') {
@@ -38,12 +41,12 @@ export async function POST(req: NextRequest) {
 
     const threats = await ask(
       `You are an expert Republican opposition research director and crisis communications strategist. Your job is to find every possible attack vector the opposition could use against the GOP candidate based on current news coverage. Be blunt, specific, and thorough. Think like the enemy.`,
-      `Candidate: ${name} (Republican), running for ${race} in ${state}.
+      `${raceCtx}
 
 Here are the currently tracked news articles:
 ${articleList}
 
-Identify 4-6 SPECIFIC THREATS — stories or narratives in this coverage that Democrats or media could weaponize against ${name} or the Republican position.
+Identify 4-6 SPECIFIC THREATS scaled to this race level (local/community attacks for municipal/county races; state media and legislative attacks for state races; national opposition and media attacks for federal races) — stories or narratives in this coverage that Democrats or media could weaponize against ${name} or the Republican position.
 
 For each threat write exactly this format:
 
@@ -65,7 +68,7 @@ Separate each threat with ---`,
 
     const response = await ask(
       `You are a Republican rapid-response communications director. Write sharp, confident, on-offense counter-messaging. Never be defensive — always pivot to Republican strengths.`,
-      `Candidate: ${name} (Republican), running for ${race} in ${state}.
+      `${raceCtx}
 
 THREAT TO RESPOND TO:
 ${threat}

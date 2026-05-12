@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/db'
 import { ask } from '@/lib/claude'
 import { auth } from '@/auth'
+import { buildRaceContext } from '@/lib/raceContext'
 
 export const maxDuration = 60
 
@@ -26,6 +27,7 @@ function issueNote(issue: string): string {
 async function getContext(userId: string) {
   const candidate = await prisma.candidate.findFirst({
     where: { userId },
+    select: { name: true, race: true, state: true, incumbent: true, raceLevel: true, district: true, county: true, city: true },
   })
   const articles  = await prisma.article.findMany({
     where: { userId },
@@ -37,40 +39,41 @@ async function getContext(userId: string) {
   const state     = candidate?.state     ?? 'the state'
   const incumbent = candidate?.incumbent ? 'incumbent Republican' : 'Republican challenger'
   const headlines = articles.map(a => `- ${a.title} (${a.sentiment ?? 'Neutral'})`).join('\n')
-  return { name, race, state, incumbent, headlines, hasArticles: articles.length > 0 }
+  const raceCtx   = candidate ? buildRaceContext({ ...candidate, name, race, state, incumbent: candidate.incumbent ?? false }) : `CANDIDATE: ${name}, running for ${race} in ${state}.`
+  return { name, race, state, incumbent, headlines, hasArticles: articles.length > 0, raceCtx }
 }
 
-type Ctx = { name: string; race: string; state: string; incumbent: string; headlines: string }
+type Ctx = { name: string; race: string; state: string; incumbent: string; headlines: string; raceCtx: string }
 
 const prompts: Record<Section, (ctx: Ctx, issue: string) => [string, string]> = {
   facebook: (ctx, issue) => [
     'You are a Republican campaign social media director. Write punchy, conservative Facebook posts that energize the GOP base and appeal to patriotic values. No hashtags. Bold and direct.',
-    `Candidate: ${ctx.name} (${ctx.incumbent}), running for ${ctx.race} in ${ctx.state}.
+    `${ctx.raceCtx}
 
 Recent news coverage:
 ${ctx.headlines}
 ${issueNote(issue)}
-Write 3 Facebook posts for the Republican campaign. For each: write a bold opening line that fires up conservatives, a 2-sentence body grounded in Republican values, and a strong call-to-action. Separate each post with ---`,
+Write 3 Facebook posts for the Republican campaign. Calibrate scope and local vs. national framing to match the race level. For each: write a bold opening line that fires up conservatives, a 2-sentence body grounded in Republican values, and a strong call-to-action. Separate each post with ---`,
   ],
 
   instagram: (ctx, issue) => [
     'You are a Republican campaign social media director. Write energizing Instagram captions with a patriotic, conservative voice and relevant hashtags.',
-    `Candidate: ${ctx.name} (${ctx.incumbent}), running for ${ctx.race} in ${ctx.state}.
+    `${ctx.raceCtx}
 
 Recent news coverage:
 ${ctx.headlines}
 ${issueNote(issue)}
-Write 3 Instagram captions for the Republican campaign. Each should be 2-3 sentences with a conservative message, then 5 relevant hashtags (include #GOP, #Republican, and state-specific tags). Separate each with ---`,
+Write 3 Instagram captions for the Republican campaign. Calibrate scope and local vs. national framing to match the race level. Each should be 2-3 sentences with a conservative message, then 5 relevant hashtags (include #GOP, #Republican, and geography-specific tags). Separate each with ---`,
   ],
 
   newsletter: (ctx, issue) => [
     'You are a Republican campaign communications director. Write a warm, energizing campaign newsletter that rallies the conservative base and motivates action.',
-    `Candidate: ${ctx.name} (${ctx.incumbent}), running for ${ctx.race} in ${ctx.state}.
+    `${ctx.raceCtx}
 
 Recent news coverage:
 ${ctx.headlines}
 ${issueNote(issue)}
-Write a campaign email newsletter with:
+Write a campaign email newsletter calibrated to this race level (local community focus for municipal/county, state policy for state, national agenda for federal):
 SUBJECT LINE:
 PREVIEW TEXT:
 BODY: (3 short paragraphs — open with conservative values, connect to current news, close with a call-to-action)
@@ -80,13 +83,13 @@ Keep it tight and motivating.`,
 
   taglines: (ctx, issue) => [
     'You are a Republican political messaging expert. Write short, powerful campaign taglines that capture conservative values and winning energy.',
-    `Candidate: ${ctx.name} (${ctx.incumbent}), running for ${ctx.race} in ${ctx.state}.
+    `${ctx.raceCtx}
 
 Recent news coverage:
 ${ctx.headlines}
 ${issueNote(issue)}
-Write:
-- 5 campaign taglines (short, punchy, conservative — think America, freedom, strength, common sense)
+Write taglines and signage ideas that match the race level (community-focused for local races, policy-focused for state, patriotic/national for federal):
+- 5 campaign taglines (short, punchy, conservative)
 - 3 yard sign / banner ideas (bold, ALL CAPS, 5 words or fewer)
 
 Label each section clearly.`,
@@ -94,12 +97,12 @@ Label each section clearly.`,
 
   strategy: (ctx, issue) => [
     'You are a senior Republican campaign strategist. Give sharp, actionable tactical advice grounded in conservative political strategy and GOP winning playbooks.',
-    `Candidate: ${ctx.name} (${ctx.incumbent}), running for ${ctx.race} in ${ctx.state}.
+    `${ctx.raceCtx}
 
 Recent news coverage:
 ${ctx.headlines}
 ${issueNote(issue)}
-Give 4 tactical Republican strategy recommendations based on this news. For each:
+Give 4 tactical Republican strategy recommendations based on this news. Scale the advice to the race level — local/grassroots tactics for county/municipal races, media and legislative strategy for state races, national coalition-building for federal races. For each:
 - Bold title
 - Urgency level: HIGH / MEDIUM / LOW
 - 2 sentences of specific advice on how to use this for a GOP win
@@ -144,10 +147,10 @@ export async function POST(req: NextRequest) {
 
     const content = await ask(
       `You are a Republican communications strategist. Write sharp, memorable talking points grounded in conservative values.${toneInstruction(tone)}`,
-      `Candidate: ${ctx.name} (${ctx.incumbent}), running for ${ctx.race} in ${ctx.state}.
+      `${ctx.raceCtx}
 Issue: ${issue}
 ${headlines ? `\nRecent news on this issue:\n${headlines}\n` : ''}
-Write exactly 3 talking points for the Republican position on "${issue}". For each:
+Write exactly 3 talking points for the Republican position on "${issue}", calibrated to this race level. For each:
 TALKING POINT [N]: (one punchy, quotable sentence)
 SUPPORT: (one sentence of evidence or reasoning)
 

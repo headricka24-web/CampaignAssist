@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/auth'
 import { ask } from '@/lib/claude'
+import { buildRaceContext } from '@/lib/raceContext'
 
 export const maxDuration = 60
 
@@ -35,11 +36,13 @@ export async function POST() {
 
   const candidate = await prisma.candidate.findFirst({
     where: { userId },
+    select: { name: true, race: true, state: true, incumbent: true, raceLevel: true, district: true, county: true, city: true },
   })
   const name      = candidate?.name      ?? 'the candidate'
   const race      = candidate?.race      ?? 'this race'
   const state     = candidate?.state     ?? 'the state'
   const incumbent = candidate?.incumbent ? 'incumbent' : 'challenger'
+  const raceCtx   = candidate ? buildRaceContext({ ...candidate, name, race, state, incumbent: candidate.incumbent ?? false }) : `CANDIDATE: ${name}, running for ${race} in ${state}.`
 
   const articles = await prisma.article.findMany({
     where:   { userId },
@@ -61,7 +64,7 @@ export async function POST() {
 Write from a conservative, Republican perspective. Be direct, confident, and tactical — no fluff.
 Identify threats from the left and opportunities to advance the Republican message.
 Use clear headers and bullet points. Keep the total brief under 350 words.`,
-    `Candidate: ${name} (Republican, ${incumbent}), running for ${race} in ${state}.
+    `${raceCtx}
 
 Here are today's news articles. Write a morning brief covering:
 1. The most important developments affecting this race
