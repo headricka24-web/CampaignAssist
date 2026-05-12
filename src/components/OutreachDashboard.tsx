@@ -369,6 +369,42 @@ export default function OutreachDashboard() {
   const [modal,                   setModal]                   = useState<ModalType>(null)
   const [approvingId,             setApprovingId]             = useState<string | null>(null)
 
+  // Cross-connection generation modal
+  const [genModal, setGenModal] = useState<{ title: string; content: string; loading: boolean } | null>(null)
+
+  async function generateThankYou(donor: { name: string; amount: number }) {
+    setGenModal({ title: `Thank You — ${donor.name}`, content: '', loading: true })
+    try {
+      const res  = await fetch('/api/lets-fund', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'thankyou', demographic: 'General', issue: `Donor: ${donor.name}, Amount: $${donor.amount}`, tone: 'Sophisticated' }),
+      })
+      const data = await res.json()
+      setGenModal({ title: `Thank You — ${donor.name}`, content: data.content ?? 'Generation failed. Try again.', loading: false })
+    } catch {
+      setGenModal({ title: `Thank You — ${donor.name}`, content: 'Network error. Try again.', loading: false })
+    }
+  }
+
+  async function generateEventAnnouncement(event: { title: string; type: string; eventDate: string; location: string | null }) {
+    const dateStr = new Date(event.eventDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+    const label   = EVENT_TYPE_LABEL[event.type] ?? event.type
+    const detail  = `${label}: "${event.title}" on ${dateStr}${event.location ? ` at ${event.location}` : ''}`
+    setGenModal({ title: `Announce: ${event.title}`, content: '', loading: true })
+    try {
+      const res  = await fetch('/api/media-studio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ section: 'newsletter', tone: 'Punchy', issue: detail }),
+      })
+      const data = await res.json()
+      setGenModal({ title: `Announce: ${event.title}`, content: data.content ?? 'Generation failed. Try again.', loading: false })
+    } catch {
+      setGenModal({ title: `Announce: ${event.title}`, content: 'Network error. Try again.', loading: false })
+    }
+  }
+
   // Document import
   const [importFile,       setImportFile]       = useState<File | null>(null)
   const [importing,        setImporting]        = useState(false)
@@ -378,6 +414,7 @@ export default function OutreachDashboard() {
   const [selectedRecords,  setSelectedRecords]  = useState<Record<string, boolean>>({})
   const [savingImport,     setSavingImport]     = useState(false)
   const [dragOver,         setDragOver]         = useState(false)
+  const [importSuccess,    setImportSuccess]    = useState(false)
 
   // Goals
   const [weeklyGoal,              setWeeklyGoal]              = useLocalStorage('outreach-weekly-goal', 500)
@@ -480,6 +517,7 @@ export default function OutreachDashboard() {
     setImportFile(null)
     setImportError('')
     setModal(null)
+    setImportSuccess(true)
     load()
   }
 
@@ -686,14 +724,22 @@ export default function OutreachDashboard() {
             ) : (
               <ul className="space-y-2">
                 {s.followUpsDue.map(d => (
-                  <li key={d.id} className={`flex items-center justify-between gap-2 px-3 py-2 rounded-xl ${d.overdue ? 'bg-red-50' : 'bg-yellow-50'}`}>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-navy truncate">{d.name}</p>
-                      <p className="text-[10px] text-gray-500">{fmt$(d.amount)}</p>
+                  <li key={d.id} className={`px-3 py-2.5 rounded-xl ${d.overdue ? 'bg-red-50' : 'bg-yellow-50'}`}>
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-navy truncate">{d.name}</p>
+                        <p className="text-[10px] text-gray-500">{fmt$(d.amount)}</p>
+                      </div>
+                      <span className={`text-[10px] font-black shrink-0 px-2 py-0.5 rounded-full ${d.overdue ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                        {d.followUpDue ? daysUntil(d.followUpDue) : 'No date'}
+                      </span>
                     </div>
-                    <span className={`text-[10px] font-black shrink-0 px-2 py-0.5 rounded-full ${d.overdue ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                      {d.followUpDue ? daysUntil(d.followUpDue) : 'No date'}
-                    </span>
+                    <button
+                      onClick={() => generateThankYou({ name: d.name, amount: d.amount })}
+                      className="w-full text-[10px] font-black uppercase tracking-widest py-1.5 rounded-lg bg-navy/10 hover:bg-navy hover:text-white text-navy transition-colors"
+                    >
+                      ✉ Generate Thank You
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -819,9 +865,18 @@ export default function OutreachDashboard() {
                           {e.location ? ` · ${e.location}` : ''}
                         </p>
                       </div>
-                      <span className={`text-[10px] font-black shrink-0 px-2 py-0.5 rounded-full ${urgent ? 'bg-red-100 text-red-700' : 'bg-navy/10 text-navy'}`}>
-                        {daysUntil(e.eventDate)}
-                      </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          onClick={() => generateEventAnnouncement(e)}
+                          className="text-[10px] font-black px-2 py-1 rounded-lg bg-navy/10 hover:bg-navy hover:text-white text-navy transition-colors"
+                          title="Generate newsletter announcement"
+                        >
+                          📧 Announce
+                        </button>
+                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${urgent ? 'bg-red-100 text-red-700' : 'bg-navy/10 text-navy'}`}>
+                          {daysUntil(e.eventDate)}
+                        </span>
+                      </div>
                     </li>
                   )
                 })}
@@ -901,6 +956,22 @@ export default function OutreachDashboard() {
               <p className="text-xs font-bold text-red-600">{importError}</p>
             </div>
           )}
+
+          {importSuccess && (
+            <div className="mt-4 px-5 py-4 bg-green-50 border border-green-200 rounded-xl flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-black text-green-700">✓ Import complete!</p>
+                <p className="text-xs text-green-600 mt-0.5">Records added to your outreach dashboard.</p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <a href="/legislative"
+                  className="text-xs font-black uppercase tracking-widest px-4 py-2 rounded-xl bg-navy text-white hover:bg-navy-700 transition-colors">
+                  📞 Generate Call Script →
+                </a>
+                <button onClick={() => setImportSuccess(false)} className="text-gray-400 hover:text-gray-600 text-lg leading-none">✕</button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -910,6 +981,42 @@ export default function OutreachDashboard() {
       {modal === 'volunteer' && <Modal title="Schedule Volunteer"  onClose={closeModal}><VolunteerForm onDone={closeModal} /></Modal>}
       {modal === 'event'     && <Modal title="Add Campaign Event"  onClose={closeModal}><EventForm     onDone={closeModal} /></Modal>}
       {modal === 'draft'     && <Modal title="Submit Content Draft" onClose={closeModal}><DraftForm    onDone={closeModal} /></Modal>}
+
+      {/* Generation modal */}
+      {genModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => !genModal.loading && setGenModal(null)}>
+          <div className="absolute inset-0 bg-navy/70 backdrop-blur-sm" />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="h-1.5 bg-gradient-to-r from-navy via-red-500 to-gold-400" />
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <h2 className="font-display font-black text-sm uppercase tracking-wide text-navy">{genModal.title}</h2>
+              <div className="flex items-center gap-2">
+                {genModal.content && !genModal.loading && (
+                  <button
+                    onClick={() => navigator.clipboard.writeText(genModal.content)}
+                    className="text-xs font-bold px-3 py-1.5 rounded-lg bg-navy text-white hover:bg-navy-700 transition-colors"
+                  >
+                    Copy
+                  </button>
+                )}
+                <button onClick={() => setGenModal(null)} className="text-xl text-gray-300 hover:text-navy leading-none transition-colors">✕</button>
+              </div>
+            </div>
+            <div className="overflow-y-auto p-6">
+              {genModal.loading ? (
+                <div className="flex items-center gap-3 py-10 justify-center">
+                  <span className="w-5 h-5 border-2 border-navy border-t-transparent rounded-full animate-spin" />
+                  <span className="text-sm text-gray-400">Generating…</span>
+                </div>
+              ) : (
+                <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap text-sm leading-relaxed">
+                  {genModal.content}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {modal === 'import-preview' && importData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setModal(null)}>
