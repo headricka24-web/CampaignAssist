@@ -6,49 +6,54 @@ import { signOut } from 'next-auth/react'
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 
+// ── Department color palette ──────────────────────────────────────────────────
+
+const DEPT_COLORS = {
+  Command:        { label: 'text-red-400',    bar: 'bg-red-500',     glow: 'shadow-red-900/30'    },
+  Intelligence:   { label: 'text-blue-400',   bar: 'bg-blue-500',    glow: 'shadow-blue-900/30'   },
+  Communications: { label: 'text-violet-400', bar: 'bg-violet-500',  glow: 'shadow-violet-900/30' },
+  'Field Ops':    { label: 'text-emerald-400',bar: 'bg-emerald-500', glow: 'shadow-emerald-900/30'},
+  Finance:        { label: 'text-amber-400',  bar: 'bg-amber-500',   glow: 'shadow-amber-900/30'  },
+} as const
+
 // ── Navigation structure ──────────────────────────────────────────────────────
 
 const NAV_GROUPS = [
   {
-    category: 'Command',
-    icon: '◈',
+    category: 'Command' as const,
     links: [
-      { href: '/dashboard', label: 'Dashboard',       icon: '⊞' },
-      { href: '/victory',   label: 'Path to Victory', icon: '★' },
+      { href: '/dashboard', label: 'Dashboard'       },
+      { href: '/victory',   label: 'Path to Victory' },
     ],
   },
   {
-    category: 'Intelligence',
-    icon: '◉',
+    category: 'Intelligence' as const,
     links: [
-      { href: '/war-room',     label: 'War Room',     icon: '🛡' },
-      { href: '/briefing',     label: 'Hot Buttons',  icon: '⚡' },
-      { href: '/news',         label: 'News Feed',    icon: '◎' },
-      { href: '/constituents', label: 'Constituents', icon: '◑' },
+      { href: '/war-room',     label: 'War Room'     },
+      { href: '/briefing',     label: 'Hot Buttons'  },
+      { href: '/news',         label: 'News Feed'    },
+      { href: '/constituents', label: 'Constituents' },
     ],
   },
   {
-    category: 'Communications',
-    icon: '◈',
+    category: 'Communications' as const,
     links: [
-      { href: '/media',       label: 'Media Studio',   icon: '✦' },
-      { href: '/legislative', label: "Let's Fund",     icon: '◆' },
-      { href: '/press',       label: 'Press Contacts', icon: '◇' },
+      { href: '/media',       label: 'Media Studio'   },
+      { href: '/legislative', label: "Let's Fund"     },
+      { href: '/press',       label: 'Press Contacts' },
     ],
   },
   {
-    category: 'Field Ops',
-    icon: '◉',
+    category: 'Field Ops' as const,
     links: [
-      { href: '/outreach', label: 'Outreach', icon: '◎' },
-      { href: '/voters',   label: 'Voters',   icon: '◑' },
+      { href: '/outreach', label: 'Outreach' },
+      { href: '/voters',   label: 'Voters'   },
     ],
   },
   {
-    category: 'Finance',
-    icon: '◈',
+    category: 'Finance' as const,
     links: [
-      { href: '/budget', label: 'Budget', icon: '◆' },
+      { href: '/budget', label: 'Budget' },
     ],
   },
 ]
@@ -64,7 +69,7 @@ export default function Sidebar({
 }) {
   const pathname  = usePathname()
   const router    = useRouter()
-  const [open,    setOpen]    = useState(false) // mobile drawer
+  const [open,    setOpen]    = useState(false)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => { setMounted(true) }, [])
@@ -86,115 +91,132 @@ export default function Sidebar({
     return pathname === href || pathname.startsWith(href + '/')
   }
 
-  // ── Shared sidebar body ───────────────────────────────────────────────────
+  // ── Sidebar body ──────────────────────────────────────────────────────────
   const sidebarBody = (
-    <div className="flex flex-col h-full bg-[#0f2744] text-white overflow-y-auto">
+    <div className="flex flex-col h-full bg-[#08192e] text-white overflow-y-auto">
 
-      {/* Logo */}
-      <div className="px-5 pt-7 pb-6 border-b border-white/10 shrink-0">
+      {/* ── Logo ──────────────────────────────────────────────────────────── */}
+      <div className="px-4 pt-5 pb-4 shrink-0">
         <Link href="/command" className="flex items-center gap-3 group" onClick={() => setOpen(false)}>
-          <div className="w-9 h-9 rounded-full bg-red-gradient shadow-glow-red flex items-center justify-center text-base font-bold shrink-0 group-hover:scale-105 transition-transform">★</div>
-          <div className="leading-tight min-w-0">
-            <p className="font-display font-bold text-[15px] tracking-widest uppercase text-white truncate">
-              Campaign<span className="text-gold-400">Assist</span>
-            </p>
-            <p className="text-[9px] uppercase tracking-[0.15em] text-blue-300/50 mt-0.5">Intel · Strategy · Victory</p>
-          </div>
-        </Link>
-      </div>
-
-      {/* Nav groups */}
-      <nav className="flex-1 px-3 py-4 space-y-5 overflow-y-auto" aria-label="Main navigation">
-        {NAV_GROUPS.map((group, i) => (
-          <div key={group.category}>
-            {/* Section divider + label */}
-            {i > 0 && <div className="h-px bg-white/10 mb-4" />}
-            <p className="px-2 mb-2 text-[11px] font-black uppercase tracking-[0.2em] text-white/50">
-              {group.category}
-            </p>
-
-            {/* Links */}
-            <div className="space-y-0.5">
-              {group.links.map(link => {
-                const active = isActive(link.href)
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setOpen(false)}
-                    className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all group ${
-                      active
-                        ? 'bg-white/10 text-white'
-                        : 'text-blue-200/70 hover:text-white hover:bg-white/5'
-                    }`}
-                  >
-                    {/* Active indicator */}
-                    <span className={`w-1 h-5 rounded-full transition-all shrink-0 ${active ? 'bg-gold-400' : 'bg-transparent group-hover:bg-white/20'}`} />
-                    <span className="text-xs w-4 text-center shrink-0 opacity-60">{link.icon}</span>
-                    <span>{link.label}</span>
-                  </Link>
-                )
-              })}
-            </div>
-          </div>
-        ))}
-      </nav>
-
-      {/* Divider */}
-      <div className="h-px bg-white/10 mx-4 shrink-0" />
-
-      {/* My Candidate — gold CTA */}
-      <div className="px-3 py-3 shrink-0">
-        <Link
-          href="/my-candidate"
-          onClick={() => setOpen(false)}
-          className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-black uppercase tracking-wide transition-all ${
-            pathname === '/my-candidate'
-              ? 'bg-gold-400 text-[#0f2744]'
-              : 'text-gold-400 hover:bg-gold-400 hover:text-[#0f2744] border border-gold-400/30'
-          }`}
-        >
-          <span className="w-1 h-5 rounded-full bg-transparent shrink-0" />
-          <span className="text-xs w-4 text-center shrink-0">★</span>
-          My Candidate
-        </Link>
-      </div>
-
-      {/* User footer */}
-      <div className="px-3 pb-5 shrink-0 space-y-1">
-        <div className="flex items-center gap-2.5 px-3 py-2">
-          <div className="w-7 h-7 rounded-full bg-gold-400 flex items-center justify-center text-[#0f2744] text-xs font-black shrink-0">
-            {initials}
+          <div className="w-9 h-9 rounded-full bg-red-gradient shadow-glow-red flex items-center justify-center text-base font-black shrink-0 group-hover:scale-110 transition-transform select-none">
+            ★
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-semibold text-white truncate">{userName || userEmail}</p>
-            {userName && <p className="text-[10px] text-blue-300/50 truncate">{userEmail}</p>}
+            <p className="font-display font-black text-[15px] leading-none text-white truncate">
+              Campaign<span className="text-gold-400">Assist</span>
+            </p>
+            <p className="text-[9px] text-blue-400/50 tracking-widest uppercase mt-0.5 truncate">
+              Intel · Strategy · Victory
+            </p>
           </div>
-        </div>
-
-        <Link
-          href="/settings"
-          onClick={() => setOpen(false)}
-          className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs text-blue-300/60 hover:text-white hover:bg-white/5 transition-all"
-        >
-          <span className="w-1 h-4 rounded-full shrink-0" />
-          <span className="w-4 text-center shrink-0 text-xs">⚙</span>
-          Settings
         </Link>
+      </div>
 
-        <button
-          onClick={handleSignOut}
-          className="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs text-red-400/70 hover:text-red-400 hover:bg-red-500/10 transition-all"
-        >
-          <span className="w-1 h-4 rounded-full shrink-0" />
-          <span className="w-4 text-center shrink-0 text-xs">↩</span>
-          Sign Out
-        </button>
+      {/* Gold rule */}
+      <div className="h-px mx-4 bg-gradient-to-r from-gold-400/60 via-gold-400/20 to-transparent shrink-0" />
 
-        {/* Live indicator */}
-        <div className="flex items-center gap-1.5 px-3 pt-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse-slow" />
-          <span className="text-[10px] font-bold tracking-widest uppercase text-green-400">Live</span>
+      {/* ── Nav groups ────────────────────────────────────────────────────── */}
+      <nav className="flex-1 px-3 py-3 space-y-1 overflow-y-auto" aria-label="Main navigation">
+        {NAV_GROUPS.map(group => {
+          const colors = DEPT_COLORS[group.category]
+          return (
+            <div key={group.category} className="mb-1">
+
+              {/* Department header */}
+              <div className={`flex items-center gap-2 px-2 pt-3 pb-1.5`}>
+                <div className={`h-3 w-0.5 rounded-full ${colors.bar}`} />
+                <span className={`text-[10px] font-black uppercase tracking-[0.22em] ${colors.label}`}>
+                  {group.category}
+                </span>
+                <div className={`flex-1 h-px bg-gradient-to-r ${
+                  group.category === 'Command'        ? 'from-red-500/30'    :
+                  group.category === 'Intelligence'   ? 'from-blue-500/30'   :
+                  group.category === 'Communications' ? 'from-violet-500/30' :
+                  group.category === 'Field Ops'      ? 'from-emerald-500/30':
+                                                        'from-amber-500/30'
+                } to-transparent`} />
+              </div>
+
+              {/* Links */}
+              <div className="space-y-0.5 pl-1">
+                {group.links.map(link => {
+                  const active = isActive(link.href)
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setOpen(false)}
+                      className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all group ${
+                        active
+                          ? 'bg-white/10 text-white'
+                          : 'text-white/55 hover:text-white/90 hover:bg-white/5'
+                      }`}
+                    >
+                      {/* Active indicator bar */}
+                      <span className={`w-0.5 h-4 rounded-full shrink-0 transition-all ${
+                        active ? colors.bar : 'bg-transparent'
+                      }`} />
+                      {link.label}
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })}
+      </nav>
+
+      {/* ── Bottom section ────────────────────────────────────────────────── */}
+      <div className="shrink-0">
+        {/* Gold rule */}
+        <div className="h-px mx-4 bg-gradient-to-r from-gold-400/40 via-gold-400/15 to-transparent mb-3" />
+
+        <div className="px-3 space-y-0.5 pb-4">
+          {/* My Candidate CTA */}
+          <Link
+            href="/my-candidate"
+            onClick={() => setOpen(false)}
+            className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] font-black uppercase tracking-wider transition-all ${
+              pathname === '/my-candidate'
+                ? 'bg-gold-400 text-[#08192e]'
+                : 'text-gold-400 border border-gold-400/25 hover:bg-gold-400/10 hover:border-gold-400/50'
+            }`}
+          >
+            <span className="text-base leading-none">★</span>
+            My Candidate
+          </Link>
+
+          {/* User row */}
+          <div className="flex items-center gap-2.5 px-3 py-2 mt-1">
+            <div className="w-7 h-7 rounded-full bg-gold-400 flex items-center justify-center text-[#08192e] text-xs font-black shrink-0 select-none">
+              {initials}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[12px] font-semibold text-white/80 truncate leading-none">{userName || userEmail}</p>
+              {userName && <p className="text-[10px] text-white/30 truncate mt-0.5">{userEmail}</p>}
+            </div>
+          </div>
+
+          <Link
+            href="/settings"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[12px] text-white/35 hover:text-white/70 hover:bg-white/5 transition-all"
+          >
+            <span className="text-sm">⚙</span> Settings
+          </Link>
+
+          <button
+            onClick={handleSignOut}
+            className="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[12px] text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-all"
+          >
+            <span className="text-sm">↩</span> Sign Out
+          </button>
+
+          {/* Live indicator */}
+          <div className="flex items-center gap-1.5 px-3 pt-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse-slow" />
+            <span className="text-[10px] font-black tracking-widest uppercase text-green-400/80">Live</span>
+          </div>
         </div>
       </div>
     </div>
@@ -202,25 +224,25 @@ export default function Sidebar({
 
   return (
     <>
-      {/* ── Desktop: static sidebar ─────────────────────────────────────── */}
-      <aside className="hidden lg:flex flex-col w-64 shrink-0 sticky top-0 h-screen">
+      {/* ── Desktop sidebar ───────────────────────────────────────────────── */}
+      <aside className="hidden lg:flex flex-col w-56 shrink-0 sticky top-0 h-screen border-r border-white/5">
         {sidebarBody}
       </aside>
 
-      {/* ── Mobile: hamburger + drawer ──────────────────────────────────── */}
+      {/* ── Mobile ────────────────────────────────────────────────────────── */}
       <div className="lg:hidden">
-        {/* Top bar */}
-        <div className="fixed top-0 left-0 right-0 z-40 bg-[#0f2744] border-b border-white/10 flex items-center justify-between px-4 h-14">
-          <Link href="/command" className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-red-gradient flex items-center justify-center text-sm font-bold">★</div>
-            <span className="font-display font-bold text-sm tracking-widest uppercase text-white">
+        {/* Fixed top bar */}
+        <div className="fixed top-0 left-0 right-0 z-40 bg-[#08192e] border-b border-white/10 flex items-center justify-between px-4 h-14">
+          <Link href="/command" className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-full bg-red-gradient flex items-center justify-center text-sm font-black select-none">★</div>
+            <span className="font-display font-black text-[14px] text-white">
               Campaign<span className="text-gold-400">Assist</span>
             </span>
           </Link>
           <button
             onClick={() => setOpen(o => !o)}
-            className="text-white p-2 rounded-lg hover:bg-white/10 transition"
-            aria-label="Open navigation menu"
+            className="text-white/70 hover:text-white p-2 rounded-lg hover:bg-white/10 transition"
+            aria-label="Open navigation"
           >
             <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
               {open
@@ -231,14 +253,14 @@ export default function Sidebar({
           </button>
         </div>
 
-        {/* Spacer so content clears the fixed top bar */}
+        {/* Spacer */}
         <div className="h-14" />
 
-        {/* Drawer overlay */}
+        {/* Drawer */}
         {mounted && open && createPortal(
           <>
             <div className="fixed inset-0 bg-black/60 z-[9998]" onClick={() => setOpen(false)} />
-            <div className="fixed top-0 left-0 bottom-0 w-64 z-[9999] shadow-2xl">
+            <div className="fixed top-0 left-0 bottom-0 w-56 z-[9999] shadow-2xl border-r border-white/10">
               {sidebarBody}
             </div>
           </>,
