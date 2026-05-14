@@ -4,19 +4,7 @@ import { prisma } from '@/lib/db'
 import { Prisma } from '@prisma/client'
 import { auth } from '@/auth'
 
-const PRESET_SEGMENTS = [
-  'Strong Republican',
-  'Lean Support',
-  'Persuadable',
-  'GOTV Target',
-  'Door Knock Priority',
-  'economy',
-  'schools',
-  'public safety',
-  'taxes',
-  'immigration',
-  'energy',
-]
+const CONTACT_STATUSES = ['Not Contacted', 'Reached', 'Left Message', 'Wrong Number', 'Do Not Contact', 'Needs Follow-Up']
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -53,11 +41,9 @@ export async function GET(req: NextRequest) {
       { precinct:  { contains: search, mode: 'insensitive' } },
     ]
   }
-  if (segment === 'Needs Follow-Up') {
-    where.contactStatus = 'Needs Follow-Up'
-  } else if (segment === 'Not Contacted') {
-    where.contactStatus = 'Not Contacted'
-  } else if (segment) {
+  if (CONTACT_STATUSES.includes(segment)) {
+    where.contactStatus = segment
+  } else if (segment && segment !== 'All Contacts') {
     where.tags = { contains: segment }
   }
 
@@ -71,15 +57,18 @@ export async function GET(req: NextRequest) {
     where:  { candidateId: { in: candidateIds } },
     select: { tags: true, contactStatus: true },
   })
-  const segmentCounts: Record<string, number> = {
-    'All Voters':     allVoters.length,
-    'Needs Follow-Up': allVoters.filter(v => v.contactStatus === 'Needs Follow-Up').length,
-    'Not Contacted':  allVoters.filter(v => v.contactStatus === 'Not Contacted').length,
+  const segmentCounts: Record<string, number> = { 'All Contacts': allVoters.length }
+  for (const s of CONTACT_STATUSES) {
+    segmentCounts[s] = allVoters.filter(v => v.contactStatus === s).length
   }
-  for (const seg of PRESET_SEGMENTS) {
-    segmentCounts[seg] = allVoters.filter(v => {
-      try { return (JSON.parse(v.tags) as string[]).includes(seg) } catch { return false }
-    }).length
+
+  // Dynamic tag counts from actual data
+  const tagCounts: Record<string, number> = {}
+  for (const v of allVoters) {
+    try {
+      const tags = JSON.parse(v.tags) as string[]
+      for (const t of tags) { tagCounts[t] = (tagCounts[t] ?? 0) + 1 }
+    } catch {}
   }
 
   const parsed = voters.map(v => ({
@@ -87,5 +76,5 @@ export async function GET(req: NextRequest) {
     tags: (() => { try { return JSON.parse(v.tags) } catch { return [] } })(),
   }))
 
-  return NextResponse.json({ voters: parsed, total, page, limit, segmentCounts })
+  return NextResponse.json({ voters: parsed, total, page, limit, segmentCounts, tagCounts })
 }

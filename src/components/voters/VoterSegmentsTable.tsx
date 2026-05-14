@@ -5,38 +5,44 @@ import { useState, useEffect, useCallback } from 'react'
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type Voter = {
-  id:             string
-  firstName:      string
-  lastName:       string
-  address:        string | null
-  city:           string | null
-  zip:            string | null
-  phone:          string | null
-  email:          string | null
-  party:          string | null
-  supportLevel:   string | null
-  turnoutScore:   number | null
-  precinct:       string | null
-  tags:           string[]
-  notes:          string | null
-  contactStatus:  string
+  id:              string
+  firstName:       string
+  lastName:        string
+  address:         string | null
+  city:            string | null
+  zip:             string | null
+  phone:           string | null
+  email:           string | null
+  party:           string | null
+  supportLevel:    string | null
+  turnoutScore:    number | null
+  precinct:        string | null
+  tags:            string[]
+  notes:           string | null
+  contactStatus:   string
   lastContactedAt: string | null
-  createdAt:      string
+  createdAt:       string
 }
-
-type SegmentCounts = Record<string, number>
 
 type APIResponse = {
   voters:        Voter[]
   total:         number
   page:          number
   limit:         number
-  segmentCounts: SegmentCounts
+  segmentCounts: Record<string, number>
+  tagCounts:     Record<string, number>
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const CONTACT_STATUSES = ['Not Contacted', 'Reached', 'Left Message', 'Wrong Number', 'Do Not Contact', 'Needs Follow-Up']
+const CONTACT_STATUSES = [
+  { key: 'Not Contacted', icon: '⭕', color: 'text-gray-500' },
+  { key: 'Reached',       icon: '✅', color: 'text-green-600' },
+  { key: 'Left Message',  icon: '📬', color: 'text-yellow-600' },
+  { key: 'Needs Follow-Up', icon: '🔁', color: 'text-blue-600' },
+  { key: 'Wrong Number',  icon: '❌', color: 'text-orange-500' },
+  { key: 'Do Not Contact',icon: '🚫', color: 'text-red-600' },
+]
 
 const PARTY_STYLE: Record<string, string> = {
   Republican:  'bg-red-100 text-red-700',
@@ -45,30 +51,13 @@ const PARTY_STYLE: Record<string, string> = {
 }
 
 const STATUS_STYLE: Record<string, string> = {
-  'Not Contacted': 'bg-gray-100 text-gray-500',
-  'Reached':       'bg-green-100 text-green-700',
-  'Left Message':  'bg-yellow-100 text-yellow-700',
-  'Wrong Number':  'bg-orange-100 text-orange-700',
-  'Do Not Contact':'bg-red-100 text-red-600',
-  'Needs Follow-Up': 'bg-blue-100 text-blue-700',
+  'Not Contacted':  'bg-gray-100 text-gray-500',
+  'Reached':        'bg-green-100 text-green-700',
+  'Left Message':   'bg-yellow-100 text-yellow-700',
+  'Wrong Number':   'bg-orange-100 text-orange-700',
+  'Do Not Contact': 'bg-red-100 text-red-600',
+  'Needs Follow-Up':'bg-blue-100 text-blue-700',
 }
-
-const PRESET_SEGMENTS = [
-  { key: 'All Voters',          icon: '👤' },
-  { key: 'Not Contacted',       icon: '⭕' },
-  { key: 'Needs Follow-Up',     icon: '📬' },
-  { key: 'GOTV Target',         icon: '🗳️' },
-  { key: 'Strong Republican',   icon: '🔴' },
-  { key: 'Lean Support',        icon: '🟠' },
-  { key: 'Persuadable',         icon: '🟡' },
-  { key: 'Door Knock Priority', icon: '🚪' },
-  { key: 'economy',             icon: '💰' },
-  { key: 'schools',             icon: '🏫' },
-  { key: 'public safety',       icon: '🚔' },
-  { key: 'taxes',               icon: '📋' },
-  { key: 'immigration',         icon: '🌎' },
-  { key: 'energy',              icon: '⚡' },
-]
 
 // ── Profile Drawer ────────────────────────────────────────────────────────────
 
@@ -79,16 +68,20 @@ function VoterProfileDrawer({
   onClose:  () => void
   onUpdate: (updated: Voter) => void
 }) {
-  const [status,   setStatus]   = useState(voter.contactStatus)
-  const [notes,    setNotes]    = useState(voter.notes ?? '')
-  const [tags,     setTags]     = useState<string[]>(voter.tags)
-  const [tagInput, setTagInput] = useState('')
-  const [saving,   setSaving]   = useState(false)
-  const [dirty,    setDirty]    = useState(false)
+  const [status,        setStatus]        = useState(voter.contactStatus)
+  const [notes,         setNotes]         = useState(voter.notes ?? '')
+  const [tags,          setTags]          = useState<string[]>(voter.tags)
+  const [tagInput,      setTagInput]      = useState('')
+  const [saving,        setSaving]        = useState(false)
+  const [dirty,         setDirty]         = useState(false)
+  const [loggedOutreach,setLoggedOutreach]= useState(false)
+  const [loggingOut,    setLoggingOut]    = useState(false)
+
+  const contactedStatuses = ['Reached', 'Left Message', 'Needs Follow-Up']
 
   async function save() {
     setSaving(true)
-    const res  = await fetch(`/api/voters/${voter.id}`, {
+    const res     = await fetch(`/api/voters/${voter.id}`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ contactStatus: status, notes, tags }),
     })
@@ -96,6 +89,29 @@ function VoterProfileDrawer({
     setSaving(false)
     setDirty(false)
     onUpdate(updated)
+  }
+
+  async function logToOutreach() {
+    setLoggingOut(true)
+    const methodMap: Record<string, string> = {
+      'Reached':        'phone',
+      'Left Message':   'phone',
+      'Needs Follow-Up':'phone',
+    }
+    await fetch('/api/outreach/contacts', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name:   `${voter.firstName} ${voter.lastName}`.trim(),
+        phone:  voter.phone,
+        email:  voter.email,
+        address:voter.address,
+        method: methodMap[status] ?? 'phone',
+        status: status === 'Reached' ? 'completed' : 'attempted',
+        notes:  notes || null,
+      }),
+    })
+    setLoggingOut(false)
+    setLoggedOutreach(true)
   }
 
   function addTag(t: string) {
@@ -116,7 +132,10 @@ function VoterProfileDrawer({
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <div>
             <h2 className="font-display font-black text-navy text-base">{voter.firstName} {voter.lastName}</h2>
-            <p className="text-[11px] text-gray-400">{voter.precinct ? `Precinct ${voter.precinct}` : ''}{voter.city ? ` · ${voter.city}` : ''}</p>
+            <p className="text-[11px] text-gray-400">
+              {voter.precinct ? `Precinct ${voter.precinct}` : ''}
+              {voter.city ? ` · ${voter.city}` : ''}
+            </p>
           </div>
           <button onClick={onClose} className="text-xl text-gray-300 hover:text-navy transition-colors">✕</button>
         </div>
@@ -154,10 +173,25 @@ function VoterProfileDrawer({
             <select
               className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 text-navy bg-white focus:outline-none focus:ring-2 focus:ring-gold-400"
               value={status}
-              onChange={e => { setStatus(e.target.value); setDirty(true) }}
+              onChange={e => { setStatus(e.target.value); setDirty(true); setLoggedOutreach(false) }}
             >
-              {CONTACT_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+              {CONTACT_STATUSES.map(({ key }) => <option key={key} value={key}>{key}</option>)}
             </select>
+
+            {/* Log to outreach CTA */}
+            {contactedStatuses.includes(status) && (
+              <button
+                onClick={logToOutreach}
+                disabled={loggingOut || loggedOutreach}
+                className={`mt-2 w-full text-xs font-black uppercase tracking-widest py-2 rounded-xl transition-all ${
+                  loggedOutreach
+                    ? 'bg-green-100 text-green-700 cursor-default'
+                    : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                }`}
+              >
+                {loggedOutreach ? '✓ Logged to Outreach' : loggingOut ? 'Logging…' : '+ Log to Outreach Tracker'}
+              </button>
+            )}
           </div>
 
           {/* Tags */}
@@ -198,7 +232,9 @@ function VoterProfileDrawer({
           </div>
 
           {voter.lastContactedAt && (
-            <p className="text-[11px] text-gray-400">Last contacted: {new Date(voter.lastContactedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+            <p className="text-[11px] text-gray-400">
+              Last contacted: {new Date(voter.lastContactedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </p>
           )}
         </div>
 
@@ -214,21 +250,107 @@ function VoterProfileDrawer({
   )
 }
 
+// ── Sidebar ───────────────────────────────────────────────────────────────────
+
+function SegmentSidebar({
+  segmentCounts, tagCounts, segment, onSegment, onUploadMore,
+}: {
+  segmentCounts: Record<string, number>
+  tagCounts:     Record<string, number>
+  segment:       string
+  onSegment:     (s: string) => void
+  onUploadMore:  () => void
+}) {
+  const activeTags = Object.entries(tagCounts)
+    .filter(([, c]) => c > 0)
+    .sort((a, b) => b[1] - a[1])
+
+  function SidebarBtn({ label, icon, count, active }: { label: string; icon?: string; count: number; active: boolean }) {
+    return (
+      <button
+        onClick={() => onSegment(label)}
+        className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-left transition-all ${active ? 'bg-navy text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+      >
+        <span className="flex items-center gap-1.5 text-xs font-bold truncate">
+          {icon && <span>{icon}</span>}
+          <span className="truncate">{label}</span>
+        </span>
+        <span className={`text-[10px] font-black shrink-0 px-1.5 py-0.5 rounded-full ${active ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>
+          {count.toLocaleString()}
+        </span>
+      </button>
+    )
+  }
+
+  return (
+    <div className="w-52 shrink-0 border-r border-gray-100 pr-1">
+      <div className="flex items-center justify-between mb-3 pr-3">
+        <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Contacts</p>
+        <button onClick={onUploadMore}
+          className="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg bg-navy/10 hover:bg-navy hover:text-white text-navy transition-all">
+          + Upload
+        </button>
+      </div>
+
+      {/* All contacts */}
+      <SidebarBtn
+        label="All Contacts"
+        icon="👤"
+        count={segmentCounts['All Contacts'] ?? 0}
+        active={segment === 'All Contacts'}
+      />
+
+      {/* Status filters */}
+      <p className="text-[9px] font-black uppercase tracking-widest text-gray-300 px-3 pt-4 pb-1">By Status</p>
+      <ul className="space-y-0.5">
+        {CONTACT_STATUSES.map(({ key, icon }) => (
+          <li key={key}>
+            <SidebarBtn
+              label={key}
+              icon={icon}
+              count={segmentCounts[key] ?? 0}
+              active={segment === key}
+            />
+          </li>
+        ))}
+      </ul>
+
+      {/* Dynamic tags from imported data */}
+      {activeTags.length > 0 && (
+        <>
+          <p className="text-[9px] font-black uppercase tracking-widest text-gray-300 px-3 pt-4 pb-1">By Tag</p>
+          <ul className="space-y-0.5">
+            {activeTags.map(([tag, count]) => (
+              <li key={tag}>
+                <SidebarBtn
+                  label={tag}
+                  count={count}
+                  active={segment === tag}
+                />
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </div>
+  )
+}
+
 // ── Main Table ────────────────────────────────────────────────────────────────
 
 export default function VoterSegmentsTable({ onUploadMore }: { onUploadMore: () => void }) {
-  const [data,           setData]           = useState<APIResponse | null>(null)
-  const [loading,        setLoading]        = useState(true)
-  const [segment,        setSegment]        = useState('All Voters')
-  const [search,         setSearch]         = useState('')
-  const [page,           setPage]           = useState(1)
-  const [selectedVoter,  setSelectedVoter]  = useState<Voter | null>(null)
-  const [searchInput,    setSearchInput]    = useState('')
+  const [data,          setData]          = useState<APIResponse | null>(null)
+  const [loading,       setLoading]       = useState(true)
+  const [segment,       setSegment]       = useState('All Contacts')
+  const [search,        setSearch]        = useState('')
+  const [page,          setPage]          = useState(1)
+  const [selectedVoter, setSelectedVoter] = useState<Voter | null>(null)
+  const [searchInput,   setSearchInput]   = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
     const params = new URLSearchParams({ page: String(page), limit: '50' })
-    if (segment !== 'All Voters') params.set('segment', segment)
+    if (segment !== 'All Contacts') params.set('segment', segment)
     if (search) params.set('search', search)
     const res  = await fetch(`/api/voters?${params}`)
     const json = await res.json()
@@ -254,45 +376,23 @@ export default function VoterSegmentsTable({ onUploadMore }: { onUploadMore: () 
   function updateVoter(updated: Voter) {
     setData(d => d ? { ...d, voters: d.voters.map(v => v.id === updated.id ? updated : v) } : d)
     setSelectedVoter(updated)
+    load()
   }
 
-  const counts = data?.segmentCounts ?? {}
+  const counts    = data?.segmentCounts ?? {}
+  const tagCounts = data?.tagCounts     ?? {}
   const totalPages = data ? Math.ceil(data.total / data.limit) : 1
 
   return (
     <div className="flex gap-0 min-h-[600px]">
       {/* ── Segment Sidebar ── */}
-      <div className="w-52 shrink-0 border-r border-gray-100 pr-1">
-        <div className="flex items-center justify-between mb-3 pr-3">
-          <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Segments</p>
-          <button onClick={onUploadMore}
-            className="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg bg-navy/10 hover:bg-navy hover:text-white text-navy transition-all">
-            + Upload
-          </button>
-        </div>
-        <ul className="space-y-0.5">
-          {PRESET_SEGMENTS.map(({ key, icon }) => {
-            const count = counts[key] ?? 0
-            const isActive = segment === key
-            return (
-              <li key={key}>
-                <button
-                  onClick={() => handleSegment(key)}
-                  className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-left transition-all ${isActive ? 'bg-navy text-white' : 'text-gray-600 hover:bg-gray-50'}`}
-                >
-                  <span className="flex items-center gap-1.5 text-xs font-bold truncate">
-                    <span>{icon}</span>
-                    <span className="truncate">{key}</span>
-                  </span>
-                  <span className={`text-[10px] font-black shrink-0 px-1.5 py-0.5 rounded-full ${isActive ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>
-                    {count.toLocaleString()}
-                  </span>
-                </button>
-              </li>
-            )
-          })}
-        </ul>
-      </div>
+      <SegmentSidebar
+        segmentCounts={counts}
+        tagCounts={tagCounts}
+        segment={segment}
+        onSegment={handleSegment}
+        onUploadMore={onUploadMore}
+      />
 
       {/* ── Voter Table ── */}
       <div className="flex-1 min-w-0 pl-5">
@@ -300,12 +400,12 @@ export default function VoterSegmentsTable({ onUploadMore }: { onUploadMore: () 
         <div className="flex items-center gap-3 mb-4">
           <div className="flex-1">
             <h3 className="font-display font-black text-navy text-base">{segment}</h3>
-            <p className="text-[11px] text-gray-400">{data ? `${data.total.toLocaleString()} voter${data.total !== 1 ? 's' : ''}` : '…'}</p>
+            <p className="text-[11px] text-gray-400">{data ? `${data.total.toLocaleString()} contact${data.total !== 1 ? 's' : ''}` : '…'}</p>
           </div>
           <form onSubmit={handleSearch} className="flex gap-2">
             <input
               className="text-sm border border-gray-200 rounded-xl px-3 py-2 text-navy w-48 focus:outline-none focus:ring-2 focus:ring-gold-400"
-              placeholder="Search voters…"
+              placeholder="Search contacts…"
               value={searchInput}
               onChange={e => setSearchInput(e.target.value)}
             />
@@ -330,7 +430,7 @@ export default function VoterSegmentsTable({ onUploadMore }: { onUploadMore: () 
         ) : !data || data.voters.length === 0 ? (
           <div className="py-16 text-center">
             <p className="text-4xl mb-3 opacity-20">🗳️</p>
-            <p className="text-sm text-gray-500 font-semibold">No voters in this segment</p>
+            <p className="text-sm text-gray-500 font-semibold">No contacts in this segment</p>
           </div>
         ) : (
           <>
@@ -391,8 +491,8 @@ export default function VoterSegmentsTable({ onUploadMore }: { onUploadMore: () 
                       </td>
                       <td className="px-3 py-2.5">
                         <div className="flex gap-1.5 text-gray-400">
-                          {voter.phone && <span title="Has phone" className="text-sm">📞</span>}
-                          {voter.email && <span title="Has email" className="text-sm">📧</span>}
+                          {voter.phone   && <span title="Has phone"   className="text-sm">📞</span>}
+                          {voter.email   && <span title="Has email"   className="text-sm">📧</span>}
                           {voter.address && <span title="Has address" className="text-sm">🏠</span>}
                         </div>
                       </td>
@@ -406,7 +506,7 @@ export default function VoterSegmentsTable({ onUploadMore }: { onUploadMore: () 
             {totalPages > 1 && (
               <div className="flex items-center justify-between mt-4">
                 <p className="text-xs text-gray-400">
-                  Page {page} of {totalPages} · {data.total.toLocaleString()} voters
+                  Page {page} of {totalPages} · {data.total.toLocaleString()} contacts
                 </p>
                 <div className="flex gap-2">
                   <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
