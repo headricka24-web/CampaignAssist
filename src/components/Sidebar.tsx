@@ -91,14 +91,14 @@ export default function Sidebar({
     <div className="flex flex-col h-full bg-[#0f2744] text-white overflow-y-auto">
 
       {/* Logo */}
-      <div className="px-5 pt-6 pb-5 border-b border-white/10 shrink-0">
-        <Link href="/dashboard" className="flex items-center gap-3 group" onClick={() => setOpen(false)}>
-          <div className="w-8 h-8 rounded-full bg-red-gradient shadow-glow-red flex items-center justify-center text-sm font-bold shrink-0">★</div>
-          <div className="leading-tight">
-            <p className="font-display font-bold text-base tracking-widest uppercase text-white">
+      <div className="px-5 pt-7 pb-6 border-b border-white/10 shrink-0">
+        <Link href="/command" className="flex items-center gap-3 group" onClick={() => setOpen(false)}>
+          <div className="w-9 h-9 rounded-full bg-red-gradient shadow-glow-red flex items-center justify-center text-base font-bold shrink-0 group-hover:scale-105 transition-transform">★</div>
+          <div className="leading-tight min-w-0">
+            <p className="font-display font-bold text-[15px] tracking-widest uppercase text-white truncate">
               Campaign<span className="text-gold-400">Assist</span>
             </p>
-            <p className="text-[9px] uppercase tracking-[0.18em] text-blue-300/60 -mt-0.5">Intelligence · Strategy · Victory</p>
+            <p className="text-[9px] uppercase tracking-[0.15em] text-blue-300/50 mt-0.5">Intel · Strategy · Victory</p>
           </div>
         </Link>
       </div>
@@ -203,7 +203,7 @@ export default function Sidebar({
   return (
     <>
       {/* ── Desktop: static sidebar ─────────────────────────────────────── */}
-      <aside className="hidden lg:flex flex-col w-56 shrink-0 sticky top-0 h-screen">
+      <aside className="hidden lg:flex flex-col w-64 shrink-0 sticky top-0 h-screen">
         {sidebarBody}
       </aside>
 
@@ -211,7 +211,7 @@ export default function Sidebar({
       <div className="lg:hidden">
         {/* Top bar */}
         <div className="fixed top-0 left-0 right-0 z-40 bg-[#0f2744] border-b border-white/10 flex items-center justify-between px-4 h-14">
-          <Link href="/dashboard" className="flex items-center gap-2">
+          <Link href="/command" className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-full bg-red-gradient flex items-center justify-center text-sm font-bold">★</div>
             <span className="font-display font-bold text-sm tracking-widest uppercase text-white">
               Campaign<span className="text-gold-400">Assist</span>

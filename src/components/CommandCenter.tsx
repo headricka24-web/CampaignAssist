@@ -12,52 +12,67 @@ type Candidate = {
   city:      string | null
 }
 
-// ── Department shortcuts — mirrors sidebar exactly ────────────────────────────
+// ── Department config ─────────────────────────────────────────────────────────
 
 const DEPARTMENTS = [
   {
-    name:  'Command',
-    color: 'border-red-200 hover:border-red-400',
-    head:  'bg-red-500',
+    name:    'Command',
+    tagline: 'Overview & field strategy',
+    from:    'from-red-700',
+    to:      'to-red-950',
+    glow:    'shadow-red-900/50',
+    mark:    '★',
     links: [
-      { href: '/dashboard', label: 'Dashboard',       desc: 'Overview & morning brief' },
-      { href: '/victory',   label: 'Path to Victory', desc: 'Win number & field targets' },
+      { href: '/dashboard', label: 'Dashboard',       desc: 'Overview & morning brief'   },
+      { href: '/victory',   label: 'Path to Victory', desc: 'Win number & daily targets' },
     ],
   },
   {
-    name:  'Intelligence',
-    color: 'border-blue-200 hover:border-blue-400',
-    head:  'bg-[#1e3a5f]',
+    name:    'Intelligence',
+    tagline: 'News, threats & voter insight',
+    from:    'from-[#0f2744]',
+    to:      'to-[#071a35]',
+    glow:    'shadow-blue-900/50',
+    mark:    '◉',
     links: [
-      { href: '/war-room',     label: 'War Room',     desc: 'Threats & opposition' },
-      { href: '/briefing',     label: 'Hot Buttons',  desc: 'Issue briefing' },
-      { href: '/news',         label: 'News Feed',    desc: 'Live coverage scan' },
-      { href: '/constituents', label: 'Constituents', desc: 'Voter bloc profiles' },
+      { href: '/war-room',     label: 'War Room',     desc: 'Threats & opposition'  },
+      { href: '/briefing',     label: 'Hot Buttons',  desc: 'Issue briefing'        },
+      { href: '/news',         label: 'News Feed',    desc: 'Live coverage scan'    },
+      { href: '/constituents', label: 'Constituents', desc: 'Voter bloc profiles'   },
     ],
   },
   {
-    name:  'Communications',
-    color: 'border-purple-200 hover:border-purple-400',
-    head:  'bg-purple-700',
+    name:    'Communications',
+    tagline: 'Message, media & fundraising',
+    from:    'from-indigo-800',
+    to:      'to-indigo-950',
+    glow:    'shadow-indigo-900/50',
+    mark:    '✦',
     links: [
-      { href: '/media',       label: 'Media Studio',   desc: 'Content generation' },
-      { href: '/legislative', label: "Let's Fund",     desc: 'Fundraising letters' },
-      { href: '/press',       label: 'Press Contacts', desc: 'Media relationships' },
+      { href: '/media',       label: 'Media Studio',   desc: 'Content & talking points' },
+      { href: '/legislative', label: "Let's Fund",     desc: 'Fundraising letters'      },
+      { href: '/press',       label: 'Press Contacts', desc: 'Media relationships'      },
     ],
   },
   {
-    name:  'Field Ops',
-    color: 'border-emerald-200 hover:border-emerald-400',
-    head:  'bg-emerald-700',
+    name:    'Field Ops',
+    tagline: 'Outreach, voters & ground game',
+    from:    'from-emerald-800',
+    to:      'to-emerald-950',
+    glow:    'shadow-emerald-900/50',
+    mark:    '◎',
     links: [
       { href: '/outreach', label: 'Outreach', desc: 'Contacts, donors & events' },
-      { href: '/voters',   label: 'Voters',   desc: 'Voter file management' },
+      { href: '/voters',   label: 'Voters',   desc: 'Voter file management'     },
     ],
   },
   {
-    name:  'Finance',
-    color: 'border-gold-200 hover:border-yellow-400',
-    head:  'bg-yellow-600',
+    name:    'Finance',
+    tagline: 'Budget, income & expenses',
+    from:    'from-amber-700',
+    to:      'to-amber-950',
+    glow:    'shadow-amber-900/50',
+    mark:    '◆',
     links: [
       { href: '/budget', label: 'Budget', desc: 'Income, expenses & cash on hand' },
     ],
@@ -87,7 +102,51 @@ function greeting() {
   return 'Good evening'
 }
 
-// ── Component ─────────────────────────────────────────────────────────────────
+// ── Department card ───────────────────────────────────────────────────────────
+
+function DeptCard({ dept }: { dept: typeof DEPARTMENTS[number] }) {
+  return (
+    <div className={`relative rounded-2xl overflow-hidden bg-gradient-to-br ${dept.from} ${dept.to} shadow-xl ${dept.glow} group`}>
+      {/* Stripe texture */}
+      <div className="absolute inset-0 bg-stripe-pattern opacity-10 pointer-events-none" />
+
+      {/* Faded watermark */}
+      <div className="absolute bottom-2 right-3 text-white/5 text-[80px] font-black leading-none select-none pointer-events-none">
+        {dept.mark}
+      </div>
+
+      {/* Header */}
+      <div className="relative px-5 pt-5 pb-4">
+        <p className="text-white/50 text-[10px] font-black uppercase tracking-[0.25em] mb-0.5">
+          {dept.tagline}
+        </p>
+        <h3 className="text-white font-display font-black text-xl tracking-wide uppercase">
+          {dept.name}
+        </h3>
+        <div className="h-px bg-white/15 mt-3" />
+      </div>
+
+      {/* Links */}
+      <div className="relative px-2 pb-3 space-y-0.5">
+        {dept.links.map(link => (
+          <Link
+            key={link.href}
+            href={link.href}
+            className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/10 transition-colors group/link"
+          >
+            <div>
+              <p className="text-white text-sm font-bold leading-none">{link.label}</p>
+              <p className="text-white/45 text-[11px] mt-0.5">{link.desc}</p>
+            </div>
+            <span className="text-white/30 group-hover/link:text-white/70 transition-colors text-sm">→</span>
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
 
 export default function CommandCenter({ candidate }: { candidate: Candidate }) {
   const last = lastName(candidate.name)
@@ -97,93 +156,76 @@ export default function CommandCenter({ candidate }: { candidate: Candidate }) {
     <div className="min-h-full -m-6">
 
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <div className="relative bg-[#0f2744] overflow-hidden">
-        {/* Stripe texture */}
+      <div className="relative bg-[#0a1e38] overflow-hidden">
         <div className="absolute inset-0 bg-stripe-pattern opacity-20 pointer-events-none" />
-        {/* Giant star watermark */}
-        <div className="absolute inset-0 flex items-center justify-end pr-16 pointer-events-none select-none">
-          <span className="text-white opacity-[0.04] text-[300px] font-black leading-none">★</span>
-        </div>
-        {/* Red top bar */}
+
+        {/* Stars field — decorative */}
+        <div className="absolute top-8 right-[10%] text-white/5 text-[260px] font-black leading-none select-none pointer-events-none">★</div>
+        <div className="absolute top-4 right-[28%] text-gold-400/5 text-[80px] font-black leading-none select-none pointer-events-none">★</div>
+
         <div className="h-1.5 bg-red-gradient" />
 
         <div className="relative max-w-5xl mx-auto px-8 py-16 md:py-20">
-          <p className="text-blue-300/60 text-xs font-black uppercase tracking-[0.3em] mb-3">
-            {greeting()}, Team {last}
-          </p>
+          {/* Eyebrow */}
+          <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 mb-6">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse-slow" />
+            <span className="text-blue-300/70 text-[11px] font-black uppercase tracking-[0.25em]">
+              {greeting()}, Team {last}
+            </span>
+          </div>
 
-          <h1 className="font-display font-black text-white text-5xl md:text-6xl leading-tight mb-2">
-            Welcome to your
-          </h1>
-          <h2 className="font-display font-black text-5xl md:text-6xl leading-tight mb-6">
+          <h1 className="font-display font-black text-white text-4xl md:text-6xl leading-[1.05] mb-3">
+            Welcome to your<br />
             <span className="text-gold-400">Campaign Command Center.</span>
-          </h2>
+          </h1>
 
-          <p className="text-blue-200/70 text-lg mb-2 font-medium">
+          <p className="text-blue-200/60 text-base md:text-lg mb-1 font-medium">
             {candidate.name} &nbsp;·&nbsp; {candidate.race} &nbsp;·&nbsp; {geo}
           </p>
-          <p className="text-blue-300/40 text-sm mb-10">
-            Everything your campaign needs — intelligence, comms, field ops, and finance — in one place.
+          <p className="text-blue-300/35 text-sm mb-10 max-w-xl">
+            Your complete campaign intelligence platform — ready for battle.
           </p>
 
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center gap-3 bg-red-500 hover:bg-red-600 text-white font-black text-base uppercase tracking-widest px-10 py-4 rounded-xl shadow-glow-red transition-all focus:outline-none focus:ring-2 focus:ring-gold-400"
-          >
-            Enter Dashboard
-            <span className="text-xl">→</span>
-          </Link>
+          <div className="flex items-center gap-4 flex-wrap">
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center gap-3 bg-red-600 hover:bg-red-700 text-white font-black text-sm uppercase tracking-widest px-8 py-3.5 rounded-xl shadow-glow-red transition-all focus:outline-none focus:ring-2 focus:ring-gold-400"
+            >
+              Enter Dashboard
+              <span>→</span>
+            </Link>
+            <Link
+              href="/my-candidate"
+              className="inline-flex items-center gap-2 border border-white/20 hover:border-white/40 text-white/60 hover:text-white/90 text-xs font-bold uppercase tracking-widest px-5 py-3.5 rounded-xl transition-all"
+            >
+              ⚙ Campaign Settings
+            </Link>
+          </div>
         </div>
 
-        {/* Gold bottom line */}
-        <div className="h-px bg-gold-gradient opacity-40" />
+        {/* Decorative red + gold bottom bars */}
+        <div className="h-1 bg-red-gradient opacity-60" />
+        <div className="h-px bg-gold-gradient opacity-30" />
       </div>
 
-      {/* ── Department shortcut grid ───────────────────────────────────────── */}
+      {/* ── Shortcut grid ─────────────────────────────────────────────────── */}
       <div className="max-w-5xl mx-auto px-8 py-10">
-        <p className="text-xs font-black uppercase tracking-[0.25em] text-gray-400 mb-5">Quick Access</p>
+        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mb-5">
+          Quick Access — Select a Department
+        </p>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {DEPARTMENTS.map(dept => (
-            <div
-              key={dept.name}
-              className={`bg-white rounded-2xl border-2 shadow-sm overflow-hidden transition-all ${dept.color}`}
-            >
-              {/* Card header */}
-              <div className={`${dept.head} px-4 py-2.5`}>
-                <p className="text-white text-[10px] font-black uppercase tracking-[0.25em]">{dept.name}</p>
-              </div>
-
-              {/* Links */}
-              <div className="divide-y divide-gray-50">
-                {dept.links.map(link => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors group"
-                  >
-                    <div>
-                      <p className="text-sm font-bold text-gray-800 group-hover:text-[#0f2744] transition-colors">
-                        {link.label}
-                      </p>
-                      <p className="text-[11px] text-gray-400 mt-0.5">{link.desc}</p>
-                    </div>
-                    <span className="text-gray-300 group-hover:text-gray-500 transition-colors text-sm">→</span>
-                  </Link>
-                ))}
-              </div>
-            </div>
+        {/* Row 1: 3 cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+          {DEPARTMENTS.slice(0, 3).map(dept => (
+            <DeptCard key={dept.name} dept={dept} />
           ))}
         </div>
 
-        {/* My Candidate link */}
-        <div className="mt-6 flex justify-center">
-          <Link
-            href="/my-candidate"
-            className="text-xs text-gray-400 hover:text-gray-600 transition font-medium"
-          >
-            ⚙ Update candidate & race settings
-          </Link>
+        {/* Row 2: 2 cards, spanning full width */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {DEPARTMENTS.slice(3).map(dept => (
+            <DeptCard key={dept.name} dept={dept} />
+          ))}
         </div>
       </div>
     </div>
