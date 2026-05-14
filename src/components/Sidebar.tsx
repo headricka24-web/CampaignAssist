@@ -53,7 +53,8 @@ const NAV_GROUPS = [
   {
     category: 'Finance' as const,
     links: [
-      { href: '/budget', label: 'Budget' },
+      { href: '/budget',     label: 'Budget'     },
+      { href: '/compliance', label: 'Compliance' },
     ],
   },
 ]

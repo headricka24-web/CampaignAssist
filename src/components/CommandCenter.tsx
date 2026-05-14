@@ -75,7 +75,8 @@ const DEPARTMENTS = [
     glow:    'shadow-amber-900/50',
     mark:    '◆',
     links: [
-      { href: '/budget', label: 'Budget', desc: 'Income, expenses & cash on hand' },
+      { href: '/budget',     label: 'Budget',     desc: 'Income, expenses & cash on hand'    },
+      { href: '/compliance', label: 'Compliance', desc: 'Registration, rules & filing guide' },
     ],
   },
 ]
