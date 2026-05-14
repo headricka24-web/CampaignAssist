@@ -156,54 +156,100 @@ export default function CommandCenter({ candidate }: { candidate: Candidate }) {
     <div className="min-h-full -m-6">
 
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <div className="relative bg-[#0a1e38] overflow-hidden">
-        <div className="absolute inset-0 bg-stripe-pattern opacity-20 pointer-events-none" />
+      <div className="relative bg-[#060f1e] overflow-hidden">
+        <div className="absolute inset-0 bg-stripe-pattern opacity-15 pointer-events-none" />
 
-        {/* Stars field — decorative */}
-        <div className="absolute top-8 right-[10%] text-white/5 text-[260px] font-black leading-none select-none pointer-events-none">★</div>
-        <div className="absolute top-4 right-[28%] text-gold-400/5 text-[80px] font-black leading-none select-none pointer-events-none">★</div>
+        {/* Atmospheric background stars */}
+        <div className="absolute -top-32 -right-16 text-white/[0.022] font-black leading-none select-none pointer-events-none" style={{fontSize:'680px'}}>★</div>
+        <div className="absolute top-12 right-[20%] text-gold-400/[0.07] text-[110px] font-black leading-none select-none pointer-events-none">★</div>
+        <div className="absolute bottom-8 left-[4%] text-white/[0.03] text-[180px] font-black leading-none select-none pointer-events-none">★</div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white/[0.012] font-black leading-none select-none pointer-events-none" style={{fontSize:'900px'}}>★</div>
 
         <div className="h-1.5 bg-red-gradient" />
 
-        <div className="relative max-w-5xl mx-auto px-8 py-16 md:py-20">
-          {/* Eyebrow */}
-          <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 mb-6">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse-slow" />
-            <span className="text-blue-300/70 text-[11px] font-black uppercase tracking-[0.25em]">
-              {greeting()}, Team {last}
-            </span>
+        <div className="relative max-w-5xl mx-auto px-8 pt-14 pb-10 md:pt-20 md:pb-14">
+
+          {/* Status badges row */}
+          <div className="flex flex-wrap items-center gap-2.5 mb-10">
+            <div className="inline-flex items-center gap-2 bg-white/[0.05] border border-white/10 rounded-full px-3.5 py-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse-slow" />
+              <span className="text-green-400/90 text-[9px] font-black uppercase tracking-[0.35em]">All Systems Online</span>
+            </div>
+            <div className="inline-flex items-center gap-1.5 bg-red-500/[0.12] border border-red-500/25 rounded-full px-3.5 py-1.5">
+              <span className="text-red-400 text-[9px] font-black uppercase tracking-[0.3em]">★ Mission Active</span>
+            </div>
+            <div className="inline-flex items-center gap-1.5 bg-gold-400/[0.08] border border-gold-400/20 rounded-full px-3.5 py-1.5">
+              <span className="text-gold-400/80 text-[9px] font-black uppercase tracking-[0.3em]">Campaign Intelligence Platform</span>
+            </div>
           </div>
 
-          <h1 className="font-display font-black text-white text-4xl md:text-6xl leading-[1.05] mb-3">
-            Welcome to your<br />
-            <span className="text-gold-400">Campaign Command Center.</span>
-          </h1>
-
-          <p className="text-blue-200/60 text-base md:text-lg mb-1 font-medium">
-            {candidate.name} &nbsp;·&nbsp; {candidate.race} &nbsp;·&nbsp; {geo}
-          </p>
-          <p className="text-blue-300/35 text-sm mb-10 max-w-xl">
-            Your complete campaign intelligence platform — ready for battle.
+          {/* Greeting */}
+          <p className="text-blue-400/35 text-xs font-black uppercase tracking-[0.55em] mb-4">
+            — {greeting()} —
           </p>
 
-          <div className="flex items-center gap-4 flex-wrap">
+          {/* BIG name headline */}
+          <div className="mb-8">
+            <h1 className="font-display font-black leading-none">
+              <span className="block text-white/60 text-4xl md:text-6xl lg:text-7xl tracking-tight mb-1">Team</span>
+              <span className="block text-gold-400 leading-[0.88]" style={{fontSize: 'clamp(68px, 12vw, 108px)'}}>{last}.</span>
+            </h1>
+          </div>
+
+          {/* Race info */}
+          <div className="flex items-center gap-3 flex-wrap mb-4">
+            <span className="w-0.5 h-4 rounded-full bg-red-500 shrink-0" />
+            <span className="text-white/75 font-semibold text-sm md:text-base">{candidate.name}</span>
+            <span className="text-white/15 hidden sm:block">·</span>
+            <span className="text-blue-300/45 text-sm md:text-base">{candidate.race}</span>
+            <span className="text-white/15 hidden sm:block">·</span>
+            <span className="text-blue-300/45 text-sm md:text-base">{geo}</span>
+          </div>
+
+          <p className="text-blue-400/30 text-sm mb-10 max-w-lg leading-relaxed">
+            Your campaign intelligence platform is fully operational.<br className="hidden sm:block" />
+            Every department is standing by and ready.
+          </p>
+
+          {/* CTAs */}
+          <div className="flex items-center gap-4 flex-wrap mb-12">
             <Link
               href="/dashboard"
-              className="inline-flex items-center gap-3 bg-red-600 hover:bg-red-700 text-white font-black text-sm uppercase tracking-widest px-8 py-3.5 rounded-xl shadow-glow-red transition-all focus:outline-none focus:ring-2 focus:ring-gold-400"
+              className="inline-flex items-center gap-3 bg-red-600 hover:bg-red-500 text-white font-black text-sm uppercase tracking-widest px-9 py-4 rounded-xl shadow-glow-red transition-all hover:-translate-y-0.5 hover:shadow-2xl"
             >
               Enter Dashboard
-              <span>→</span>
+              <span className="text-base">→</span>
             </Link>
             <Link
               href="/my-candidate"
-              className="inline-flex items-center gap-2 border border-white/20 hover:border-white/40 text-white/60 hover:text-white/90 text-xs font-bold uppercase tracking-widest px-5 py-3.5 rounded-xl transition-all"
+              className="inline-flex items-center gap-2 border border-white/15 hover:border-white/35 text-white/45 hover:text-white/75 text-xs font-bold uppercase tracking-widest px-6 py-4 rounded-xl transition-all"
             >
               ⚙ Campaign Settings
             </Link>
           </div>
+
+          {/* Department status strip */}
+          <div className="border-t border-white/[0.05] pt-6">
+            <p className="text-white/20 text-[9px] font-black uppercase tracking-[0.45em] mb-3">Department Status</p>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { name: 'Command',        color: 'text-red-400',     dot: 'bg-red-500'     },
+                { name: 'Intelligence',   color: 'text-blue-400',    dot: 'bg-blue-500'    },
+                { name: 'Communications', color: 'text-violet-400',  dot: 'bg-violet-500'  },
+                { name: 'Field Ops',      color: 'text-emerald-400', dot: 'bg-emerald-500' },
+                { name: 'Finance',        color: 'text-amber-400',   dot: 'bg-amber-500'   },
+              ].map(d => (
+                <div key={d.name} className="inline-flex items-center gap-1.5 bg-white/[0.04] border border-white/[0.07] rounded-full px-3 py-1.5">
+                  <span className={`w-1.5 h-1.5 rounded-full ${d.dot} animate-pulse-slow`} />
+                  <span className={`text-[9px] font-black uppercase tracking-[0.18em] ${d.color}`}>{d.name}</span>
+                  <span className="text-white/20 text-[8px] uppercase tracking-widest">Online</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
-        {/* Decorative red + gold bottom bars */}
+        {/* Bottom bars */}
         <div className="h-1 bg-red-gradient opacity-60" />
         <div className="h-px bg-gold-gradient opacity-30" />
       </div>

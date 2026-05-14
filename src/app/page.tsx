@@ -6,44 +6,70 @@ export const dynamic = 'force-dynamic'
 
 const FEATURES = [
   {
-    icon: '🗺️',
-    title: 'Constituent Profiles',
-    blurb: 'Real Census Bureau demographics, BLS employment data, and FEC election history for your exact district.',
+    icon: '⭐',
+    title: 'Command Center',
+    dept: 'Command',
+    blurb: 'Your campaign dashboard with morning intelligence brief, path to victory tracker, and win-number targets.',
   },
   {
     icon: '📰',
     title: 'News Intelligence',
-    blurb: 'Monitor every story about your candidate, your opponent, and your district across hundreds of outlets.',
-  },
-  {
-    icon: '🗳️',
-    title: 'Voter Intelligence',
-    blurb: 'Upload your voter file and instantly identify GOTV targets, persuadables, and your base.',
+    dept: 'Intelligence',
+    blurb: 'Monitor every story about your candidate, your opponent, and your district — auto-classified by sentiment.',
   },
   {
     icon: '⚡',
     title: 'War Room',
-    blurb: 'Rapid-response rebuttals, talking points, and press statements generated from live news coverage.',
+    dept: 'Intelligence',
+    blurb: 'Rapid-response rebuttals, talking points, and press statements generated from live news coverage in seconds.',
   },
   {
-    icon: '📋',
-    title: 'Campaign Outreach',
-    blurb: 'Track donors, volunteers, and voter contacts. Log activity and never miss a follow-up.',
+    icon: '🔥',
+    title: 'Hot Buttons',
+    dept: 'Intelligence',
+    blurb: "Today's top voter issues summarized with instant talking points so you never get caught flat-footed.",
+  },
+  {
+    icon: '🗺️',
+    title: 'Constituent Profiles',
+    dept: 'Intelligence',
+    blurb: 'Real Census Bureau demographics, BLS employment data, and FEC election history for your exact district.',
   },
   {
     icon: '🏛️',
     title: 'Media Studio',
+    dept: 'Communications',
     blurb: 'Social posts, newsletters, email scripts, and taglines — tailored to your candidate and your race.',
   },
   {
-    icon: '🔥',
-    title: 'Hot Button Briefing',
-    blurb: "Today's top issues summarized so you always know what voters are talking about.",
+    icon: '📢',
+    title: 'Press Contacts',
+    dept: 'Communications',
+    blurb: 'Manage your full press list with relationship tracking, beat assignments, and outreach history.',
   },
   {
     icon: '💰',
-    title: 'Fundraising Tools',
+    title: "Let's Fund",
+    dept: 'Communications',
     blurb: 'Fundraising emails, call scripts, direct mail copy, and major donor asks — built around your message.',
+  },
+  {
+    icon: '🗳️',
+    title: 'Voter Intelligence',
+    dept: 'Field Ops',
+    blurb: 'Upload your voter file and instantly identify GOTV targets, persuadables, and your base.',
+  },
+  {
+    icon: '📋',
+    title: 'Campaign Outreach',
+    dept: 'Field Ops',
+    blurb: 'Track donors, volunteers, and voter contacts. Log activity and never miss a follow-up.',
+  },
+  {
+    icon: '💵',
+    title: 'Budget Tracker',
+    dept: 'Finance',
+    blurb: 'Track income and expenses by category, import bank statements, and keep your campaign finances clean.',
   },
 ]
 
@@ -75,7 +101,7 @@ const HOW_IT_WORKS = [
 ]
 
 const STATS = [
-  { value: '8',    label: 'AI-powered tools' },
+  { value: '11',    label: 'AI-powered tools' },
   { value: '100+', label: 'sources monitored' },
   { value: '50+',  label: 'Census data points' },
   { value: '2 min', label: 'to your first briefing' },
@@ -305,11 +331,12 @@ export default async function LandingPage() {
             </h2>
             <p className="text-gray-400 text-sm uppercase tracking-widest font-semibold">All under one roof. All powered by AI.</p>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {FEATURES.map(f => (
               <div key={f.title}
                 className="group bg-gray-50 hover:bg-navy rounded-2xl p-5 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg border border-gray-100 hover:border-navy cursor-default">
                 <div className="text-3xl mb-3">{f.icon}</div>
+                <div className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-300 group-hover:text-blue-400/50 mb-1 transition-colors">{f.dept}</div>
                 <h3 className="font-black text-navy group-hover:text-gold-400 text-sm uppercase tracking-wide mb-1.5 transition-colors">{f.title}</h3>
                 <p className="text-gray-400 group-hover:text-blue-200 text-xs leading-relaxed transition-colors">{f.blurb}</p>
               </div>

@@ -133,9 +133,9 @@ export default function WhatWeOfferPage() {
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto max-w-7xl px-6 space-y-6">
           <div className="text-center">
-            <div className="inline-flex items-center gap-2 bg-navy text-gold-400 text-xs font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-3">★ Command Center</div>
+            <div className="inline-flex items-center gap-2 bg-navy text-gold-400 text-xs font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-3">★ Command — Dashboard</div>
             <h2 className="font-display font-black text-navy text-3xl md:text-4xl">Your Campaign Dashboard</h2>
-            <p className="text-gray-400 mt-2 max-w-xl mx-auto">Everything at a glance — stories tracked, sentiment pulse, latest news, and your morning brief in one place.</p>
+            <p className="text-gray-400 mt-2 max-w-xl mx-auto">Everything at a glance — stories tracked, sentiment pulse, latest news, and your morning intelligence brief in one place.</p>
           </div>
 
           <Screenshot title="dashboard">
@@ -231,7 +231,7 @@ export default function WhatWeOfferPage() {
       <section className="py-16 bg-white">
         <div className="container mx-auto max-w-7xl px-6 space-y-6">
           <div className="text-center">
-            <div className="inline-flex items-center gap-2 bg-navy text-gold-400 text-xs font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-3">★ News Intelligence</div>
+            <div className="inline-flex items-center gap-2 bg-navy text-gold-400 text-xs font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-3">★ Intelligence — News Feed</div>
             <h2 className="font-display font-black text-navy text-3xl md:text-4xl">News Tracker</h2>
             <p className="text-gray-400 mt-2 max-w-xl mx-auto">Every story classified by category — candidate coverage, opposition, district news, and hot-button issues — scored by sentiment automatically.</p>
           </div>
@@ -293,9 +293,9 @@ export default function WhatWeOfferPage() {
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto max-w-7xl px-6 space-y-6">
           <div className="text-center">
-            <div className="inline-flex items-center gap-2 bg-navy text-gold-400 text-xs font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-3">★ Constituent Intelligence</div>
-            <h2 className="font-display font-black text-navy text-3xl md:text-4xl">Constituent Profile</h2>
-            <p className="text-gray-400 mt-2 max-w-xl mx-auto">Real Census Bureau, BLS, and FEC data pulled automatically for your district — plus AI strategic analysis.</p>
+            <div className="inline-flex items-center gap-2 bg-navy text-gold-400 text-xs font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-3">★ Intelligence — Constituents</div>
+            <h2 className="font-display font-black text-navy text-3xl md:text-4xl">Constituent Profiles</h2>
+            <p className="text-gray-400 mt-2 max-w-xl mx-auto">Real Census Bureau, BLS, and FEC data pulled automatically for your district — plus AI-generated strategic analysis of your voter blocs.</p>
           </div>
 
           <Screenshot title="constituents">
@@ -357,9 +357,9 @@ export default function WhatWeOfferPage() {
       <section className="py-16 bg-white">
         <div className="container mx-auto max-w-7xl px-6 space-y-6">
           <div className="text-center">
-            <div className="inline-flex items-center gap-2 bg-navy text-gold-400 text-xs font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-3">★ Rapid Response</div>
+            <div className="inline-flex items-center gap-2 bg-navy text-gold-400 text-xs font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-3">★ Intelligence — War Room</div>
             <h2 className="font-display font-black text-navy text-3xl md:text-4xl">War Room</h2>
-            <p className="text-gray-400 mt-2 max-w-xl mx-auto">Threats from news coverage are identified and scored automatically. Click any one to generate a full counter-response in seconds.</p>
+            <p className="text-gray-400 mt-2 max-w-xl mx-auto">Threats from news coverage are identified and severity-scored automatically. Click any threat to generate a full counter-response in seconds.</p>
           </div>
 
           <Screenshot title="war-room">
@@ -415,7 +415,7 @@ export default function WhatWeOfferPage() {
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto max-w-7xl px-6 space-y-6">
           <div className="text-center">
-            <div className="inline-flex items-center gap-2 bg-navy text-gold-400 text-xs font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-3">★ Voter Intelligence</div>
+            <div className="inline-flex items-center gap-2 bg-navy text-gold-400 text-xs font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-3">★ Field Ops — Voters</div>
             <h2 className="font-display font-black text-navy text-3xl md:text-4xl">Voter File Manager</h2>
             <p className="text-gray-400 mt-2 max-w-xl mx-auto">Upload your voter file and instantly see your list segmented by support level, issue interest, and contact priority.</p>
           </div>
@@ -478,7 +478,7 @@ export default function WhatWeOfferPage() {
       <section className="py-16 bg-white">
         <div className="container mx-auto max-w-7xl px-6 space-y-6">
           <div className="text-center">
-            <div className="inline-flex items-center gap-2 bg-navy text-gold-400 text-xs font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-3">★ Content Generation</div>
+            <div className="inline-flex items-center gap-2 bg-navy text-gold-400 text-xs font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-3">★ Communications — Media Studio</div>
             <h2 className="font-display font-black text-navy text-3xl md:text-4xl">Media Studio</h2>
             <p className="text-gray-400 mt-2 max-w-xl mx-auto">Generate social posts, newsletters, fundraising emails, and talking points — all tailored to your candidate and race.</p>
           </div>
@@ -527,6 +527,143 @@ export default function WhatWeOfferPage() {
                     </div>
                   ))}
                 </div>
+              </div>
+            </div>
+          </Screenshot>
+        </div>
+      </section>
+
+      {/* ── 7. Press Contacts ────────────────────────────────────────────────── */}
+      <section className="py-16 bg-gray-50">
+        <div className="container mx-auto max-w-7xl px-6 space-y-6">
+          <div className="text-center">
+            <div className="inline-flex items-center gap-2 bg-navy text-gold-400 text-xs font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-3">★ Communications — Press Contacts</div>
+            <h2 className="font-display font-black text-navy text-3xl md:text-4xl">Press &amp; Media Contacts</h2>
+            <p className="text-gray-400 mt-2 max-w-xl mx-auto">Your full press list in one place — relationship status, beat coverage, outreach history, and import from any spreadsheet or PDF.</p>
+          </div>
+
+          <Screenshot title="press">
+            <div className="bg-gray-50 p-5 space-y-4">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="font-display text-xl font-black text-navy">📢 Press Contacts</h2>
+                  <p className="text-xs text-gray-400 mt-0.5">18 contacts · 4 outlets</p>
+                </div>
+                <div className="flex gap-2">
+                  <div className="border border-gray-200 text-gray-500 font-bold px-3 py-1.5 rounded-lg text-xs">↑ Import File</div>
+                  <div className="bg-navy text-white font-bold px-4 py-1.5 rounded-lg text-xs">+ Add Contact</div>
+                </div>
+              </div>
+
+              {/* Contact table */}
+              <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+                <div className="grid grid-cols-[1.5fr_1fr_80px_90px_100px] gap-3 px-4 py-2.5 bg-gray-50 border-b border-gray-100 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                  <span>Name / Outlet</span><span>Beat</span><span>Role</span><span>Email</span><span>Relationship</span>
+                </div>
+                {[
+                  { name: 'Sarah Chen',    outlet: 'State Tribune',   beat: 'Politics',    role: 'Reporter',  rel: 'warm',  relColor: 'bg-blue-100 text-blue-700' },
+                  { name: 'Mike Torres',   outlet: 'Capitol News',    beat: 'Govt.',       role: 'Editor',    rel: 'ally',  relColor: 'bg-green-100 text-green-700' },
+                  { name: 'Dana Reeves',   outlet: 'Daily Dispatch',  beat: 'Local Govt.', role: 'Reporter',  rel: 'cold',  relColor: 'bg-gray-100 text-gray-500' },
+                  { name: 'James Park',    outlet: 'Metro Post',      beat: 'Business',    role: 'Columnist', rel: 'warm',  relColor: 'bg-blue-100 text-blue-700' },
+                  { name: 'Lisa Morales',  outlet: 'Political Wire',  beat: 'Elections',   role: 'Reporter',  rel: 'hostile','relColor': 'bg-red-100 text-red-700' },
+                ].map((c, i) => (
+                  <div key={c.name} className={`grid grid-cols-[1.5fr_1fr_80px_90px_100px] gap-3 px-4 py-3 items-center border-b border-gray-50 ${i % 2 === 0 ? '' : 'bg-gray-50/40'}`}>
+                    <div>
+                      <p className="text-xs font-semibold text-navy">{c.name}</p>
+                      <p className="text-[10px] text-gray-400">{c.outlet}</p>
+                    </div>
+                    <span className="text-xs text-gray-500">{c.beat}</span>
+                    <span className="text-[10px] bg-navy-50 text-navy px-2 py-0.5 rounded-full font-bold w-fit">{c.role}</span>
+                    <span className="text-[10px] text-blue-500">✉ on file</span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full w-fit capitalize ${c.relColor}`}>{c.rel}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Outreach log preview */}
+              <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">Recent Outreach Log</p>
+                {[
+                  { name: 'Sarah Chen',  action: 'Emailed press release re: education bill',       date: 'May 13', status: 'Sent' },
+                  { name: 'Mike Torres', action: 'Phone call — confirmed interview for Wednesday',  date: 'May 12', status: 'Connected' },
+                  { name: 'Dana Reeves', action: 'Left voicemail re: campaign announcement',        date: 'May 10', status: 'No Response' },
+                ].map(o => (
+                  <div key={o.date + o.name} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+                    <div>
+                      <p className="text-xs font-semibold text-navy">{o.name} <span className="text-gray-300 font-normal">·</span> <span className="text-gray-400 font-normal">{o.action}</span></p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0 ml-3">
+                      <span className="text-[10px] text-gray-300">{o.date}</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${o.status === 'Connected' ? 'bg-green-100 text-green-700' : o.status === 'Sent' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'}`}>{o.status}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Screenshot>
+        </div>
+      </section>
+
+      {/* ── 8. Budget Tracker ────────────────────────────────────────────────── */}
+      <section className="py-16 bg-white">
+        <div className="container mx-auto max-w-7xl px-6 space-y-6">
+          <div className="text-center">
+            <div className="inline-flex items-center gap-2 bg-navy text-gold-400 text-xs font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-3">★ Finance — Budget Tracker</div>
+            <h2 className="font-display font-black text-navy text-3xl md:text-4xl">Campaign Budget</h2>
+            <p className="text-gray-400 mt-2 max-w-xl mx-auto">Track every dollar in and out by category. Import bank statements, review transactions, and keep your campaign finances clean and compliant.</p>
+          </div>
+
+          <Screenshot title="budget">
+            <div className="bg-gray-50 p-5 space-y-4">
+              {/* Summary cards */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                  <div className="h-1 bg-gradient-to-r from-green-400 to-green-600" />
+                  <div className="p-4">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Total Income</p>
+                    <p className="font-display font-bold text-3xl text-green-600">$124,800</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">18 transactions</p>
+                  </div>
+                </div>
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                  <div className="h-1 bg-gradient-to-r from-red-400 to-red-600" />
+                  <div className="p-4">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Total Expenses</p>
+                    <p className="font-display font-bold text-3xl text-red-600">$87,340</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">34 transactions</p>
+                  </div>
+                </div>
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                  <div className="h-1 bg-gradient-to-r from-navy to-blue-700" />
+                  <div className="p-4">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Cash on Hand</p>
+                    <p className="font-display font-bold text-3xl text-navy">$37,460</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">as of today</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Transaction table */}
+              <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Recent Transactions</p>
+                  <div className="bg-navy text-white font-bold px-3 py-1 rounded-lg text-[10px]">↑ Import File</div>
+                </div>
+                {[
+                  { date: 'May 13', desc: 'Facebook Ad Buy — May',        cat: 'Advertising', type: 'expense', amount: '-$4,200',  color: 'text-red-500' },
+                  { date: 'May 12', desc: 'Major Donor — K. Henderson',   cat: 'Donations',   type: 'income',  amount: '+$10,000', color: 'text-green-600' },
+                  { date: 'May 11', desc: 'Campaign Manager — May',        cat: 'Staff',       type: 'expense', amount: '-$5,500',  color: 'text-red-500' },
+                  { date: 'May 10', desc: 'Small Dollar Donations',        cat: 'Donations',   type: 'income',  amount: '+$3,240',  color: 'text-green-600' },
+                  { date: 'May 9',  desc: 'Printing — Door Hangers',       cat: 'Printing',    type: 'expense', amount: '-$1,180',  color: 'text-red-500' },
+                ].map((t, i) => (
+                  <div key={t.desc} className={`grid grid-cols-[80px_1fr_100px_90px] gap-3 px-4 py-2.5 items-center border-b border-gray-50 ${i % 2 === 0 ? '' : 'bg-gray-50/40'}`}>
+                    <span className="text-[10px] text-gray-400">{t.date}</span>
+                    <span className="text-xs font-medium text-navy">{t.desc}</span>
+                    <span className="text-[10px] bg-navy-50 text-navy px-2 py-0.5 rounded-full font-bold w-fit">{t.cat}</span>
+                    <span className={`text-xs font-black text-right ${t.color}`}>{t.amount}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </Screenshot>
