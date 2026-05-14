@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
 type Candidate = {
   id:           string
@@ -47,6 +48,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 export default function CandidateForm({ existing }: { existing?: Candidate | null }) {
   const isEdit = !!existing
+  const router = useRouter()
 
   const [name,         setName]         = useState(existing?.name         ?? '')
   const [race,         setRace]         = useState(existing?.race         ?? '')
@@ -94,10 +96,13 @@ export default function CandidateForm({ existing }: { existing?: Candidate | nul
 
     setSaving(false)
     if (res.ok) {
-      setStatus(isEdit ? 'Settings saved.' : 'Candidate added.')
-      if (!isEdit) { setName(''); setRace(''); setState(''); setParty(''); setRaceLevel(''); setDistrict(''); setCounty(''); setCity(''); setZip(''); setOpponentName('') }
-      // Refresh the page to reflect changes
-      setTimeout(() => window.location.reload(), 600)
+      if (!isEdit) {
+        // New candidate saved — send them to Command Center
+        router.push('/command')
+      } else {
+        setStatus('Settings saved.')
+        setTimeout(() => window.location.reload(), 800)
+      }
     } else {
       setStatus('Error saving — please try again.')
     }

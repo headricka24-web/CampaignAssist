@@ -45,7 +45,7 @@ export default function SignupPage() {
     if (result?.error) {
       router.push('/login')
     } else {
-      router.push('/my-candidate')
+      router.push('/command')
       router.refresh()
     }
   }
