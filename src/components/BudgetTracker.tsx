@@ -149,7 +149,7 @@ export default function BudgetTracker() {
   const cats = form.type === 'income' ? INCOME_CATS : EXPENSE_CATS
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-full">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>

@@ -181,7 +181,7 @@ export default function PressContacts() {
   const hostileCnt = contacts.filter(c => c.relationship === 'hostile').length
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-full">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
