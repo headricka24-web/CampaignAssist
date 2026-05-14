@@ -16,6 +16,8 @@ const links = [
   { href: '/briefing',     label: 'Hot Buttons'  },
   { href: '/legislative',  label: "Let's Fund"   },
   { href: '/constituents', label: 'Constituents' },
+  { href: '/budget',       label: 'Budget'       },
+  { href: '/press',        label: 'Press'        },
   { href: '/victory',      label: '★ Victory'    },
 ]
 

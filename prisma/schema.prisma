@@ -249,6 +249,57 @@ model ContentDraft {
   @@index([candidateId])
 }
 
+model BudgetTransaction {
+  id            String   @id @default(cuid())
+  createdAt     DateTime @default(now())
+  candidateId   String?
+  type          String   // income | expense
+  category      String   // Donations | In-Kind | Loan | Refund | Staff | Advertising | Events | Printing | Travel | Consulting | Legal | Office | Polling | Other
+  amount        Float
+  vendor        String?
+  description   String?
+  txDate        DateTime @default(now())
+  paymentMethod String?  // check | card | cash | transfer | in-kind
+  notes         String?
+
+  @@index([candidateId])
+}
+
+model MediaContact {
+  id              String         @id @default(cuid())
+  createdAt       DateTime       @default(now())
+  candidateId     String?
+  name            String
+  outlet          String
+  role            String?        // Reporter | Editor | Producer | Anchor | Columnist | Blogger
+  beat            String?        // Politics | Local | Business | Education | Crime | Health | etc.
+  email           String?
+  phone           String?
+  twitter         String?
+  notes           String?
+  relationship    String         @default("cold") // cold | warm | ally | hostile
+  lastContactedAt DateTime?
+  outreach        PressOutreach[]
+
+  @@index([candidateId])
+}
+
+model PressOutreach {
+  id             String       @id @default(cuid())
+  createdAt      DateTime     @default(now())
+  candidateId    String?
+  mediaContactId String
+  mediaContact   MediaContact @relation(fields: [mediaContactId], references: [id], onDelete: Cascade)
+  type           String       // pitch | press-release | follow-up | interview | quote-request | other
+  subject        String?
+  notes          String?
+  status         String       @default("sent") // sent | responded | published | ignored | declined
+  sentAt         DateTime     @default(now())
+
+  @@index([candidateId])
+  @@index([mediaContactId])
+}
+
 model Voter {
   id              String    @id @default(cuid())
   createdAt       DateTime  @default(now())
