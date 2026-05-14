@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import * as XLSX from 'xlsx'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -103,16 +104,40 @@ export default function VoterUpload({ onComplete }: { onComplete: () => void }) 
   function handleFile(f: File) {
     setFile(f)
     setError('')
+    const isSpreadsheet =
+      f.name.toLowerCase().endsWith('.xlsx') ||
+      f.name.toLowerCase().endsWith('.xls') ||
+      f.type.includes('spreadsheet') ||
+      f.type.includes('excel')
+
     const reader = new FileReader()
-    reader.onload = e => {
-      const text = e.target?.result as string ?? ''
-      const { headers: h, rows } = parseCSVPreview(text)
-      setHeaders(h)
-      setPreview(rows)
-      setMappings(autoDetect(h))
-      setStep('map')
+
+    if (isSpreadsheet) {
+      reader.onload = e => {
+        const data = e.target?.result
+        if (!data) return
+        const wb    = XLSX.read(data, { type: 'array' })
+        const ws    = wb.Sheets[wb.SheetNames[0]]
+        const all   = XLSX.utils.sheet_to_json<string[]>(ws, { header: 1, defval: '' }) as string[][]
+        const headers = (all[0] ?? []).map(String)
+        const rows    = all.slice(1, 4).map(row => row.map(String))
+        setHeaders(headers)
+        setPreview(rows)
+        setMappings(autoDetect(headers))
+        setStep('map')
+      }
+      reader.readAsArrayBuffer(f)
+    } else {
+      reader.onload = e => {
+        const text = e.target?.result as string ?? ''
+        const { headers: h, rows } = parseCSVPreview(text)
+        setHeaders(h)
+        setPreview(rows)
+        setMappings(autoDetect(h))
+        setStep('map')
+      }
+      reader.readAsText(f)
     }
-    reader.readAsText(f)
   }
 
   async function startImport() {
