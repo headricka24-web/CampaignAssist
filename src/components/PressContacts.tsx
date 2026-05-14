@@ -6,6 +6,19 @@ import { useState, useEffect, useCallback } from 'react'
 
 type Relationship = 'cold' | 'warm' | 'ally' | 'hostile'
 
+type ImportContact = {
+  name:         string
+  outlet:       string
+  role:         string | null
+  beat:         string | null
+  email:        string | null
+  phone:        string | null
+  twitter:      string | null
+  notes:        string | null
+  relationship: Relationship
+  selected:     boolean
+}
+
 type OutreachEntry = {
   id:      string
   type:    string
@@ -99,9 +112,15 @@ export default function PressContacts() {
   const [outreachModal, setOutreachModal] = useState<string | null>(null) // contactId
   const [outreachForm,  setOutreachForm]  = useState<OutreachForm>(DEFAULT_OUTREACH)
   const [loggingOutreach, setLoggingOutreach] = useState(false)
-  const [relFilter,     setRelFilter]     = useState<'all' | Relationship>('all')
-  const [search,        setSearch]        = useState('')
-  const [deleting,      setDeleting]      = useState<string | null>(null)
+  const [relFilter,      setRelFilter]      = useState<'all' | Relationship>('all')
+  const [search,         setSearch]         = useState('')
+  const [deleting,       setDeleting]       = useState<string | null>(null)
+  // import state
+  const [showImport,     setShowImport]     = useState(false)
+  const [importing,      setImporting]      = useState(false)
+  const [importContacts, setImportContacts] = useState<ImportContact[]>([])
+  const [importError,    setImportError]    = useState('')
+  const [savingImport,   setSavingImport]   = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -172,6 +191,43 @@ export default function PressContacts() {
     setDeleting(null)
   }
 
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImporting(true)
+    setImportError('')
+    setImportContacts([])
+    const fd = new FormData()
+    fd.append('file', file)
+    const res  = await fetch('/api/press-contacts/import', { method: 'POST', body: fd })
+    const data = await res.json()
+    setImporting(false)
+    if (!res.ok) { setImportError(data.error ?? 'Failed to parse file'); return }
+    const rows: ImportContact[] = (data.contacts as ImportContact[]).map(r => ({ ...r, selected: true }))
+    if (rows.length === 0) { setImportError('No contacts found in this file.'); return }
+    setImportContacts(rows)
+    e.target.value = ''
+  }
+
+  async function confirmImport() {
+    const selected = importContacts.filter(r => r.selected)
+    if (selected.length === 0) return
+    setSavingImport(true)
+    await Promise.all(selected.map(r => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { selected: _, ...contact } = r
+      return fetch('/api/press-contacts', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(contact),
+      })
+    }))
+    setImportContacts([])
+    setShowImport(false)
+    setSavingImport(false)
+    await load()
+  }
+
   const filtered = contacts
     .filter(c => relFilter === 'all' || c.relationship === relFilter)
     .filter(c => !search || `${c.name} ${c.outlet} ${c.beat ?? ''}`.toLowerCase().includes(search.toLowerCase()))
@@ -188,12 +244,20 @@ export default function PressContacts() {
           <h1 className="text-2xl font-bold text-gray-900">Press & Media Contacts</h1>
           <p className="text-sm text-gray-500 mt-0.5">Manage reporters, track outreach, and build media relationships</p>
         </div>
-        <button
-          onClick={() => setShowAddForm(true)}
-          className="bg-[#1e3a5f] text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-[#16304f] transition"
-        >
-          + Add Contact
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowImport(true)}
+            className="border border-[#1e3a5f] text-[#1e3a5f] px-4 py-2 rounded-xl text-sm font-semibold hover:bg-[#1e3a5f] hover:text-white transition"
+          >
+            ↑ Import File
+          </button>
+          <button
+            onClick={() => setShowAddForm(true)}
+            className="bg-[#1e3a5f] text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-[#16304f] transition"
+          >
+            + Add Contact
+          </button>
+        </div>
       </div>
 
       {/* Summary strip */}
@@ -347,6 +411,133 @@ export default function PressContacts() {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* ── Import Modal ─────────────────────────────────────────────── */}
+      {showImport && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Import Media Contacts</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Accepts CSV, Excel (.xlsx), or PDF contact lists</p>
+              </div>
+              <button onClick={() => { setShowImport(false); setImportContacts([]); setImportError('') }} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+            </div>
+
+            <div className="p-6 flex-1 overflow-y-auto">
+              {importContacts.length === 0 && (
+                <label className={`flex flex-col items-center justify-center gap-3 border-2 border-dashed rounded-2xl p-10 cursor-pointer transition ${importing ? 'border-blue-300 bg-blue-50' : 'border-gray-200 hover:border-[#1e3a5f] hover:bg-gray-50'}`}>
+                  {importing ? (
+                    <>
+                      <div className="w-8 h-8 border-2 border-[#1e3a5f] border-t-transparent rounded-full animate-spin" />
+                      <p className="text-sm font-semibold text-gray-500">Analyzing file with AI…</p>
+                      <p className="text-xs text-gray-400">Extracting contact details from your document</p>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-4xl">📋</span>
+                      <p className="text-sm font-semibold text-gray-700">Click to upload or drag a file here</p>
+                      <p className="text-xs text-gray-400">CSV · Excel spreadsheet · PDF contact list · Press rolodex export</p>
+                      <p className="text-xs text-gray-300">Max 4 MB</p>
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept=".csv,.xlsx,.xls,.pdf,.txt"
+                    onChange={handleFileUpload}
+                    disabled={importing}
+                  />
+                </label>
+              )}
+
+              {importError && (
+                <div className="mt-4 bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 text-sm text-rose-700 font-medium">
+                  {importError}
+                  <button onClick={() => setImportError('')} className="ml-3 text-xs underline">Try again</button>
+                </div>
+              )}
+
+              {importContacts.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-semibold text-gray-700">
+                      Found <span className="text-[#1e3a5f] font-black">{importContacts.length}</span> contacts —
+                      <span className="text-gray-500"> review and deselect any to skip</span>
+                    </p>
+                    <div className="flex gap-2 text-xs">
+                      <button onClick={() => setImportContacts(c => c.map(x => ({ ...x, selected: true })))} className="text-[#1e3a5f] font-semibold hover:underline">Select all</button>
+                      <span className="text-gray-300">|</span>
+                      <button onClick={() => setImportContacts(c => c.map(x => ({ ...x, selected: false })))} className="text-gray-400 hover:underline">Deselect all</button>
+                    </div>
+                  </div>
+                  <div className="border border-gray-100 rounded-xl overflow-hidden">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="bg-gray-50 border-b border-gray-100 text-gray-400 uppercase tracking-wide">
+                          <th className="px-3 py-2 text-left w-8">✓</th>
+                          <th className="px-3 py-2 text-left">Name</th>
+                          <th className="px-3 py-2 text-left">Outlet</th>
+                          <th className="px-3 py-2 text-left">Role / Beat</th>
+                          <th className="px-3 py-2 text-left">Email</th>
+                          <th className="px-3 py-2 text-left">Relationship</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {importContacts.map((c, i) => (
+                          <tr
+                            key={i}
+                            onClick={() => setImportContacts(r => r.map((x, j) => j === i ? { ...x, selected: !x.selected } : x))}
+                            className={`border-b border-gray-50 cursor-pointer transition ${c.selected ? 'hover:bg-gray-50' : 'opacity-40 bg-gray-50/50'}`}
+                          >
+                            <td className="px-3 py-2">
+                              <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${c.selected ? 'bg-[#1e3a5f] border-[#1e3a5f]' : 'border-gray-300'}`}>
+                                {c.selected && <span className="text-white text-[10px] leading-none">✓</span>}
+                              </div>
+                            </td>
+                            <td className="px-3 py-2 font-semibold text-gray-800">{c.name}</td>
+                            <td className="px-3 py-2 text-gray-600">{c.outlet}</td>
+                            <td className="px-3 py-2 text-gray-500">{[c.role, c.beat].filter(Boolean).join(' · ') || '—'}</td>
+                            <td className="px-3 py-2 text-gray-500 max-w-[140px] truncate">{c.email ?? '—'}</td>
+                            <td className="px-3 py-2">
+                              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${REL_CONFIG[c.relationship]?.bg ?? 'bg-gray-100 text-gray-500'}`}>
+                                {REL_CONFIG[c.relationship]?.label ?? c.relationship}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {importContacts.length > 0 && (
+              <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between shrink-0">
+                <p className="text-xs text-gray-400">
+                  {importContacts.filter(r => r.selected).length} of {importContacts.length} selected
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => { setImportContacts([]); setImportError('') }}
+                    className="border border-gray-200 text-gray-600 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-gray-50 transition"
+                  >
+                    ← Re-upload
+                  </button>
+                  <button
+                    onClick={confirmImport}
+                    disabled={savingImport || importContacts.filter(r => r.selected).length === 0}
+                    className="bg-[#1e3a5f] text-white px-5 py-2 rounded-xl text-sm font-semibold hover:bg-[#16304f] transition disabled:opacity-50"
+                  >
+                    {savingImport ? 'Saving…' : `Import ${importContacts.filter(r => r.selected).length} contacts`}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

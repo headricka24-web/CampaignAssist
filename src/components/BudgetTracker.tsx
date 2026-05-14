@@ -25,6 +25,18 @@ type Summary = {
   balance:      number
 }
 
+type ImportRow = {
+  date:          string
+  type:          string
+  category:      string
+  amount:        number
+  vendor:        string | null
+  description:   string | null
+  paymentMethod: string | null
+  notes:         string | null
+  selected:      boolean
+}
+
 type FormData = {
   type:          TxType
   category:      string
@@ -83,14 +95,20 @@ function fmtDate(iso: string) {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function BudgetTracker() {
-  const [data,       setData]       = useState<Summary | null>(null)
-  const [loading,    setLoading]    = useState(true)
-  const [showForm,   setShowForm]   = useState(false)
-  const [saving,     setSaving]     = useState(false)
-  const [form,       setForm]       = useState<FormData>(DEFAULT_FORM)
-  const [filter,     setFilter]     = useState<'all' | 'income' | 'expense'>('all')
-  const [catFilter,  setCatFilter]  = useState('all')
-  const [deleting,   setDeleting]   = useState<string | null>(null)
+  const [data,        setData]        = useState<Summary | null>(null)
+  const [loading,     setLoading]     = useState(true)
+  const [showForm,    setShowForm]    = useState(false)
+  const [saving,      setSaving]      = useState(false)
+  const [form,        setForm]        = useState<FormData>(DEFAULT_FORM)
+  const [filter,      setFilter]      = useState<'all' | 'income' | 'expense'>('all')
+  const [catFilter,   setCatFilter]   = useState('all')
+  const [deleting,    setDeleting]    = useState<string | null>(null)
+  // import state
+  const [showImport,  setShowImport]  = useState(false)
+  const [importing,   setImporting]   = useState(false)
+  const [importRows,  setImportRows]  = useState<ImportRow[]>([])
+  const [importError, setImportError] = useState('')
+  const [saving2,     setSaving2]     = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -129,6 +147,42 @@ export default function BudgetTracker() {
     setDeleting(null)
   }
 
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImporting(true)
+    setImportError('')
+    setImportRows([])
+    const fd = new FormData()
+    fd.append('file', file)
+    const res = await fetch('/api/budget/import', { method: 'POST', body: fd })
+    const data = await res.json()
+    setImporting(false)
+    if (!res.ok) { setImportError(data.error ?? 'Failed to parse file'); return }
+    const rows: ImportRow[] = (data.transactions as ImportRow[]).map(r => ({ ...r, selected: true }))
+    if (rows.length === 0) { setImportError('No transactions found in this file.'); return }
+    setImportRows(rows)
+    // reset file input so same file can be re-uploaded
+    e.target.value = ''
+  }
+
+  async function confirmImport() {
+    const selected = importRows.filter(r => r.selected)
+    if (selected.length === 0) return
+    setSaving2(true)
+    await Promise.all(selected.map(r =>
+      fetch('/api/budget', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ ...r, amount: Math.abs(r.amount) }),
+      })
+    ))
+    setImportRows([])
+    setShowImport(false)
+    setSaving2(false)
+    await load()
+  }
+
   const txs = data?.transactions ?? []
   const categories = [...new Set(txs.map(t => t.category))]
 
@@ -156,12 +210,20 @@ export default function BudgetTracker() {
           <h1 className="text-2xl font-bold text-gray-900">Campaign Budget</h1>
           <p className="text-sm text-gray-500 mt-0.5">Track income, expenses, and cash on hand</p>
         </div>
-        <button
-          onClick={() => setShowForm(true)}
-          className="bg-[#1e3a5f] text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-[#16304f] transition"
-        >
-          + Add Transaction
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowImport(true)}
+            className="border border-[#1e3a5f] text-[#1e3a5f] px-4 py-2 rounded-xl text-sm font-semibold hover:bg-[#1e3a5f] hover:text-white transition"
+          >
+            ↑ Import File
+          </button>
+          <button
+            onClick={() => setShowForm(true)}
+            className="bg-[#1e3a5f] text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-[#16304f] transition"
+          >
+            + Add Transaction
+          </button>
+        </div>
       </div>
 
       {/* Summary cards */}
@@ -282,6 +344,140 @@ export default function BudgetTracker() {
           </table>
         )}
       </div>
+
+      {/* ── Import modal ─────────────────────────────────────────────── */}
+      {showImport && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Import Transactions</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Accepts CSV, Excel (.xlsx), or PDF bank statements</p>
+              </div>
+              <button onClick={() => { setShowImport(false); setImportRows([]); setImportError('') }} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+            </div>
+
+            <div className="p-6 flex-1 overflow-y-auto">
+              {/* Upload zone */}
+              {importRows.length === 0 && (
+                <label className={`flex flex-col items-center justify-center gap-3 border-2 border-dashed rounded-2xl p-10 cursor-pointer transition ${importing ? 'border-blue-300 bg-blue-50' : 'border-gray-200 hover:border-[#1e3a5f] hover:bg-gray-50'}`}>
+                  {importing ? (
+                    <>
+                      <div className="w-8 h-8 border-2 border-[#1e3a5f] border-t-transparent rounded-full animate-spin" />
+                      <p className="text-sm font-semibold text-gray-500">Analyzing file with AI…</p>
+                      <p className="text-xs text-gray-400">This may take a few seconds</p>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-4xl">📂</span>
+                      <p className="text-sm font-semibold text-gray-700">Click to upload or drag a file here</p>
+                      <p className="text-xs text-gray-400">Bank statement PDF · CSV export · Excel spreadsheet</p>
+                      <p className="text-xs text-gray-300">Max 4 MB</p>
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept=".csv,.xlsx,.xls,.pdf,.txt"
+                    onChange={handleFileUpload}
+                    disabled={importing}
+                  />
+                </label>
+              )}
+
+              {importError && (
+                <div className="mt-4 bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 text-sm text-rose-700 font-medium">
+                  {importError}
+                  <button
+                    onClick={() => setImportError('')}
+                    className="ml-3 text-xs underline"
+                  >Try again</button>
+                </div>
+              )}
+
+              {/* Preview table */}
+              {importRows.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-semibold text-gray-700">
+                      Found <span className="text-[#1e3a5f] font-black">{importRows.length}</span> transactions —
+                      <span className="text-gray-500"> review and deselect any to skip</span>
+                    </p>
+                    <div className="flex gap-2 text-xs">
+                      <button onClick={() => setImportRows(r => r.map(x => ({ ...x, selected: true })))} className="text-[#1e3a5f] font-semibold hover:underline">Select all</button>
+                      <span className="text-gray-300">|</span>
+                      <button onClick={() => setImportRows(r => r.map(x => ({ ...x, selected: false })))} className="text-gray-400 hover:underline">Deselect all</button>
+                    </div>
+                  </div>
+                  <div className="border border-gray-100 rounded-xl overflow-hidden">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="bg-gray-50 border-b border-gray-100 text-gray-400 uppercase tracking-wide">
+                          <th className="px-3 py-2 text-left w-8">✓</th>
+                          <th className="px-3 py-2 text-left">Date</th>
+                          <th className="px-3 py-2 text-left">Type</th>
+                          <th className="px-3 py-2 text-left">Category</th>
+                          <th className="px-3 py-2 text-left">Description / Vendor</th>
+                          <th className="px-3 py-2 text-right">Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {importRows.map((row, i) => (
+                          <tr
+                            key={i}
+                            onClick={() => setImportRows(r => r.map((x, j) => j === i ? { ...x, selected: !x.selected } : x))}
+                            className={`border-b border-gray-50 cursor-pointer transition ${row.selected ? 'hover:bg-gray-50' : 'opacity-40 bg-gray-50/50'}`}
+                          >
+                            <td className="px-3 py-2">
+                              <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${row.selected ? 'bg-[#1e3a5f] border-[#1e3a5f]' : 'border-gray-300'}`}>
+                                {row.selected && <span className="text-white text-[10px] leading-none">✓</span>}
+                              </div>
+                            </td>
+                            <td className="px-3 py-2 text-gray-500 whitespace-nowrap">{row.date}</td>
+                            <td className="px-3 py-2">
+                              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${row.type === 'income' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                                {row.type}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2 text-gray-600">{row.category}</td>
+                            <td className="px-3 py-2 text-gray-700 max-w-[200px] truncate">{row.description ?? row.vendor ?? '—'}</td>
+                            <td className={`px-3 py-2 text-right font-bold whitespace-nowrap ${row.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                              {row.type === 'income' ? '+' : '−'}${Math.abs(row.amount).toLocaleString()}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {importRows.length > 0 && (
+              <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between shrink-0">
+                <p className="text-xs text-gray-400">
+                  {importRows.filter(r => r.selected).length} of {importRows.length} selected
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => { setImportRows([]); setImportError('') }}
+                    className="border border-gray-200 text-gray-600 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-gray-50 transition"
+                  >
+                    ← Re-upload
+                  </button>
+                  <button
+                    onClick={confirmImport}
+                    disabled={saving2 || importRows.filter(r => r.selected).length === 0}
+                    className="bg-[#1e3a5f] text-white px-5 py-2 rounded-xl text-sm font-semibold hover:bg-[#16304f] transition disabled:opacity-50"
+                  >
+                    {saving2 ? 'Saving…' : `Import ${importRows.filter(r => r.selected).length} transactions`}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Add transaction modal */}
       {showForm && (
