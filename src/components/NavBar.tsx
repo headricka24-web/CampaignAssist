@@ -16,6 +16,7 @@ const links = [
   { href: '/briefing',     label: 'Hot Buttons'  },
   { href: '/legislative',  label: "Let's Fund"   },
   { href: '/constituents', label: 'Constituents' },
+  { href: '/victory',      label: '★ Victory'    },
 ]
 
 export default function NavBar({
