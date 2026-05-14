@@ -10,7 +10,9 @@ type Phase = {
   startDaysOut: number
   endDaysOut:   number
   icon:         string
-  activeClass:  string
+  dot:          string   // bg class for the node
+  ring:         string   // ring class for current
+  bar:          string   // bg class for the filled connector
   textColor:    string
   borderClass:  string
   panelBg:      string
@@ -24,8 +26,8 @@ const PHASES: Phase[] = [
   {
     id: 'foundation', name: 'Foundation', shortName: 'Foundation',
     startDaysOut: 9999, endDaysOut: 121, icon: '🏛️',
-    activeClass: 'bg-slate-600 border-slate-400',
-    textColor: 'text-slate-300', borderClass: 'border-slate-600/40', panelBg: 'bg-slate-900/50',
+    dot: 'bg-slate-500', ring: 'ring-slate-400', bar: 'bg-slate-500',
+    textColor: 'text-slate-300', borderClass: 'border-slate-500/30', panelBg: 'bg-slate-800/60',
     focus: 'Register your campaign, hire staff, and define your message.',
     tasks: ['File paperwork & open campaign bank account', 'Hire campaign manager and key staff', 'Define candidate message and core issues', 'Set fundraising goals and build donor list'],
     link: '/my-candidate', linkLabel: 'Campaign Settings',
@@ -33,8 +35,8 @@ const PHASES: Phase[] = [
   {
     id: 'launch', name: 'Build & Launch', shortName: 'Launch',
     startDaysOut: 120, endDaysOut: 91, icon: '📢',
-    activeClass: 'bg-blue-600 border-blue-400',
-    textColor: 'text-blue-300', borderClass: 'border-blue-600/40', panelBg: 'bg-blue-950/50',
+    dot: 'bg-blue-500', ring: 'ring-blue-400', bar: 'bg-blue-500',
+    textColor: 'text-blue-300', borderClass: 'border-blue-500/30', panelBg: 'bg-blue-900/50',
     focus: 'Go public, earn first media coverage, and build your donor base.',
     tasks: ['Public announcement & kickoff event', 'First press release — work your press list', 'Launch online fundraising', 'Upload voter file and begin initial ID'],
     link: '/media', linkLabel: 'Media Studio',
@@ -42,8 +44,8 @@ const PHASES: Phase[] = [
   {
     id: 'voter-id', name: 'Voter Contact', shortName: 'Voter ID',
     startDaysOut: 90, endDaysOut: 61, icon: '🗳️',
-    activeClass: 'bg-emerald-600 border-emerald-400',
-    textColor: 'text-emerald-300', borderClass: 'border-emerald-600/40', panelBg: 'bg-emerald-950/50',
+    dot: 'bg-emerald-500', ring: 'ring-emerald-400', bar: 'bg-emerald-500',
+    textColor: 'text-emerald-300', borderClass: 'border-emerald-500/30', panelBg: 'bg-emerald-900/50',
     focus: "Knock doors, phone bank, and identify who's with you.",
     tasks: ['Door-to-door canvassing by precinct', 'Phone banking — ID persuadable voters', 'Recruit and train volunteers', 'Target outreach to strong-support voters'],
     link: '/voters', linkLabel: 'Voter File',
@@ -51,8 +53,8 @@ const PHASES: Phase[] = [
   {
     id: 'persuasion', name: 'Persuasion Sprint', shortName: 'Persuasion',
     startDaysOut: 60, endDaysOut: 31, icon: '⚡',
-    activeClass: 'bg-violet-600 border-violet-400',
-    textColor: 'text-violet-300', borderClass: 'border-violet-600/40', panelBg: 'bg-violet-950/50',
+    dot: 'bg-violet-500', ring: 'ring-violet-400', bar: 'bg-violet-500',
+    textColor: 'text-violet-300', borderClass: 'border-violet-500/30', panelBg: 'bg-violet-900/50',
     focus: 'Move undecided voters and maximize earned media coverage.',
     tasks: ['Launch paid advertising (TV, digital, mail)', 'Direct contact with persuadable voters', 'Intensify press & earned media outreach', 'Final fundraising push before ad blackout'],
     link: '/media', linkLabel: 'Media Studio',
@@ -60,8 +62,8 @@ const PHASES: Phase[] = [
   {
     id: 'gotv-prep', name: 'GOTV Prep', shortName: 'GOTV Prep',
     startDaysOut: 30, endDaysOut: 15, icon: '📋',
-    activeClass: 'bg-amber-600 border-amber-400',
-    textColor: 'text-amber-300', borderClass: 'border-amber-600/40', panelBg: 'bg-amber-950/50',
+    dot: 'bg-amber-500', ring: 'ring-amber-400', bar: 'bg-amber-500',
+    textColor: 'text-amber-300', borderClass: 'border-amber-500/30', panelBg: 'bg-amber-900/50',
     focus: 'Set up Election Day infrastructure and chase early votes.',
     tasks: ['Chase early vote targets — call and knock', 'Finalize canvass routes for Election Day', 'Volunteer mobilization — confirm all shifts', 'Poll watcher training and assignments'],
     link: '/outreach', linkLabel: 'Outreach',
@@ -69,8 +71,8 @@ const PHASES: Phase[] = [
   {
     id: 'final-sprint', name: 'Final Sprint', shortName: 'Final Push',
     startDaysOut: 14, endDaysOut: 1, icon: '🚀',
-    activeClass: 'bg-red-600 border-red-400',
-    textColor: 'text-red-300', borderClass: 'border-red-600/40', panelBg: 'bg-red-950/50',
+    dot: 'bg-red-500', ring: 'ring-red-400', bar: 'bg-red-500',
+    textColor: 'text-red-300', borderClass: 'border-red-500/30', panelBg: 'bg-red-900/50',
     focus: 'All hands on deck — every single vote counts.',
     tasks: ['All-out canvassing — no door left unknocked', 'Robocalls, texts, and email blasts to base', 'Chase outstanding early vote returns', 'Run last TV, radio, and digital ads'],
     link: '/victory', linkLabel: 'Path to Victory',
@@ -78,8 +80,8 @@ const PHASES: Phase[] = [
   {
     id: 'election-day', name: 'Election Day', shortName: 'E-Day',
     startDaysOut: 0, endDaysOut: 0, icon: '★',
-    activeClass: 'bg-yellow-500 border-yellow-300',
-    textColor: 'text-yellow-300', borderClass: 'border-yellow-500/40', panelBg: 'bg-yellow-950/50',
+    dot: 'bg-yellow-400', ring: 'ring-yellow-300', bar: 'bg-yellow-400',
+    textColor: 'text-yellow-300', borderClass: 'border-yellow-400/30', panelBg: 'bg-yellow-900/50',
     focus: 'Execute the plan. Get every supporter to the polls.',
     tasks: ['Poll watchers at every key precinct', 'Ride-to-polls program running all day', 'GOTV calls and texts until polls close', 'Victory party ready to go'],
     link: '/victory', linkLabel: 'Path to Victory',
@@ -104,46 +106,32 @@ function currentPhaseIdx(days: number): number {
 export default function CampaignTimeline({ electionDate }: { electionDate: string }) {
   const days   = daysUntil(electionDate)
   const curIdx = electionDate ? currentPhaseIdx(days) : -1
-
   const [sel, setSel] = useState<number>(curIdx)
 
-  if (!electionDate) {
-    return (
-      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center">
-        <p className="text-3xl mb-3">🗓️</p>
-        <p className="text-white/50 text-sm font-semibold mb-1">No election date set.</p>
-        <p className="text-white/30 text-xs mb-5">Set your election date to unlock your interactive campaign timeline.</p>
-        <Link
-          href="/victory"
-          className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-black text-xs uppercase tracking-widest px-6 py-2.5 rounded-xl transition-all"
-        >
-          Set Up Path to Victory →
-        </Link>
-      </div>
-    )
-  }
-
-  const selected     = sel >= 0 ? PHASES[sel] : null
-  const progressPct  = curIdx >= 0 ? (curIdx / (PHASES.length - 1)) * 100 : 0
+  const selected = sel >= 0 ? PHASES[sel] : null
 
   return (
-    <div>
-      {/* Header */}
-      <div className="flex items-end justify-between mb-7 gap-4">
+    <div className="bg-[#0a1e38] rounded-2xl border border-white/10 overflow-hidden">
+
+      {/* ── Header strip ─────────────────────────────────────────────── */}
+      <div className="px-6 pt-5 pb-4 border-b border-white/[0.06] flex items-center justify-between gap-4">
         <div>
-          {days > 0 ? (
+          <p className="text-[10px] font-black uppercase tracking-[0.32em] text-white/30 mb-1">Campaign Timeline</p>
+          {!electionDate ? (
+            <p className="text-white/50 text-sm">Set your election date to track campaign phases.</p>
+          ) : days > 0 ? (
             <div className="flex items-baseline gap-2">
-              <span className="text-gold-400 font-black text-5xl leading-none">{days}</span>
-              <span className="text-white/50 text-base">days to Election Day</span>
+              <span className="text-gold-400 font-black text-4xl leading-none">{days}</span>
+              <span className="text-white/50 text-sm">days to Election Day</span>
             </div>
           ) : days === 0 ? (
-            <p className="text-yellow-400 text-2xl font-black">It's Election Day! 🗳️</p>
+            <p className="text-yellow-400 font-black text-xl">It's Election Day! 🗳️</p>
           ) : (
-            <p className="text-white/30 text-base">Election has passed.</p>
+            <p className="text-white/30 text-sm">Election has passed.</p>
           )}
           {curIdx >= 0 && (
-            <p className="text-white/25 text-[11px] uppercase tracking-widest mt-1">
-              Current phase: {PHASES[curIdx].name}
+            <p className="text-white/30 text-[11px] mt-0.5">
+              Current phase: <span className={`font-bold ${PHASES[curIdx].textColor}`}>{PHASES[curIdx].name}</span>
             </p>
           )}
         </div>
@@ -155,92 +143,114 @@ export default function CampaignTimeline({ electionDate }: { electionDate: strin
         </Link>
       </div>
 
-      {/* Timeline track — horizontally scrollable on small screens */}
-      <div className="relative mb-5 overflow-x-auto pb-2">
-        <div className="min-w-[500px] relative">
-          {/* Background connector line */}
-          <div className="absolute top-5 left-5 right-5 h-px bg-white/[0.08]" />
-          {/* Progress fill */}
-          <div
-            className="absolute top-5 left-5 h-px bg-white/30 transition-all duration-700"
-            style={{ width: `calc(${progressPct / 100} * (100% - 40px))` }}
-          />
+      {/* ── Timeline track ───────────────────────────────────────────── */}
+      <div className="px-6 py-6 overflow-x-auto">
+        {!electionDate ? (
+          <div className="text-center py-4">
+            <Link
+              href="/victory"
+              className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-black text-xs uppercase tracking-widest px-6 py-2.5 rounded-xl transition-all"
+            >
+              Set Up Path to Victory →
+            </Link>
+          </div>
+        ) : (
+          <div className="min-w-[580px]">
+            {/* Phase row */}
+            <div className="flex items-center">
+              {PHASES.map((phase, i) => {
+                const isPast     = i < curIdx
+                const isCurrent  = i === curIdx
+                const isSelected = i === sel
+                const isFuture   = i > curIdx
 
-          <div className="relative flex justify-between">
-            {PHASES.map((phase, i) => {
-              const isPast     = i < curIdx
-              const isCurrent  = i === curIdx
-              const isSelected = i === sel
+                return (
+                  <div key={phase.id} className="flex items-center flex-1 last:flex-none">
+                    {/* Node button */}
+                    <button
+                      onClick={() => setSel(prev => prev === i ? -1 : i)}
+                      className="relative flex flex-col items-center gap-2 group focus:outline-none shrink-0"
+                    >
+                      {/* Circle */}
+                      <div className={`
+                        w-12 h-12 rounded-full flex items-center justify-center text-xl
+                        border-2 transition-all duration-200 relative z-10
+                        ${isSelected
+                          ? `${phase.dot} border-white/60 scale-110 shadow-xl ring-2 ${phase.ring} ring-offset-2 ring-offset-[#0a1e38]`
+                          : isCurrent
+                          ? `${phase.dot} border-white/40 shadow-lg ring-2 ${phase.ring} ring-offset-2 ring-offset-[#0a1e38]`
+                          : isPast
+                          ? `${phase.dot} border-white/20 opacity-60`
+                          : 'bg-white/[0.06] border-white/15 text-white/30 group-hover:bg-white/[0.12] group-hover:border-white/30'
+                        }
+                      `}>
+                        {isPast && !isSelected
+                          ? <span className="text-white font-black text-sm">✓</span>
+                          : <span className={isFuture ? 'opacity-40' : ''}>{phase.icon}</span>
+                        }
+                      </div>
 
-              return (
-                <button
-                  key={phase.id}
-                  onClick={() => setSel(prev => prev === i ? -1 : i)}
-                  className="flex flex-col items-center gap-1.5 group focus:outline-none"
-                  style={{ minWidth: '58px' }}
-                >
-                  {/* Node bubble */}
-                  <div className={`
-                    relative w-10 h-10 rounded-full flex items-center justify-center text-sm border-2 z-10
-                    transition-all duration-200
-                    ${isSelected
-                      ? `${phase.activeClass} scale-110 shadow-lg`
-                      : isCurrent
-                      ? `${phase.activeClass} shadow-md`
-                      : isPast
-                      ? 'bg-white/10 border-white/20 text-white/50'
-                      : 'bg-white/[0.04] border-white/10 text-white/20 group-hover:bg-white/10 group-hover:border-white/25 group-hover:text-white/45'
-                    }
-                  `}>
-                    {isPast && !isSelected
-                      ? <span className="text-white/50 text-[11px] font-black">✓</span>
-                      : phase.icon
-                    }
-                  </div>
+                      {/* Label */}
+                      <div className="text-center w-16">
+                        <p className={`text-[10px] font-bold uppercase tracking-wide leading-tight transition-colors ${
+                          isSelected ? 'text-white' :
+                          isCurrent  ? phase.textColor :
+                          isPast     ? 'text-white/35' :
+                                       'text-white/20 group-hover:text-white/40'
+                        }`}>
+                          {phase.shortName}
+                        </p>
+                        {isCurrent && (
+                          <span className={`text-[9px] font-black uppercase tracking-wider ${phase.textColor} opacity-80`}>
+                            ● Now
+                          </span>
+                        )}
+                      </div>
+                    </button>
 
-                  {/* Label */}
-                  <div className="text-center">
-                    <p className={`
-                      text-[9px] font-bold uppercase tracking-wide leading-tight max-w-[54px] mx-auto transition-colors
-                      ${isSelected ? 'text-white' : isCurrent ? phase.textColor : isPast ? 'text-white/25' : 'text-white/15 group-hover:text-white/35'}
-                    `}>
-                      {phase.shortName}
-                    </p>
-                    {isCurrent && (
-                      <p className="text-[8px] font-black text-white/35 tracking-widest uppercase mt-0.5">● Now</p>
+                    {/* Connector bar between nodes */}
+                    {i < PHASES.length - 1 && (
+                      <div className="flex-1 h-1 mx-1 rounded-full overflow-hidden bg-white/[0.07]">
+                        <div className={`h-full rounded-full transition-all duration-500 ${
+                          i < curIdx
+                            ? PHASES[i + 1].bar + ' opacity-50'
+                            : i === curIdx
+                            ? PHASES[i].bar + ' opacity-30 w-1/2'
+                            : 'w-0'
+                        }`} />
+                      </div>
                     )}
                   </div>
-                </button>
-              )
-            })}
+                )
+              })}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Expanded phase detail */}
+      {/* ── Selected phase detail ─────────────────────────────────────── */}
       {selected && (
-        <div className={`rounded-xl border ${selected.borderClass} ${selected.panelBg} p-5 mt-1`}>
+        <div className={`border-t border-white/[0.06] ${selected.panelBg} px-6 py-5`}>
           <div className="flex items-start justify-between gap-4 mb-4">
             <div>
               <p className={`text-[9px] font-black uppercase tracking-[0.28em] ${selected.textColor} mb-1`}>
                 {sel === curIdx ? '● Current Phase' : sel < curIdx ? 'Completed' : 'Upcoming'}
               </p>
-              <h3 className="text-white font-black text-base leading-none">{selected.name}</h3>
-              <p className="text-white/45 text-xs mt-1.5 leading-relaxed">{selected.focus}</p>
+              <h3 className="text-white font-black text-lg leading-none">{selected.name}</h3>
+              <p className="text-white/45 text-sm mt-1.5 leading-relaxed max-w-lg">{selected.focus}</p>
             </div>
             <Link
               href={selected.link}
-              className={`shrink-0 text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border ${selected.borderClass} ${selected.textColor} hover:bg-white/10 transition-colors whitespace-nowrap`}
+              className={`shrink-0 text-[11px] font-black uppercase tracking-wider px-4 py-2 rounded-lg border ${selected.borderClass} ${selected.textColor} hover:bg-white/10 transition-colors whitespace-nowrap`}
             >
               {selected.linkLabel} →
             </Link>
           </div>
-
-          <div className="grid sm:grid-cols-2 gap-x-6 gap-y-1.5">
+          <div className="grid sm:grid-cols-2 gap-x-8 gap-y-2">
             {selected.tasks.map(task => (
-              <div key={task} className="flex items-start gap-2">
-                <span className={`${selected.textColor} text-[10px] mt-0.5 shrink-0`}>★</span>
-                <span className="text-white/55 text-[11px] leading-relaxed">{task}</span>
+              <div key={task} className="flex items-start gap-2.5">
+                <span className={`${selected.textColor} text-[11px] mt-0.5 shrink-0`}>★</span>
+                <span className="text-white/60 text-sm leading-snug">{task}</span>
               </div>
             ))}
           </div>

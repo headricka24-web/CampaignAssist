@@ -203,8 +203,13 @@ export default function CommandCenter({ candidate, electionDate }: { candidate: 
         <div className="h-px bg-gold-gradient opacity-30" />
       </div>
 
+      {/* ── Campaign Timeline ─────────────────────────────────────────────── */}
+      <div className="max-w-5xl mx-auto px-8 pt-8 pb-4">
+        <CampaignTimeline electionDate={electionDate} />
+      </div>
+
       {/* ── Shortcut grid ─────────────────────────────────────────────────── */}
-      <div className="max-w-5xl mx-auto px-8 py-10">
+      <div className="max-w-5xl mx-auto px-8 py-8">
         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mb-5">
           Quick Access — Select a Department
         </p>
@@ -221,16 +226,6 @@ export default function CommandCenter({ candidate, electionDate }: { candidate: 
           {DEPARTMENTS.slice(3).map(dept => (
             <DeptCard key={dept.name} dept={dept} />
           ))}
-        </div>
-      </div>
-
-      {/* ── Campaign Timeline ─────────────────────────────────────────────── */}
-      <div className="max-w-5xl mx-auto px-8 pb-12">
-        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] px-7 py-7">
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 mb-5">
-            Campaign Timeline
-          </p>
-          <CampaignTimeline electionDate={electionDate} />
         </div>
       </div>
     </div>
