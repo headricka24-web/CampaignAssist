@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import CampaignTimeline from './CampaignTimeline'
 
 type Candidate = {
   name:      string
@@ -148,7 +149,7 @@ function DeptCard({ dept }: { dept: typeof DEPARTMENTS[number] }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function CommandCenter({ candidate }: { candidate: Candidate }) {
+export default function CommandCenter({ candidate, electionDate }: { candidate: Candidate; electionDate: string }) {
   const last = lastName(candidate.name)
   const geo  = geoLabel(candidate)
 
@@ -220,6 +221,16 @@ export default function CommandCenter({ candidate }: { candidate: Candidate }) {
           {DEPARTMENTS.slice(3).map(dept => (
             <DeptCard key={dept.name} dept={dept} />
           ))}
+        </div>
+      </div>
+
+      {/* ── Campaign Timeline ─────────────────────────────────────────────── */}
+      <div className="max-w-5xl mx-auto px-8 pb-12">
+        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] px-7 py-7">
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 mb-5">
+            Campaign Timeline
+          </p>
+          <CampaignTimeline electionDate={electionDate} />
         </div>
       </div>
     </div>

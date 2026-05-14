@@ -15,8 +15,16 @@ export default async function CommandPage() {
     select: { name: true, race: true, state: true, raceLevel: true, district: true, county: true, city: true },
   })
 
-  // New user — no candidate yet → guide them to setup first
   if (!candidate) redirect('/my-candidate')
 
-  return <CommandCenter candidate={candidate} />
+  let electionDate = ''
+  try {
+    const vp = await prisma.generatedContent.findUnique({
+      where:  { userId_type: { userId, type: 'victory-plan' } },
+      select: { content: true },
+    })
+    if (vp) electionDate = (JSON.parse(vp.content) as { electionDate?: string }).electionDate ?? ''
+  } catch {}
+
+  return <CommandCenter candidate={candidate} electionDate={electionDate} />
 }
