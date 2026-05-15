@@ -247,7 +247,7 @@ export default function VictoryCalculator({
           <p className="text-4xl mb-4 opacity-30">🗳</p>
           <p className="text-gray-600 font-semibold">No victory plan yet.</p>
           <p className="text-gray-400 text-sm mt-1 mb-6 max-w-xs mx-auto">
-            All you need to start is your election date — everything else has smart defaults you can refine later.
+            All you need to start is your election date — everything else uses proven baseline targets you can refine later.
           </p>
           <button onClick={openEdit}
             className="bg-navy text-white font-black px-8 py-3 rounded-xl text-sm uppercase tracking-widest hover:bg-navy-700 transition-colors">

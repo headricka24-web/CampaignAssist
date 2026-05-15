@@ -86,7 +86,7 @@ const HOW_IT_WORKS = [
     number: '02',
     phase: 'Know Your Voters',
     headline: 'Find every persuadable.',
-    body: 'Get a full constituent intelligence profile. Upload your voter file to segment GOTV targets, swing voters, and your base — AI-tagged by issue and contact priority.',
+    body: 'Get a full constituent intelligence profile. Upload your voter file to segment GOTV targets, swing voters, and your base — automatically prioritized by issue and contact status.',
     color: 'from-red-600 to-red-800',
     accent: 'bg-red-500',
   },
@@ -101,7 +101,7 @@ const HOW_IT_WORKS = [
 ]
 
 const STATS = [
-  { value: '11',    label: 'AI-powered tools' },
+  { value: '11',    label: 'operational tools' },
   { value: '100+', label: 'sources monitored' },
   { value: '50+',  label: 'Census data points' },
   { value: '2 min', label: 'to your first briefing' },
@@ -180,7 +180,7 @@ export default async function LandingPage() {
           <div className="max-w-4xl">
             <div className="inline-flex items-center gap-2 bg-red-500/80 text-white text-xs font-black tracking-widest uppercase px-4 py-1.5 rounded-full mb-8 shadow-glow-red">
               <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
-              ★ AI-Powered Campaign Intelligence
+              ★ Live Campaign Intelligence
             </div>
 
             <h1 className="font-display font-black text-white leading-[0.95] mb-8">
@@ -189,10 +189,10 @@ export default async function LandingPage() {
             </h1>
 
             <p className="text-blue-100 text-xl md:text-2xl max-w-2xl mb-4 leading-relaxed font-medium">
-              The all-in-one platform that gives every candidate — from city council to U.S. Senate — the intelligence and tools to run a modern, data-driven campaign.
+              Professional campaign infrastructure that helps Republican candidates operate like statewide races — without a massive staff.
             </p>
             <p className="text-blue-300/60 text-sm mb-12 uppercase tracking-[0.2em] font-semibold">
-              ★ Real data · Real news · Built for every campaign ★
+              ★ Real data · Rapid response · Built to win ★
             </p>
 
             <div className="flex flex-wrap gap-4 items-center">
@@ -205,11 +205,11 @@ export default async function LandingPage() {
                 <>
                   <Link href="/signup"
                     className="bg-gold-400 hover:bg-gold-500 text-navy font-black text-sm px-10 py-4 rounded-xl transition-all shadow-xl hover:shadow-2xl hover:-translate-y-0.5">
-                    🚀 Let's get your campaign up and running!
+                    ★ Launch Your Campaign Operations
                   </Link>
                   <Link href="/what-we-offer"
                     className="btn-what inline-flex items-center gap-2 px-8 py-4 rounded-xl text-sm uppercase tracking-widest">
-                    ✨ What is CampaignAssist?
+                    How It Works →
                   </Link>
                 </>
               )}
@@ -260,7 +260,7 @@ export default async function LandingPage() {
                   'Population, income, age, and education breakdowns by district',
                   'Current unemployment rate from BLS live data',
                   'Federal election results from the last 3 cycles via FEC',
-                  'AI-generated analysis of your base, swing voters, and persuadables',
+                  'Automated voter analysis — base, swing, and persuadables mapped to your district',
                 ].map(item => (
                   <li key={item} className="flex items-start gap-3 text-blue-100 text-sm">
                     <span className="text-gold-400 shrink-0 mt-0.5">★</span>
@@ -274,7 +274,7 @@ export default async function LandingPage() {
               {[
                 { label: 'Demographic Data Points', value: '50+', sub: 'U.S. Census Bureau' },
                 { label: 'News Sources', value: '100+', sub: 'monitored daily' },
-                { label: 'AI-Powered Tools', value: '8', sub: 'across every function' },
+                { label: 'Operational Functions', value: '8', sub: 'across every department' },
                 { label: 'Time to First Briefing', value: '2 min', sub: 'from signup' },
               ].map(stat => (
                 <div key={stat.label} className="bg-white/5 border border-white/10 rounded-2xl p-5 hover:bg-white/10 transition-colors">
@@ -327,9 +327,9 @@ export default async function LandingPage() {
         <div className="container mx-auto max-w-7xl px-6">
           <div className="text-center mb-12">
             <h2 className="font-display text-3xl md:text-4xl font-black text-navy mb-3">
-              Every tool your campaign needs.
+              Every operational function your campaign needs.
             </h2>
-            <p className="text-gray-400 text-sm uppercase tracking-widest font-semibold">All under one roof. All powered by AI.</p>
+            <p className="text-gray-400 text-sm uppercase tracking-widest font-semibold">Centralized. Coordinated. Built to win.</p>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {FEATURES.map(f => (
@@ -357,10 +357,10 @@ export default async function LandingPage() {
         <div className="relative container mx-auto max-w-3xl px-6 text-center">
           <div className="text-gold-400 text-xl mb-6 tracking-widest">★ ★ ★</div>
           <h2 className="font-display text-5xl md:text-6xl font-black text-white mb-4 leading-tight">
-            Your campaign deserves<br />better tools.
+            Run your race like<br />a professional operation.
           </h2>
           <p className="text-blue-200 text-xl mb-10 leading-relaxed">
-            Set up your account in two minutes. Add your race and CampaignAssist starts working immediately.
+            Set up in two minutes. Add your race and your command center is live immediately.
           </p>
           {loggedIn ? (
             <Link href="/dashboard"
@@ -371,7 +371,7 @@ export default async function LandingPage() {
             <div className="space-y-4">
               <Link href="/signup"
                 className="inline-block bg-gold-400 hover:bg-gold-500 text-navy font-black text-sm px-12 py-5 rounded-xl transition-all shadow-2xl hover:-translate-y-0.5">
-                🚀 Let's get your campaign up and running!
+                ★ Launch Your Campaign Operations
               </Link>
               <p className="text-blue-300/50 text-sm">No credit card. No commitment.</p>
             </div>

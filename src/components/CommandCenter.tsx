@@ -112,7 +112,7 @@ function SuggestedActionsWidget() {
         </div>
 
         <div className="px-6 py-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-          <p className="text-[10px] uppercase tracking-widest font-bold text-white/20">Refreshes daily · Powered by CampaignAssist AI</p>
+          <p className="text-[10px] uppercase tracking-widest font-bold text-white/20">Refreshes daily · CampaignAssist Intelligence</p>
         </div>
       </div>
     </>
@@ -299,7 +299,7 @@ export default function CommandCenter({ candidate, electionDate }: { candidate: 
                 {candidate.name} &nbsp;·&nbsp; {candidate.race} &nbsp;·&nbsp; {geo}
               </p>
               <p className="text-blue-200/55 text-sm mb-10 max-w-xl">
-                Your complete campaign intelligence platform — ready for battle.
+                Professional campaign infrastructure. No massive staff required.
               </p>
 
               <div className="flex items-center gap-4 flex-wrap">

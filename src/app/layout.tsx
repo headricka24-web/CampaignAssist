@@ -5,8 +5,8 @@ import AuthProvider from '@/components/AuthProvider'
 import { auth } from '@/auth'
 
 export const metadata: Metadata = {
-  title: 'CampaignAssist — AI-Powered Campaign Intelligence Platform',
-  description: 'The all-in-one platform for modern political campaigns. Real-time news intelligence, constituent profiles, voter strategy, and AI-powered tools — built for every candidate.',
+  title: 'CampaignAssist — Republican Campaign Operations Platform',
+  description: 'Professional campaign infrastructure for Republican candidates. Real-time intelligence, voter strategy, rapid response, and centralized operations — built for every race.',
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

@@ -28,11 +28,11 @@ export default async function MyCandidatePage() {
             <span className="text-red-500">started.</span>
           </h1>
           <p className="text-gray-500 text-base max-w-xl leading-relaxed">
-            Your candidate is the heart of everything on this platform. Add them below and CampaignAssist will personalize your news feed, constituent profiles, voter analysis, and every AI tool around your specific race.
+            Your candidate drives everything on this platform. Add them below and CampaignAssist will personalize your intelligence operations, constituent profiles, voter analysis, and every command function around your specific race.
           </p>
           <div className="flex items-center gap-2 mt-4 text-sm text-gray-400">
             <span className="w-5 h-5 rounded-full bg-navy text-white text-[10px] flex items-center justify-center font-black shrink-0">1</span>
-            Fill in your candidate details below to activate your full campaign intelligence suite.
+            Fill in your candidate details below to activate your full campaign command center.
           </div>
         </div>
       ) : (
@@ -56,7 +56,7 @@ export default async function MyCandidatePage() {
               <span className="text-gold-400 text-xl">📋</span>
               <div>
                 <p className="text-white font-black text-sm uppercase tracking-wide">Candidate Setup</p>
-                <p className="text-blue-300/60 text-xs mt-0.5">Fill in the details below to activate your campaign intelligence.</p>
+                <p className="text-blue-300/60 text-xs mt-0.5">Fill in the details below to activate your command center.</p>
               </div>
             </div>
           )}
