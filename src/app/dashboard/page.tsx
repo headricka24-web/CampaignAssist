@@ -46,7 +46,7 @@ async function getDashboardData(userId: string) {
 
   // Parse hot buttons briefing into a short summary (first 300 chars)
   const hotButtonSnippet = hotButtonsContent?.content
-    ? hotButtonsContent.content.replace(/\*\*/g, '').replace(/#{1,3}\s/g, '').slice(0, 280).trim()
+    ? hotButtonsContent.content.replace(/\*\*/g, '').replace(/#{1,3}\s/g, '').replace(/\n+/g, ' ').slice(0, 280).trim()
     : null
 
   return {
@@ -213,10 +213,10 @@ export default async function DashboardPage() {
 
       {/* ── Stats Row ─────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <StatCard label="Stories Monitored"  value={total}         accent="blue"  icon="📰" />
-        <StatCard label="Breaking Today"     value={newToday}      accent="gold"  icon="⚡" />
-        <StatCard label="Favorable"          value={positiveCount} accent="green" icon="▲" />
-        <StatCard label="Opposition"         value={negativeCount} accent="red"   icon="▼" />
+        <Link href="/news"><StatCard label="Stories Monitored"  value={total}         accent="blue"  icon="📰" /></Link>
+        <Link href="/news?tab=breaking"><StatCard label="Breaking Today"     value={newToday}      accent="gold"  icon="⚡" /></Link>
+        <Link href="/news?tab=favorable"><StatCard label="Favorable"          value={positiveCount} accent="green" icon="▲" /></Link>
+        <Link href="/news?tab=opposition"><StatCard label="Opposition"         value={negativeCount} accent="red"   icon="▼" /></Link>
       </div>
 
       {/* ── Command Center: 3-column layout ───────────────────────── */}

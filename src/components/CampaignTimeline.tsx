@@ -178,7 +178,7 @@ export default function CampaignTimeline({ electionDate }: { electionDate: strin
                         ${isSelected
                           ? `${phase.dot} border-white/60 scale-110 shadow-xl ring-2 ${phase.ring} ring-offset-2 ring-offset-[#0a1e38]`
                           : isCurrent
-                          ? `${phase.dot} border-white/40 shadow-lg ring-2 ${phase.ring} ring-offset-2 ring-offset-[#0a1e38]`
+                          ? `${phase.dot} border-white/40 shadow-lg ring-2 ${phase.ring} ring-offset-2 ring-offset-[#0a1e38] animate-pulse-slow`
                           : isPast
                           ? `${phase.dot} border-white/20 opacity-60`
                           : 'bg-white/[0.06] border-white/15 text-white/30 group-hover:bg-white/[0.12] group-hover:border-white/30'
@@ -215,7 +215,7 @@ export default function CampaignTimeline({ electionDate }: { electionDate: strin
                           i < curIdx
                             ? PHASES[i + 1].bar + ' opacity-50'
                             : i === curIdx
-                            ? PHASES[i].bar + ' opacity-30 w-1/2'
+                            ? PHASES[i].bar + ' opacity-60 w-1/2 animate-pulse-slow'
                             : 'w-0'
                         }`} />
                       </div>

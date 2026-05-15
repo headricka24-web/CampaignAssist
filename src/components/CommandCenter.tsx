@@ -2,6 +2,60 @@
 
 import Link from 'next/link'
 import CampaignTimeline from './CampaignTimeline'
+import { useState, useEffect } from 'react'
+
+// ── Suggested Actions Widget ──────────────────────────────────────────────────
+
+function SuggestedActionsWidget() {
+  const [open,    setOpen]    = useState(false)
+  const [actions, setActions] = useState<string[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/suggested-actions')
+      .then(r => r.json())
+      .then(d => { if (d.actions?.length) setActions(d.actions) })
+      .finally(() => setLoading(false))
+  }, [])
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-3 bg-white/[0.07] hover:bg-white/[0.12] border border-white/15 hover:border-gold-400/40 rounded-2xl px-4 py-3 transition-all group"
+      >
+        <div className="relative shrink-0">
+          <span className="text-2xl">📋</span>
+          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+        </div>
+        <div className="text-left">
+          <p className="text-[9px] font-black uppercase tracking-[0.28em] text-gold-400/90 leading-none mb-0.5">Suggested Actions</p>
+          <p className="text-[11px] text-white/55 group-hover:text-white/75 transition-colors leading-none">
+            {loading ? 'Loading…' : `${actions.length} priorities today`}
+          </p>
+        </div>
+        <span className={`text-white/30 group-hover:text-white/60 transition-all text-xs ml-1 ${open ? 'rotate-180' : ''}`}>▾</span>
+      </button>
+
+      {open && actions.length > 0 && (
+        <div className="absolute bottom-full right-0 mb-2 w-80 bg-[#071630] border border-white/15 rounded-2xl shadow-2xl overflow-hidden z-50">
+          <div className="h-0.5 bg-gradient-to-r from-gold-400/80 to-red-500/80" />
+          <div className="p-4">
+            <p className="text-[9px] font-black uppercase tracking-[0.28em] text-gold-400/80 mb-3">Today's Priorities</p>
+            <ul className="space-y-2.5">
+              {actions.map((a, i) => (
+                <li key={i} className="flex items-start gap-2.5">
+                  <span className="text-gold-400/70 font-black text-[11px] mt-0.5 shrink-0">{i + 1}.</span>
+                  <span className="text-white/70 text-xs leading-relaxed">{a}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 type Candidate = {
   name:      string
@@ -177,10 +231,10 @@ export default function CommandCenter({ candidate, electionDate }: { candidate: 
             {greeting()}, Team <span className="text-gold-400">{last}.</span>
           </h1>
 
-          <p className="text-blue-200/55 text-base md:text-lg font-medium mb-1">
+          <p className="text-blue-100/80 text-base md:text-lg font-medium mb-1">
             {candidate.name} &nbsp;·&nbsp; {candidate.race} &nbsp;·&nbsp; {geo}
           </p>
-          <p className="text-blue-300/35 text-sm mb-10 max-w-xl">
+          <p className="text-blue-200/55 text-sm mb-10 max-w-xl">
             Your complete campaign intelligence platform — ready for battle.
           </p>
 
@@ -193,10 +247,15 @@ export default function CommandCenter({ candidate, electionDate }: { candidate: 
             </Link>
             <Link
               href="/my-candidate"
-              className="inline-flex items-center gap-2 border border-white/20 hover:border-white/40 text-white/60 hover:text-white/90 text-xs font-bold uppercase tracking-widest px-5 py-3.5 rounded-xl transition-all"
+              className="inline-flex items-center gap-2 border border-white/25 hover:border-white/50 text-white/70 hover:text-white text-xs font-bold uppercase tracking-widest px-5 py-3.5 rounded-xl transition-all"
             >
               ⚙ Campaign Settings
             </Link>
+          </div>
+
+          {/* Suggested Actions — bottom right */}
+          <div className="absolute bottom-6 right-8 hidden md:block">
+            <SuggestedActionsWidget />
           </div>
         </div>
 

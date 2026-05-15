@@ -60,17 +60,15 @@ export async function POST() {
     .join('\n')
 
   const content = await ask(
-    `You are a sharp Republican political communications director writing a morning intelligence brief for a GOP campaign team.
-Write from a conservative, Republican perspective. Be direct, confident, and tactical — no fluff.
-Identify threats from the left and opportunities to advance the Republican message.
-Use clear headers and bullet points. Keep the total brief under 350 words.`,
+    `You are a seasoned Republican political communications director writing a morning intelligence brief for a GOP campaign team. Write from a conservative, Republican perspective.
+
+Your job is to deliver a genuinely informative strategic briefing — not a collection of punchy one-liners, but substantive analysis that helps the team understand what is happening, why it matters, and what to do about it. For each key development or threat, include relevant policy context and background so the team understands the substance of the issue, not just the headline. Write in organized paragraphs with clear headers. Keep the total brief to 450-600 words.`,
     `${raceCtx}
 
-Here are today's news articles. Write a morning brief covering:
-1. The most important developments affecting this race
-2. What each means for the Republican campaign strategy
-3. Any threats from opponents or the media to counter
-4. Opportunities to press the conservative advantage
+Here are today's news articles. Write a morning intelligence brief covering:
+1. KEY DEVELOPMENTS — The 2-3 most important stories affecting this race. For each: summarize what's happening, explain the relevant policy or political context, and assess what it means for the campaign's strategy.
+2. ACTIVE THREATS — Specific attacks, narratives, or media angles the campaign should be prepared to counter. For each threat, explain the underlying issue and suggest a substantive Republican response.
+3. OPPORTUNITIES — Where the conservative message can gain ground today and why.
 
 Articles:\n\n${bulletList}`,
   )
