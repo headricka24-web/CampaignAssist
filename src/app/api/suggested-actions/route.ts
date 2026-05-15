@@ -62,15 +62,21 @@ export async function GET() {
   }
 
   const raw = await ask(
-    `You are a Republican campaign strategist. Based on the current intelligence context, generate exactly 4 concrete, specific, actionable campaign priorities for today. Each should be one clear sentence. No fluff, no headers — just 4 action items, one per line.`,
+    `You are a Republican campaign strategist. Output ONLY a numbered list of exactly 4 action items. Format strictly as:
+1. [action]
+2. [action]
+3. [action]
+4. [action]
+
+Each action is one direct, specific sentence. No headers, no preamble, no explanation — only those 4 lines.`,
     context.join('\n\n'),
     300,
   )
 
   const actions = raw
     .split('\n')
-    .map(l => l.replace(/^[\d\-\*\.\s]+/, '').trim())
-    .filter(Boolean)
+    .map(l => l.replace(/^\s*\d+[\.\)]\s*/, '').trim())
+    .filter(l => l.length > 10)
     .slice(0, 4)
 
   await prisma.generatedContent.upsert({

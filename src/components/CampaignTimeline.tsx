@@ -171,16 +171,21 @@ export default function CampaignTimeline({ electionDate }: { electionDate: strin
                       onClick={() => setSel(prev => prev === i ? -1 : i)}
                       className="relative flex flex-col items-center gap-2 group focus:outline-none shrink-0"
                     >
+                      {/* Ping ring for current phase */}
+                      {isCurrent && !isSelected && (
+                        <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full ${phase.dot} animate-ping-slow opacity-50 z-0`} />
+                      )}
+
                       {/* Circle */}
                       <div className={`
                         w-12 h-12 rounded-full flex items-center justify-center text-xl
                         border-2 transition-all duration-200 relative z-10
                         ${isSelected
-                          ? `${phase.dot} border-white/60 scale-110 shadow-xl ring-2 ${phase.ring} ring-offset-2 ring-offset-[#0a1e38]`
+                          ? `${phase.dot} border-white/80 scale-110 shadow-xl ring-2 ${phase.ring} ring-offset-2 ring-offset-[#0a1e38]`
                           : isCurrent
-                          ? `${phase.dot} border-white/40 shadow-lg ring-2 ${phase.ring} ring-offset-2 ring-offset-[#0a1e38] animate-pulse-slow`
+                          ? `${phase.dot} border-white/70 shadow-lg ring-4 ${phase.ring} ring-offset-2 ring-offset-[#0a1e38]`
                           : isPast
-                          ? `${phase.dot} border-white/20 opacity-60`
+                          ? `${phase.dot} border-white/25 opacity-70`
                           : 'bg-white/[0.06] border-white/15 text-white/30 group-hover:bg-white/[0.12] group-hover:border-white/30'
                         }
                       `}>
@@ -194,9 +199,9 @@ export default function CampaignTimeline({ electionDate }: { electionDate: strin
                       <div className="text-center w-16">
                         <p className={`text-[10px] font-bold uppercase tracking-wide leading-tight transition-colors ${
                           isSelected ? 'text-white' :
-                          isCurrent  ? phase.textColor :
-                          isPast     ? 'text-white/35' :
-                                       'text-white/20 group-hover:text-white/40'
+                          isCurrent  ? 'text-white font-black' :
+                          isPast     ? 'text-white/50' :
+                                       'text-white/30 group-hover:text-white/55'
                         }`}>
                           {phase.shortName}
                         </p>

@@ -30,8 +30,19 @@ const config: Config = {
         'glow-red': '0 0 20px rgba(178,34,52,0.25)',
         'glow-gold': '0 0 20px rgba(212,160,23,0.3)',
       },
+      keyframes: {
+        'ping-slow': {
+          '75%, 100%': { transform: 'scale(2.2)', opacity: '0' },
+        },
+        'glow-pulse': {
+          '0%, 100%': { boxShadow: '0 0 8px 2px rgba(212,160,23,0.25)' },
+          '50%':       { boxShadow: '0 0 24px 6px rgba(212,160,23,0.55)' },
+        },
+      },
       animation: {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'ping-slow':  'ping-slow 2.2s cubic-bezier(0, 0, 0.2, 1) infinite',
+        'glow-pulse': 'glow-pulse 2.5s ease-in-out infinite',
       },
     },
   },

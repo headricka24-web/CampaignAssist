@@ -7,9 +7,9 @@ import { useState, useEffect } from 'react'
 // ── Suggested Actions Widget ──────────────────────────────────────────────────
 
 function SuggestedActionsWidget() {
-  const [open,    setOpen]    = useState(false)
-  const [actions, setActions] = useState<string[]>([])
-  const [loading, setLoading] = useState(true)
+  const [actions,  setActions]  = useState<string[]>([])
+  const [loading,  setLoading]  = useState(true)
+  const [open,     setOpen]     = useState(true)
 
   useEffect(() => {
     fetch('/api/suggested-actions')
@@ -19,38 +19,47 @@ function SuggestedActionsWidget() {
   }, [])
 
   return (
-    <div className="relative">
+    <div className="w-72 rounded-2xl overflow-hidden animate-glow-pulse"
+      style={{ background: 'rgba(4,14,31,0.88)', border: '1px solid rgba(212,160,23,0.35)', backdropFilter: 'blur(8px)' }}>
+      <div className="h-px bg-gradient-to-r from-gold-400/90 via-gold-300/50 to-transparent" />
+
+      {/* Header */}
       <button
         onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-3 bg-white/[0.07] hover:bg-white/[0.12] border border-white/15 hover:border-gold-400/40 rounded-2xl px-4 py-3 transition-all group"
+        className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-white/[0.04] transition-all"
       >
         <div className="relative shrink-0">
-          <span className="text-2xl">📋</span>
-          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+          <span className="text-2xl leading-none">📋</span>
+          <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 opacity-80 animate-ping" />
+          <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400" />
         </div>
-        <div className="text-left">
-          <p className="text-[9px] font-black uppercase tracking-[0.28em] text-gold-400/90 leading-none mb-0.5">Suggested Actions</p>
-          <p className="text-[11px] text-white/55 group-hover:text-white/75 transition-colors leading-none">
-            {loading ? 'Loading…' : `${actions.length} priorities today`}
-          </p>
+        <div className="flex-1 text-left">
+          <p className="text-[9px] font-black uppercase tracking-[0.3em] text-gold-400 leading-none mb-0.5">Suggested Actions</p>
+          <p className="text-[11px] text-white/45 leading-none">Today's strategic priorities</p>
         </div>
-        <span className={`text-white/30 group-hover:text-white/60 transition-all text-xs ml-1 ${open ? 'rotate-180' : ''}`}>▾</span>
+        <span className={`text-white/30 text-xs transition-transform duration-300 ${open ? '' : 'rotate-180'}`}>▾</span>
       </button>
 
-      {open && actions.length > 0 && (
-        <div className="absolute bottom-full right-0 mb-2 w-80 bg-[#071630] border border-white/15 rounded-2xl shadow-2xl overflow-hidden z-50">
-          <div className="h-0.5 bg-gradient-to-r from-gold-400/80 to-red-500/80" />
-          <div className="p-4">
-            <p className="text-[9px] font-black uppercase tracking-[0.28em] text-gold-400/80 mb-3">Today's Priorities</p>
-            <ul className="space-y-2.5">
-              {actions.map((a, i) => (
-                <li key={i} className="flex items-start gap-2.5">
-                  <span className="text-gold-400/70 font-black text-[11px] mt-0.5 shrink-0">{i + 1}.</span>
-                  <span className="text-white/70 text-xs leading-relaxed">{a}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+      {/* Body */}
+      {open && (
+        <div className="border-t px-4 pb-4 pt-3 space-y-3" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+          {loading ? (
+            <div className="flex items-center gap-2.5 py-1">
+              <span className="w-3.5 h-3.5 border-2 rounded-full animate-spin shrink-0"
+                style={{ borderColor: 'rgba(212,160,23,0.3)', borderTopColor: 'rgba(212,160,23,0.9)' }} />
+              <span className="text-[11px] text-white/35">Generating priorities…</span>
+            </div>
+          ) : actions.length === 0 ? (
+            <p className="text-xs text-white/30 py-1">Run your first news scan to unlock personalized action items.</p>
+          ) : actions.map((a, i) => (
+            <div key={i} className="flex items-start gap-3">
+              <span className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black leading-none"
+                style={{ background: 'rgba(212,160,23,0.18)', border: '1px solid rgba(212,160,23,0.35)', color: '#e8b820' }}>
+                {i + 1}
+              </span>
+              <p className="text-[11px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.68)' }}>{a}</p>
+            </div>
+          ))}
         </div>
       )}
     </div>
