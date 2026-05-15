@@ -228,43 +228,48 @@ export default function CommandCenter({ candidate, electionDate }: { candidate: 
         <div className="h-1.5 bg-red-gradient" />
 
         <div className="relative max-w-5xl mx-auto px-8 py-16 md:py-20">
+          <div className="flex items-end gap-10">
 
-          {/* Live pill */}
-          <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 mb-8">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse-slow" />
-            <span className="text-green-400/80 text-[10px] font-black uppercase tracking-[0.3em]">Live · All Systems Online</span>
-          </div>
+            {/* ── Left: heading + CTAs ── */}
+            <div className="flex-1 min-w-0">
+              {/* Live pill */}
+              <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 mb-8">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse-slow" />
+                <span className="text-green-400/80 text-[10px] font-black uppercase tracking-[0.3em]">Live · All Systems Online</span>
+              </div>
 
-          {/* Greeting headline — uniform size */}
-          <h1 className="font-display font-black text-white text-4xl md:text-6xl leading-[1.1] mb-4">
-            {greeting()}, Team <span className="text-gold-400">{last}.</span>
-          </h1>
+              <h1 className="font-display font-black text-white text-4xl md:text-6xl leading-[1.1] mb-4">
+                {greeting()}, Team <span className="text-gold-400">{last}.</span>
+              </h1>
 
-          <p className="text-blue-100/80 text-base md:text-lg font-medium mb-1">
-            {candidate.name} &nbsp;·&nbsp; {candidate.race} &nbsp;·&nbsp; {geo}
-          </p>
-          <p className="text-blue-200/55 text-sm mb-10 max-w-xl">
-            Your complete campaign intelligence platform — ready for battle.
-          </p>
+              <p className="text-blue-100/80 text-base md:text-lg font-medium mb-1">
+                {candidate.name} &nbsp;·&nbsp; {candidate.race} &nbsp;·&nbsp; {geo}
+              </p>
+              <p className="text-blue-200/55 text-sm mb-10 max-w-xl">
+                Your complete campaign intelligence platform — ready for battle.
+              </p>
 
-          <div className="flex items-center gap-4 flex-wrap">
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center gap-3 bg-red-600 hover:bg-red-700 text-white font-black text-sm uppercase tracking-widest px-8 py-3.5 rounded-xl shadow-glow-red transition-all"
-            >
-              Enter Dashboard <span>→</span>
-            </Link>
-            <Link
-              href="/my-candidate"
-              className="inline-flex items-center gap-2 border border-white/25 hover:border-white/50 text-white/70 hover:text-white text-xs font-bold uppercase tracking-widest px-5 py-3.5 rounded-xl transition-all"
-            >
-              ⚙ Campaign Settings
-            </Link>
-          </div>
+              <div className="flex items-center gap-4 flex-wrap">
+                <Link
+                  href="/dashboard"
+                  className="inline-flex items-center gap-3 bg-red-600 hover:bg-red-700 text-white font-black text-sm uppercase tracking-widest px-8 py-3.5 rounded-xl shadow-glow-red transition-all"
+                >
+                  Enter Dashboard <span>→</span>
+                </Link>
+                <Link
+                  href="/my-candidate"
+                  className="inline-flex items-center gap-2 border border-white/25 hover:border-white/50 text-white/70 hover:text-white text-xs font-bold uppercase tracking-widest px-5 py-3.5 rounded-xl transition-all"
+                >
+                  ⚙ Campaign Settings
+                </Link>
+              </div>
+            </div>
 
-          {/* Suggested Actions — bottom right */}
-          <div className="absolute bottom-6 right-8 hidden md:block">
-            <SuggestedActionsWidget />
+            {/* ── Right: Suggested Actions widget ── */}
+            <div className="hidden lg:block shrink-0">
+              <SuggestedActionsWidget />
+            </div>
+
           </div>
         </div>
 

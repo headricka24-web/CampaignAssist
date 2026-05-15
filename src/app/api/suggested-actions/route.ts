@@ -17,7 +17,7 @@ export async function GET() {
   const today = todayKey()
 
   const cached = await prisma.generatedContent.findUnique({
-    where: { userId_type: { userId, type: 'suggested-actions' } },
+    where: { userId_type: { userId, type: 'suggested-actions-v2' } },
   })
   if (cached) {
     try {
@@ -80,9 +80,9 @@ Each action is one direct, specific sentence. No headers, no preamble, no explan
     .slice(0, 4)
 
   await prisma.generatedContent.upsert({
-    where:  { userId_type: { userId, type: 'suggested-actions' } },
+    where:  { userId_type: { userId, type: 'suggested-actions-v2' } },
     update: { content: JSON.stringify({ date: today, actions }) },
-    create: { userId, type: 'suggested-actions', content: JSON.stringify({ date: today, actions }) },
+    create: { userId, type: 'suggested-actions-v2', content: JSON.stringify({ date: today, actions }) },
   })
 
   return NextResponse.json({ actions })
