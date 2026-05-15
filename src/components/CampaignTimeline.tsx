@@ -173,7 +173,10 @@ export default function CampaignTimeline({ electionDate }: { electionDate: strin
                     >
                       {/* Ping ring for current phase */}
                       {isCurrent && !isSelected && (
-                        <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full ${phase.dot} animate-ping-slow opacity-50 z-0`} />
+                        <div
+                          className={`absolute top-0 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full ${phase.dot} animate-ping opacity-60 z-0`}
+                          style={{ animationDuration: '2.5s' }}
+                        />
                       )}
 
                       {/* Circle */}
@@ -191,7 +194,7 @@ export default function CampaignTimeline({ electionDate }: { electionDate: strin
                       `}>
                         {isPast && !isSelected
                           ? <span className="text-white font-black text-sm">✓</span>
-                          : <span className={isFuture ? 'opacity-40' : ''}>{phase.icon}</span>
+                          : <span className={isFuture ? 'opacity-55' : ''}>{phase.icon}</span>
                         }
                       </div>
 
@@ -200,8 +203,8 @@ export default function CampaignTimeline({ electionDate }: { electionDate: strin
                         <p className={`text-[10px] font-bold uppercase tracking-wide leading-tight transition-colors ${
                           isSelected ? 'text-white' :
                           isCurrent  ? 'text-white font-black' :
-                          isPast     ? 'text-white/50' :
-                                       'text-white/30 group-hover:text-white/55'
+                          isPast     ? 'text-white/60' :
+                                       'text-white/45 group-hover:text-white/70'
                         }`}>
                           {phase.shortName}
                         </p>

@@ -7,9 +7,9 @@ import { useState, useEffect } from 'react'
 // ── Suggested Actions Widget ──────────────────────────────────────────────────
 
 function SuggestedActionsWidget() {
-  const [actions,  setActions]  = useState<string[]>([])
-  const [loading,  setLoading]  = useState(true)
-  const [open,     setOpen]     = useState(true)
+  const [actions, setActions] = useState<string[]>([])
+  const [loading, setLoading] = useState(true)
+  const [open,    setOpen]    = useState(false)
 
   useEffect(() => {
     fetch('/api/suggested-actions')
@@ -19,50 +19,103 @@ function SuggestedActionsWidget() {
   }, [])
 
   return (
-    <div className="w-72 rounded-2xl overflow-hidden animate-glow-pulse"
-      style={{ background: 'rgba(4,14,31,0.88)', border: '1px solid rgba(212,160,23,0.35)', backdropFilter: 'blur(8px)' }}>
-      <div className="h-px bg-gradient-to-r from-gold-400/90 via-gold-300/50 to-transparent" />
-
-      {/* Header */}
+    <>
+      {/* ── Notebook button (stays in hero) ── */}
       <button
-        onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-white/[0.04] transition-all"
+        onClick={() => setOpen(true)}
+        className="group relative w-52 rounded-2xl overflow-hidden text-left transition-all duration-200 hover:scale-[1.02]"
+        style={{ background: 'rgba(4,14,31,0.80)', border: '1.5px solid rgba(212,160,23,0.4)', backdropFilter: 'blur(6px)' }}
       >
-        <div className="relative shrink-0">
-          <span className="text-2xl leading-none">📋</span>
-          <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 opacity-80 animate-ping" />
-          <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400" />
+        {/* Binding strip */}
+        <div className="h-1.5 bg-gradient-to-r from-gold-400 via-gold-300/70 to-gold-400/20" />
+
+        {/* Spiral holes */}
+        <div className="flex items-center gap-[7px] px-4 py-2">
+          {Array.from({ length: 9 }).map((_, i) => (
+            <div key={i} className="w-2.5 h-2.5 rounded-full shrink-0"
+              style={{ background: '#040e1f', border: '1px solid rgba(212,160,23,0.35)', boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.6)' }} />
+          ))}
         </div>
-        <div className="flex-1 text-left">
-          <p className="text-[9px] font-black uppercase tracking-[0.3em] text-gold-400 leading-none mb-0.5">Suggested Actions</p>
-          <p className="text-[11px] text-white/45 leading-none">Today's strategic priorities</p>
+
+        {/* Body */}
+        <div className="px-4 pb-5 pt-1">
+          <div className="flex items-center gap-2 mb-2.5">
+            <span className="text-3xl leading-none">📓</span>
+            <div className="flex items-center gap-1.5">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-60" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400" />
+              </span>
+              <span className="text-[9px] font-black uppercase tracking-widest text-green-400/80">Live</span>
+            </div>
+          </div>
+
+          <p className="text-sm font-black text-white/90 leading-tight mb-1">Today's<br/>Recommended Actions</p>
+          <p className="text-[11px] text-white/40 mb-4">
+            {loading ? 'Generating…' : `${actions.length} priorities ready`}
+          </p>
+
+          <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest transition-colors text-gold-400/60 group-hover:text-gold-400">
+            Open notebook <span className="transition-transform group-hover:translate-x-0.5">→</span>
+          </div>
         </div>
-        <span className={`text-white/30 text-xs transition-transform duration-300 ${open ? '' : 'rotate-180'}`}>▾</span>
       </button>
 
-      {/* Body */}
-      {open && (
-        <div className="border-t px-4 pb-4 pt-3 space-y-3" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+      {/* ── Slide-out panel from right ── */}
+      {/* Backdrop */}
+      <div
+        className={`fixed inset-0 z-40 transition-opacity duration-300 ${open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+        style={{ background: 'rgba(10,22,40,0.5)', backdropFilter: 'blur(2px)' }}
+        onClick={() => setOpen(false)}
+      />
+
+      {/* Panel */}
+      <div className={`fixed top-0 right-0 bottom-0 w-96 z-50 flex flex-col transition-transform duration-300 ease-in-out ${open ? 'translate-x-0' : 'translate-x-full'}`}
+        style={{ background: '#050f20', borderLeft: '1px solid rgba(212,160,23,0.25)' }}>
+
+        <div className="h-1 bg-gradient-to-r from-gold-400 via-gold-300/60 to-transparent" />
+
+        {/* Panel header */}
+        <div className="flex items-center justify-between px-6 py-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">📓</span>
+            <div>
+              <p className="text-[9px] font-black uppercase tracking-[0.28em] text-gold-400">Today's Recommended Actions</p>
+              <p className="text-[11px] text-white/35 mt-0.5">Based on today's intelligence brief</p>
+            </div>
+          </div>
+          <button onClick={() => setOpen(false)}
+            className="w-8 h-8 rounded-xl flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all text-sm">
+            ✕
+          </button>
+        </div>
+
+        {/* Actions list */}
+        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5">
           {loading ? (
-            <div className="flex items-center gap-2.5 py-1">
-              <span className="w-3.5 h-3.5 border-2 rounded-full animate-spin shrink-0"
-                style={{ borderColor: 'rgba(212,160,23,0.3)', borderTopColor: 'rgba(212,160,23,0.9)' }} />
-              <span className="text-[11px] text-white/35">Generating priorities…</span>
+            <div className="flex items-center gap-3 text-white/40">
+              <span className="w-4 h-4 border-2 rounded-full animate-spin shrink-0"
+                style={{ borderColor: 'rgba(212,160,23,0.3)', borderTopColor: '#e8b820' }} />
+              <span className="text-sm">Generating your priorities…</span>
             </div>
           ) : actions.length === 0 ? (
-            <p className="text-xs text-white/30 py-1">Run your first news scan to unlock personalized action items.</p>
+            <p className="text-sm text-white/30">Run your first news scan to unlock personalized recommendations.</p>
           ) : actions.map((a, i) => (
-            <div key={i} className="flex items-start gap-3">
-              <span className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black leading-none"
-                style={{ background: 'rgba(212,160,23,0.18)', border: '1px solid rgba(212,160,23,0.35)', color: '#e8b820' }}>
+            <div key={i} className="flex items-start gap-4">
+              <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-[11px] font-black"
+                style={{ background: 'rgba(212,160,23,0.15)', border: '1px solid rgba(212,160,23,0.4)', color: '#e8b820' }}>
                 {i + 1}
-              </span>
-              <p className="text-[11px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.68)' }}>{a}</p>
+              </div>
+              <p className="text-sm text-white/75 leading-relaxed">{a}</p>
             </div>
           ))}
         </div>
-      )}
-    </div>
+
+        <div className="px-6 py-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+          <p className="text-[10px] uppercase tracking-widest font-bold text-white/20">Refreshes daily · Powered by CampaignAssist AI</p>
+        </div>
+      </div>
+    </>
   )
 }
 
