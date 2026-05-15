@@ -129,15 +129,15 @@ export default function VictoryCalculator({
   totalVoters:   number
   totalRaised:   number
 }) {
-  const [plan, savePlan] = usePersistedContent<VictoryPlan>('victory-plan', DEFAULT_PLAN)
+  const [plan, savePlan, { loading: planLoading }] = usePersistedContent<VictoryPlan>('victory-plan', DEFAULT_PLAN)
   const [editing,  setEditing]  = useState(false)
   const [draft,    setDraft]    = useState<VictoryPlan>(DEFAULT_PLAN)
   const [step,     setStep]     = useState<1 | 2>(1) // setup wizard step
 
-  // Auto-open setup if no election date yet
+  // Auto-open setup only after data loads and only if no election date is saved
   useEffect(() => {
-    if (!plan.electionDate) { setEditing(true); setStep(1) }
-  }, [plan.electionDate])
+    if (!planLoading && !plan.electionDate) { setEditing(true); setStep(1) }
+  }, [planLoading, plan.electionDate])
 
   const raceLevel = (candidate?.raceLevel ?? 'state').toLowerCase()
   const levelDefaults = RACE_DEFAULTS[raceLevel] ?? RACE_DEFAULTS.state
