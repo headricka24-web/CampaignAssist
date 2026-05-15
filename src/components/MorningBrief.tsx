@@ -64,7 +64,7 @@ export default function MorningBrief() {
               ? <p className="text-sm text-gray-500 mb-3">No articles in your feed yet — run a News Tracker scan first.</p>
               : <p className="text-sm text-gray-500 mb-3">Get a sharp, strategic read on everything your campaign needs to know today.</p>
             }
-            <button onClick={generate} disabled={generating}
+            <button onClick={() => generate()} disabled={generating}
               className="bg-navy hover:bg-navy-700 text-white font-bold px-6 py-2.5 rounded-xl text-sm transition-colors shadow-sm disabled:opacity-50">
               ★ Generate Today's Brief
             </button>
