@@ -17,9 +17,10 @@ export default function MorningBrief() {
       .finally(() => setLoading(false))
   }, [])
 
-  async function generate() {
+  async function generate(force = false) {
     setGenerating(true); setNoArticles(false)
-    const res  = await fetch('/api/morning-brief', { method: 'POST' })
+    const url  = force ? '/api/morning-brief?force=true' : '/api/morning-brief'
+    const res  = await fetch(url, { method: 'POST' })
     const data = await res.json()
     if (data.reason === 'no_articles') setNoArticles(true)
     else setContent(data.content)
@@ -43,7 +44,7 @@ export default function MorningBrief() {
             <p className="text-[11px] text-gray-400 uppercase tracking-widest pl-10">{today}</p>
           </div>
           {!loading && content && (
-            <button onClick={generate} disabled={generating}
+            <button onClick={() => generate(true)} disabled={generating}
               className="shrink-0 text-xs font-bold text-gray-400 hover:text-navy transition-colors disabled:opacity-40 border border-gray-200 hover:border-navy px-3 py-1.5 rounded-lg">
               ↺ Regenerate
             </button>

@@ -23,16 +23,19 @@ export async function GET() {
   return NextResponse.json({ content: null })
 }
 
-export async function POST() {
+export async function POST(req: Request) {
   const session = await auth()
   const userId  = session?.user?.id
   if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+
+  const { searchParams } = new URL(req.url)
+  const force = searchParams.get('force') === 'true'
 
   const date     = todayKey()
   const existing = await prisma.dailyBrief.findFirst({
     where: { date, userId },
   })
-  if (existing) return NextResponse.json({ content: existing.content, cached: true })
+  if (existing && !force) return NextResponse.json({ content: existing.content, cached: true })
 
   const candidate = await prisma.candidate.findFirst({
     where: { userId },
@@ -73,8 +76,10 @@ Here are today's news articles. Write a morning intelligence brief covering:
 Articles:\n\n${bulletList}`,
   )
 
-  await prisma.dailyBrief.create({
-    data: { date, userId, content },
+  await prisma.dailyBrief.upsert({
+    where:  { date_userId: { date, userId } },
+    update: { content },
+    create: { date, userId, content },
   })
 
   return NextResponse.json({ content, cached: false })
