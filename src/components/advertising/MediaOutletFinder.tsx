@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import RichText from '@/components/RichText'
+import OutletResults from './OutletResults'
 import { usePersistedContent } from '@/lib/usePersistedContent'
 
 function CopyButton({ text }: { text: string }) {
@@ -60,7 +60,7 @@ export default function MediaOutletFinder() {
         <p className="text-gray-400 text-sm ml-[52px]">Discover local TV stations, radio, digital outlets, and newspapers for your race's market.</p>
       </div>
 
-      <div className="max-w-2xl space-y-6">
+      <div className="max-w-3xl space-y-6">
 
         {/* Optional geo override */}
         <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
@@ -88,23 +88,16 @@ export default function MediaOutletFinder() {
 
         {/* Results */}
         {content && (
-          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">📡</span>
-                <div>
-                  <p className="font-black text-sm text-navy uppercase tracking-wide">Media Outlets</p>
-                  {geoLabel && <p className="text-[11px] text-gray-400 mt-0.5">{geoLabel}</p>}
-                </div>
-              </div>
+          <div>
+            {/* Toolbar */}
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Media Buying Guide</p>
               <div className="flex items-center gap-2">
                 <CopyButton text={content} />
                 <button onClick={() => find(true)} className="text-xs text-gray-400 hover:text-navy font-bold transition-colors">↺ Redo</button>
               </div>
             </div>
-            <div className="p-6">
-              <RichText text={content} />
-            </div>
+            <OutletResults content={content} geo={geoLabel || undefined} />
           </div>
         )}
 
