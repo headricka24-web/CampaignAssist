@@ -14,6 +14,7 @@ const DEPT_COLORS = {
   Communications: { label: 'text-violet-400', bar: 'bg-violet-500',  glow: 'shadow-violet-900/30' },
   'Field Ops':    { label: 'text-emerald-400',bar: 'bg-emerald-500', glow: 'shadow-emerald-900/30'},
   Finance:        { label: 'text-amber-400',  bar: 'bg-amber-500',   glow: 'shadow-amber-900/30'  },
+  Advertising:    { label: 'text-orange-400', bar: 'bg-orange-500',  glow: 'shadow-orange-900/30' },
 } as const
 
 // ── Navigation structure ──────────────────────────────────────────────────────
@@ -55,6 +56,15 @@ const NAV_GROUPS = [
     links: [
       { href: '/budget',     label: 'Budget'     },
       { href: '/compliance', label: 'Compliance' },
+    ],
+  },
+  {
+    category: 'Advertising' as const,
+    links: [
+      { href: '/advertising/copy',       label: 'Ad Copy Studio'    },
+      { href: '/advertising/strategy',   label: 'Ad Strategy'       },
+      { href: '/advertising/outlets',    label: 'Media Outlets'     },
+      { href: '/advertising/brainstorm', label: 'Ad Brainstorm'     },
     ],
   },
 ]
@@ -134,7 +144,8 @@ export default function Sidebar({
                   group.category === 'Intelligence'   ? 'from-blue-500/30'   :
                   group.category === 'Communications' ? 'from-violet-500/30' :
                   group.category === 'Field Ops'      ? 'from-emerald-500/30':
-                                                        'from-amber-500/30'
+                  group.category === 'Finance'        ? 'from-amber-500/30'  :
+                                                        'from-orange-500/30'
                 } to-transparent`} />
               </div>
 

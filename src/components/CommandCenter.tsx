@@ -195,6 +195,20 @@ const DEPARTMENTS = [
       { href: '/compliance', label: 'Compliance', desc: 'Registration, rules & filing guide' },
     ],
   },
+  {
+    name:    'Advertising',
+    tagline: 'Ad copy, strategy & media',
+    from:    'from-orange-700',
+    to:      'to-orange-950',
+    glow:    'shadow-orange-900/50',
+    mark:    '▶',
+    links: [
+      { href: '/advertising/copy',       label: 'Ad Copy Studio', desc: 'TV, radio, digital & mail scripts' },
+      { href: '/advertising/strategy',   label: 'Ad Strategy',    desc: 'Phase & budget-based ad plan'      },
+      { href: '/advertising/outlets',    label: 'Media Outlets',  desc: 'Local TV, radio & digital outlets' },
+      { href: '/advertising/brainstorm', label: 'Ad Brainstorm',  desc: '5 creative concepts for your race' },
+    ],
+  },
 ]
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -348,8 +362,8 @@ export default function CommandCenter({ candidate, electionDate }: { candidate: 
           ))}
         </div>
 
-        {/* Row 2: 2 cards, spanning full width */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Row 2: 3 cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {DEPARTMENTS.slice(3).map(dept => (
             <DeptCard key={dept.name} dept={dept} />
           ))}
