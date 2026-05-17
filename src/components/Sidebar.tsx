@@ -61,10 +61,9 @@ const NAV_GROUPS = [
   {
     category: 'Advertising' as const,
     links: [
-      { href: '/advertising/copy',       label: 'Ad Copy Studio'    },
-      { href: '/advertising/strategy',   label: 'Ad Strategy'       },
-      { href: '/advertising/outlets',    label: 'Media Outlets'     },
-      { href: '/advertising/brainstorm', label: 'Ad Brainstorm'     },
+      { href: '/advertising/copy',     label: 'Ad Copy Studio' },
+      { href: '/advertising/strategy', label: 'Ad Strategy'    },
+      { href: '/advertising/outlets',  label: 'Media Outlets'  },
     ],
   },
 ]

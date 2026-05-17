@@ -203,10 +203,9 @@ const DEPARTMENTS = [
     glow:    'shadow-orange-900/50',
     mark:    '▶',
     links: [
-      { href: '/advertising/copy',       label: 'Ad Copy Studio', desc: 'TV, radio, digital & mail scripts' },
-      { href: '/advertising/strategy',   label: 'Ad Strategy',    desc: 'Phase & budget-based ad plan'      },
-      { href: '/advertising/outlets',    label: 'Media Outlets',  desc: 'Local TV, radio & digital outlets' },
-      { href: '/advertising/brainstorm', label: 'Ad Brainstorm',  desc: '5 creative concepts for your race' },
+      { href: '/advertising/copy',     label: 'Ad Copy Studio', desc: 'TV, radio, digital & mail scripts' },
+      { href: '/advertising/strategy', label: 'Ad Strategy',    desc: 'Phase & budget-based ad plan'      },
+      { href: '/advertising/outlets',  label: 'Media Outlets',  desc: 'Local TV, radio & digital outlets' },
     ],
   },
 ]
