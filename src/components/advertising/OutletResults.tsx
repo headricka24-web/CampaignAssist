@@ -130,7 +130,8 @@ function SectionBody({ lines }: { lines: string[] }) {
 
   for (const line of lines) {
     const trimmed = line.trim()
-    if (!trimmed) {
+    // Skip blank lines and horizontal rules (--- / ***)
+    if (!trimmed || /^[-*_]{2,}$/.test(trimmed)) {
       flushTable()
       flushBullets()
       continue
@@ -249,10 +250,12 @@ export default function OutletResults({ content, geo }: { content: string; geo?:
         </div>
       )}
 
-      {/* Section cards */}
-      {sections.map((s, i) => (
-        <SectionCard key={i} title={s.title} lines={s.lines} />
-      ))}
+      {/* Section cards — skip preamble/title-only sections with no real content */}
+      {sections
+        .filter(s => s.lines.some(l => l.trim() && !/^[-*_]{2,}$/.test(l.trim())))
+        .map((s, i) => (
+          <SectionCard key={i} title={s.title} lines={s.lines} />
+        ))}
     </div>
   )
 }
