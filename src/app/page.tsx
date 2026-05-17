@@ -71,6 +71,24 @@ const FEATURES = [
     dept: 'Finance',
     blurb: 'Track income and expenses by category, import bank statements, and keep your campaign finances clean.',
   },
+  {
+    icon: '📺',
+    title: 'Ad Copy Studio',
+    dept: 'Advertising',
+    blurb: 'Generate TV spots, radio scripts, digital display ads, social video, direct mail, and pre-roll — on demand.',
+  },
+  {
+    icon: '🎯',
+    title: 'Ad Strategy Advisor',
+    dept: 'Advertising',
+    blurb: 'Get a complete phase-by-phase advertising plan built around your budget — from grassroots to full media buy.',
+  },
+  {
+    icon: '📡',
+    title: 'Media Outlet Finder',
+    dept: 'Advertising',
+    blurb: 'Discover local TV stations, radio, digital outlets, and newspapers for your exact race market with buying tips.',
+  },
 ]
 
 const HOW_IT_WORKS = [
@@ -101,7 +119,7 @@ const HOW_IT_WORKS = [
 ]
 
 const STATS = [
-  { value: '11',    label: 'operational tools' },
+  { value: '14',    label: 'operational tools' },
   { value: '100+', label: 'sources monitored' },
   { value: '50+',  label: 'Census data points' },
   { value: '2 min', label: 'to your first briefing' },
@@ -274,7 +292,7 @@ export default async function LandingPage() {
               {[
                 { label: 'Demographic Data Points', value: '50+', sub: 'U.S. Census Bureau' },
                 { label: 'News Sources', value: '100+', sub: 'monitored daily' },
-                { label: 'Operational Functions', value: '8', sub: 'across every department' },
+                { label: 'Operational Functions', value: '14', sub: 'across 6 departments' },
                 { label: 'Time to First Briefing', value: '2 min', sub: 'from signup' },
               ].map(stat => (
                 <div key={stat.label} className="bg-white/5 border border-white/10 rounded-2xl p-5 hover:bg-white/10 transition-colors">

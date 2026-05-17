@@ -670,6 +670,146 @@ export default function WhatWeOfferPage() {
         </div>
       </section>
 
+      {/* ── 9. Advertising ──────────────────────────────────────────────────── */}
+      <section className="py-16 bg-gray-50">
+        <div className="container mx-auto max-w-7xl px-6 space-y-6">
+          <div className="text-center">
+            <div className="inline-flex items-center gap-2 bg-orange-500 text-white text-xs font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-3">▶ Advertising — New</div>
+            <h2 className="font-display font-black text-navy text-3xl md:text-4xl">Ad Copy Studio &amp; Media Strategy</h2>
+            <p className="text-gray-400 mt-2 max-w-xl mx-auto">Generate professional TV scripts, radio spots, digital ads, and direct mail — plus a phase-by-phase media strategy and local outlet list for your market.</p>
+          </div>
+
+          {/* Three feature cards */}
+          <div className="grid md:grid-cols-3 gap-5">
+            {[
+              {
+                icon: '📺',
+                title: 'Ad Copy Studio',
+                color: 'from-red-500 to-red-700',
+                bg: 'bg-red-50',
+                border: 'border-red-100',
+                text: 'text-red-700',
+                formats: ['TV :30', 'TV :60', 'Radio :30', 'Radio :60', 'Digital Display', 'Social Video', 'Direct Mail', 'Pre-Roll :15'],
+                desc: 'Pick a format, enter a focus issue, and get a full professional script in seconds. Every output is saved and copyable.',
+              },
+              {
+                icon: '🎯',
+                title: 'Ad Strategy Advisor',
+                color: 'from-orange-500 to-orange-700',
+                bg: 'bg-orange-50',
+                border: 'border-orange-100',
+                text: 'text-orange-700',
+                formats: ['Early Campaign', 'Mid-Campaign', 'Final Push', 'GOTV', 'Under $5K', '$5K–$25K', '$25K–$100K', '$100K+'],
+                desc: 'Select your campaign phase and budget. Get a full ad mix with budget allocation, targeting priorities, and what to avoid.',
+              },
+              {
+                icon: '📡',
+                title: 'Media Outlet Finder',
+                color: 'from-violet-500 to-violet-700',
+                bg: 'bg-violet-50',
+                border: 'border-violet-100',
+                text: 'text-violet-700',
+                formats: ['Local TV', 'Radio (incl. conservative talk)', 'Digital & Streaming', 'Newspapers', 'Hyperlocal / Community', 'Buying Tips'],
+                desc: 'Auto-detects your race geography and surfaces the real outlets that matter — with notes on which buys make sense for your level.',
+              },
+            ].map(f => (
+              <div key={f.title} className={`bg-white rounded-2xl border ${f.border} overflow-hidden shadow-sm`}>
+                <div className={`h-1.5 bg-gradient-to-r ${f.color}`} />
+                <div className="p-5">
+                  <div className="flex items-center gap-2.5 mb-3">
+                    <div className={`w-10 h-10 rounded-xl ${f.bg} flex items-center justify-center text-xl shrink-0`}>{f.icon}</div>
+                    <h3 className={`font-black text-sm uppercase tracking-wide ${f.text}`}>{f.title}</h3>
+                  </div>
+                  <p className="text-gray-500 text-xs leading-relaxed mb-4">{f.desc}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {f.formats.map(fmt => (
+                      <span key={fmt} className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${f.bg} ${f.text}`}>{fmt}</span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Mock TV script output */}
+          <Screenshot title="advertising/copy">
+            <div className="bg-gray-50 p-5 space-y-4">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-orange-700 flex items-center justify-center text-xl shadow-lg">📺</div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest text-orange-500 font-black">Advertising</p>
+                    <h2 className="font-display font-black text-navy text-xl">Ad Copy Studio</h2>
+                  </div>
+                </div>
+              </div>
+
+              {/* Focus input */}
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Focus Issue / Theme</p>
+                <div className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-400">Border security and public safety…</div>
+              </div>
+
+              {/* Format cards */}
+              <div className="grid grid-cols-4 gap-3">
+                {[
+                  { icon: '📺', label: 'TV Spot', sub: ':30 second', bar: 'from-red-500 to-red-700', active: true },
+                  { icon: '📺', label: 'TV Spot', sub: ':60 second', bar: 'from-red-700 to-red-900', active: false },
+                  { icon: '📻', label: 'Radio Spot', sub: ':30 second', bar: 'from-blue-500 to-blue-700', active: false },
+                  { icon: '📱', label: 'Social Video', sub: ':15–:30 script', bar: 'from-orange-400 to-orange-600', active: false },
+                ].map((f, i) => (
+                  <div key={i} className={`bg-white rounded-2xl border overflow-hidden shadow-sm ${f.active ? 'border-navy ring-2 ring-navy/10' : 'border-gray-100'}`}>
+                    <div className={`h-1 bg-gradient-to-r ${f.bar}`} />
+                    <div className="p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-xl">{f.icon}</span>
+                        <div>
+                          <p className="text-xs font-black text-navy">{f.label}</p>
+                          <p className="text-[10px] text-gray-400">{f.sub}</p>
+                        </div>
+                      </div>
+                      <div className={`w-full py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wide text-center ${f.active ? 'bg-navy text-white' : 'bg-gray-100 text-gray-400'}`}>
+                        {f.active ? '✓ Generated' : 'Generate'}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Script output */}
+              <div className="bg-white border-2 border-navy-100 rounded-2xl overflow-hidden shadow-patriot">
+                <div className="h-1 bg-red-gradient" />
+                <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">📺</span>
+                    <div>
+                      <p className="font-black text-xs text-navy uppercase tracking-wide">TV Spot :30</p>
+                      <p className="text-[10px] text-gray-400">Border security · Smith for Congress</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="bg-navy text-white text-[10px] font-bold px-3 py-1.5 rounded-lg">Copy All</div>
+                    <div className="border border-gray-200 text-gray-400 text-[10px] font-bold px-2.5 py-1.5 rounded-lg">↺ Redo</div>
+                  </div>
+                </div>
+                <div className="p-5 space-y-3 text-xs">
+                  <div><span className="font-black text-navy uppercase tracking-widest text-[10px]">TITLE:</span> <span className="text-gray-700">"Enough"</span></div>
+                  <div className="space-y-1.5 text-gray-600 leading-relaxed">
+                    <p><span className="font-bold text-navy">[VISUAL]</span> Aerial shot of the southern border. Razor wire. Empty patrol road at dusk.</p>
+                    <p><span className="font-bold text-navy">[VO]</span> <em>"Three thousand illegal crossings. Last month alone. In our district."</em></p>
+                    <p><span className="font-bold text-navy">[VISUAL]</span> Cut to hometown streets. Family walking to school.</p>
+                    <p><span className="font-bold text-navy">[VO]</span> <em>"Tom Smith won't negotiate with that. He'll end it."</em></p>
+                    <p><span className="font-bold text-navy">[SUPER]</span> TOM SMITH · CONGRESS · OHIO 14TH</p>
+                    <p><span className="font-bold text-navy">[TAG]</span> <em>"I'm Tom Smith and I approve this message."</em></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Screenshot>
+        </div>
+      </section>
+
       {/* ── CTA ──────────────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden bg-hero-gradient py-20">
         <div className="absolute inset-0 bg-stripe-pattern opacity-20" />
