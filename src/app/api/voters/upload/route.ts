@@ -101,11 +101,10 @@ export async function POST(req: NextRequest) {
 
   if (rows.length === 0) return NextResponse.json({ error: 'File appears to be empty' }, { status: 400 })
 
-  const session     = await auth()
-  const userId      = session?.user?.id ?? null
-  const candidate   = await prisma.candidate.findFirst({
-    where: userId ? { userId } : { userId: null },
-  })
+  const session = await auth()
+  const userId  = session?.user?.id ?? null
+  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  const candidate   = await prisma.candidate.findFirst({ where: { userId } })
   const candidateId = candidate?.id ?? null
 
   type VoterRow = {

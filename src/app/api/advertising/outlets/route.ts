@@ -67,6 +67,10 @@ One practical tip specific to this race's geography and level for getting the be
 
 Be as specific as possible with real outlet names. If the exact market has many options, prioritize the most politically relevant for a Republican campaign.`
 
-  const content = await ask(system, user, 900)
-  return NextResponse.json({ content, geo: targetGeo })
+  try {
+    const content = await ask(system, user, 900)
+    return NextResponse.json({ content, geo: targetGeo })
+  } catch {
+    return NextResponse.json({ error: 'ai_unavailable' }, { status: 500 })
+  }
 }

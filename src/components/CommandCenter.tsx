@@ -214,7 +214,7 @@ const DEPARTMENTS = [
 
 function lastName(fullName: string) {
   const parts = fullName.trim().split(/\s+/)
-  return parts[parts.length - 1]
+  return parts[parts.length - 1] || 'Campaign'
 }
 
 function geoLabel(c: Candidate) {

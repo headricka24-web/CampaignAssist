@@ -12,7 +12,7 @@ export async function GET() {
     where:  { userId },
     select: { id: true },
   })
-  const cid = candidate?.id ?? ''
+  const cid = candidate?.id ?? null
 
   const contacts = await prisma.mediaContact.findMany({
     where:   { candidateId: cid },
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     where:  { userId },
     select: { id: true },
   })
-  const cid = candidate?.id ?? ''
+  const cid = candidate?.id ?? null
 
   const body = await req.json() as Record<string, unknown>
 
@@ -47,6 +47,12 @@ export async function POST(req: NextRequest) {
       status?: string
     }
 
+    // ownership check — contact must belong to this candidate
+    const existing = await prisma.mediaContact.findUnique({ where: { id: mediaContactId }, select: { candidateId: true } })
+    if (!existing || existing.candidateId !== cid) {
+      return NextResponse.json({ error: 'not found' }, { status: 404 })
+    }
+
     // bump lastContactedAt on the contact
     await prisma.mediaContact.update({
       where: { id: mediaContactId },
@@ -55,7 +61,7 @@ export async function POST(req: NextRequest) {
 
     const entry = await prisma.pressOutreach.create({
       data: {
-        candidateId:    cid || null,
+        candidateId:    cid,
         mediaContactId,
         type,
         subject:  subject ?? null,
@@ -99,7 +105,7 @@ export async function POST(req: NextRequest) {
 
   const contact = await prisma.mediaContact.create({
     data: {
-      candidateId:  cid || null,
+      candidateId:  cid,
       name,
       outlet,
       role:         role         ?? null,
@@ -128,7 +134,7 @@ export async function DELETE(req: NextRequest) {
     where:  { userId },
     select: { id: true },
   })
-  const cid = candidate?.id ?? ''
+  const cid = candidate?.id ?? null
 
   const contact = await prisma.mediaContact.findUnique({ where: { id } })
   if (!contact || contact.candidateId !== cid) {

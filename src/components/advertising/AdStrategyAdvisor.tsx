@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import RichText from '@/components/RichText'
+import { usePersistedContent } from '@/lib/usePersistedContent'
 
 const PHASES = [
   { id: 'early',      label: 'Early Campaign',  sub: '6+ months out',      icon: '🌱' },
@@ -35,7 +36,7 @@ function CopyButton({ text }: { text: string }) {
 export default function AdStrategyAdvisor() {
   const [phase,   setPhase]   = useState<Phase | null>(null)
   const [budget,  setBudget]  = useState<Budget | null>(null)
-  const [content, setContent] = useState('')
+  const [content, saveContent, { loading: loadingCached }] = usePersistedContent('ad-strategy', '')
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState('')
 
@@ -43,7 +44,6 @@ export default function AdStrategyAdvisor() {
     if (!phase || !budget) return
     setLoading(true)
     setError('')
-    setContent('')
     try {
       const res  = await fetch('/api/advertising/strategy', {
         method: 'POST',
@@ -53,7 +53,7 @@ export default function AdStrategyAdvisor() {
       const data = await res.json()
       if (data.error === 'no_candidate') { setError('Add a candidate first.'); return }
       if (data.error) { setError('Something went wrong.'); return }
-      setContent(data.content)
+      await saveContent(data.content)
     } catch {
       setError('Network error.')
     } finally {
@@ -62,6 +62,7 @@ export default function AdStrategyAdvisor() {
   }
 
   const canGenerate = phase && budget
+  const busy        = loading || loadingCached
 
   return (
     <section>
@@ -128,10 +129,10 @@ export default function AdStrategyAdvisor() {
         {/* Generate button */}
         <button
           onClick={generate}
-          disabled={!canGenerate || loading}
+          disabled={!canGenerate || busy}
           className="w-full py-4 rounded-2xl font-black uppercase tracking-widest text-sm transition-all bg-navy text-white hover:bg-navy-700 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
         >
-          {loading ? 'Building your strategy…' : 'Generate Ad Strategy'}
+          {busy ? 'Building your strategy…' : content ? '↺ Regenerate Strategy' : 'Generate Ad Strategy'}
         </button>
 
         {error && <p className="text-sm text-red-500">{error}</p>}
@@ -146,7 +147,7 @@ export default function AdStrategyAdvisor() {
               </div>
               <div className="flex items-center gap-2">
                 <CopyButton text={content} />
-                <button onClick={generate} className="text-xs text-gray-400 hover:text-navy font-bold transition-colors">↺ Redo</button>
+                <button onClick={generate} disabled={busy} className="text-xs text-gray-400 hover:text-navy font-bold transition-colors disabled:opacity-40">↺ Redo</button>
               </div>
             </div>
             <div className="p-6">

@@ -4,15 +4,15 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/auth'
 
 export async function POST(req: NextRequest) {
+  const session = await auth()
+  const userId  = session?.user?.id ?? null
+  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+
   const { title, type, eventDate, location, description } = await req.json()
   if (!title?.trim()) return NextResponse.json({ error: 'title required' }, { status: 400 })
   if (!eventDate)     return NextResponse.json({ error: 'eventDate required' }, { status: 400 })
 
-  const session   = await auth()
-  const userId    = session?.user?.id ?? null
-  const candidate = await prisma.candidate.findFirst({
-    where: userId ? { userId } : { userId: null },
-  })
+  const candidate = await prisma.candidate.findFirst({ where: { userId } })
 
   const event = await prisma.campaignEvent.create({
     data: {

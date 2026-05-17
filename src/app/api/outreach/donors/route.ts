@@ -4,15 +4,15 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/auth'
 
 export async function POST(req: NextRequest) {
+  const session = await auth()
+  const userId  = session?.user?.id ?? null
+  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+
   const { name, email, phone, amount, donatedAt, method, followUpDue, notes, status } = await req.json()
   if (!name?.trim()) return NextResponse.json({ error: 'name required' }, { status: 400 })
   if (!amount || isNaN(Number(amount))) return NextResponse.json({ error: 'valid amount required' }, { status: 400 })
 
-  const session   = await auth()
-  const userId    = session?.user?.id ?? null
-  const candidate = await prisma.candidate.findFirst({
-    where: userId ? { userId } : { userId: null },
-  })
+  const candidate = await prisma.candidate.findFirst({ where: { userId } })
 
   const donor = await prisma.donor.create({
     data: {

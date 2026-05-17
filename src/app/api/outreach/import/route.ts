@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { NextRequest } from 'next/server'
 import * as XLSX from 'xlsx'
 import Anthropic from '@anthropic-ai/sdk'
+import { auth } from '@/auth'
 
 const EXTRACTION_SYSTEM = `You are a campaign data extraction assistant. Extract donor, volunteer, voter contact, and event information from the provided document. Return ONLY a valid JSON object with this exact structure:
 {
@@ -19,6 +20,9 @@ Rules:
 - Do NOT wrap the JSON in markdown code fences.`
 
 export async function POST(req: NextRequest) {
+  const session = await auth()
+  if (!session?.user?.id) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+
   const formData = await req.formData()
   const file = formData.get('file') as File | null
 

@@ -19,12 +19,17 @@ export default function MorningBrief() {
 
   async function generate(force = false) {
     setGenerating(true); setNoArticles(false)
-    const url  = force ? '/api/morning-brief?force=true' : '/api/morning-brief'
-    const res  = await fetch(url, { method: 'POST' })
-    const data = await res.json()
-    if (data.reason === 'no_articles') setNoArticles(true)
-    else setContent(data.content)
-    setGenerating(false)
+    try {
+      const url  = force ? '/api/morning-brief?force=true' : '/api/morning-brief'
+      const res  = await fetch(url, { method: 'POST' })
+      const data = await res.json()
+      if (data.reason === 'no_articles') setNoArticles(true)
+      else setContent(data.content)
+    } catch {
+      // network error — silently reset so user can retry
+    } finally {
+      setGenerating(false)
+    }
   }
 
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })

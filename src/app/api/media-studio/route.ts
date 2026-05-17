@@ -27,7 +27,7 @@ function issueNote(issue: string): string {
 async function getContext(userId: string) {
   const candidate = await prisma.candidate.findFirst({
     where: { userId },
-    select: { name: true, race: true, state: true, incumbent: true, raceLevel: true, district: true, county: true, city: true },
+    select: { name: true, race: true, state: true, party: true, incumbent: true, raceLevel: true, district: true, county: true, city: true },
   })
   const articles  = await prisma.article.findMany({
     where: { userId },

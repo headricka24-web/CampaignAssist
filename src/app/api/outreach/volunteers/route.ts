@@ -4,15 +4,15 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/auth'
 
 export async function POST(req: NextRequest) {
+  const session = await auth()
+  const userId  = session?.user?.id ?? null
+  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+
   const { name, email, phone, role, shiftDate, shiftStart, shiftEnd, status, notes } = await req.json()
   if (!name?.trim())  return NextResponse.json({ error: 'name required' }, { status: 400 })
   if (!shiftDate)     return NextResponse.json({ error: 'shiftDate required' }, { status: 400 })
 
-  const session   = await auth()
-  const userId    = session?.user?.id ?? null
-  const candidate = await prisma.candidate.findFirst({
-    where: userId ? { userId } : { userId: null },
-  })
+  const candidate = await prisma.candidate.findFirst({ where: { userId } })
 
   const volunteer = await prisma.volunteer.create({
     data: {

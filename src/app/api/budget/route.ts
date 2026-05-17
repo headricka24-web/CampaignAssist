@@ -12,7 +12,7 @@ export async function GET() {
     where:  { userId },
     select: { id: true },
   })
-  const cid = candidate?.id ?? ''
+  const cid = candidate?.id ?? null
 
   const transactions = await prisma.budgetTransaction.findMany({
     where:   { candidateId: cid },
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     where:  { userId },
     select: { id: true },
   })
-  const cid = candidate?.id ?? ''
+  const cid = candidate?.id ?? null
 
   const body = await req.json() as {
     type: string
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
 
   const tx = await prisma.budgetTransaction.create({
     data: {
-      candidateId:   cid || null,
+      candidateId:   cid,
       type:          body.type,
       category:      body.category,
       amount:        body.amount,
@@ -79,7 +79,7 @@ export async function DELETE(req: NextRequest) {
     where:  { userId },
     select: { id: true },
   })
-  const cid = candidate?.id ?? ''
+  const cid = candidate?.id ?? null
 
   const tx = await prisma.budgetTransaction.findUnique({ where: { id } })
   if (!tx || tx.candidateId !== cid) {

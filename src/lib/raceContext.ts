@@ -8,6 +8,7 @@ type CandidateGeo = {
   name:        string
   race:        string
   state:       string
+  party?:      string | null
   incumbent:   boolean
   raceLevel:   string | null
   district:    string | null
@@ -17,6 +18,7 @@ type CandidateGeo = {
 
 export function buildRaceContext(c: CandidateGeo): string {
   const level = (c.raceLevel ?? '').toLowerCase()
+  const party = c.party?.trim() || 'Republican'
 
   // ── Geography label ─────────────────────────────────────────────
   const geoLabel = (() => {
@@ -24,14 +26,14 @@ export function buildRaceContext(c: CandidateGeo): string {
     if (level === 'state'   && c.district)  return `${c.state} District ${c.district}`
     if (level === 'county'  && c.county)    return `${c.county} County, ${c.state}`
     if (level === 'municipal' && c.city)    return `${c.city}, ${c.state}`
-    return c.state
+    return c.state || 'Unknown Geography'
   })()
 
   // ── Status label ────────────────────────────────────────────────
-  const status = c.incumbent ? 'incumbent Republican' : 'Republican challenger'
+  const status = c.incumbent ? `incumbent ${party}` : `${party} challenger`
 
   // ── Base line ───────────────────────────────────────────────────
-  const base = `CANDIDATE: ${c.name} (${status}), running for ${c.race} in ${geoLabel}.`
+  const base = `CANDIDATE: ${c.name || 'Unknown'} (${status}), running for ${c.race || 'office'} in ${geoLabel}.`
 
   // ── Race-level guidance ─────────────────────────────────────────
   const guidance = (() => {

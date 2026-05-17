@@ -24,7 +24,7 @@ const FORMAT_LABELS: Record<Format, string> = {
 async function getContext(userId: string) {
   const candidate = await prisma.candidate.findFirst({
     where: { userId },
-    select: { name: true, race: true, state: true, incumbent: true, raceLevel: true, district: true, county: true, city: true },
+    select: { name: true, race: true, state: true, party: true, incumbent: true, raceLevel: true, district: true, county: true, city: true },
   })
   if (!candidate) return null
   const raceCtx = buildRaceContext({ ...candidate, name: candidate.name, race: candidate.race, state: candidate.state, incumbent: candidate.incumbent ?? false })
@@ -102,21 +102,32 @@ Make it specific to this candidate and race level. The tone should be confident,
 }
 
 export async function POST(req: NextRequest) {
-  const { format, issue = '' } = await req.json() as { format: Format; issue?: string }
+  // Auth first — before parsing body
+  const session = await auth()
+  const userId  = session?.user?.id
+  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+
+  let format: Format, issue: string
+  try {
+    const body = await req.json() as { format: Format; issue?: string }
+    format = body.format
+    issue  = body.issue ?? ''
+  } catch {
+    return NextResponse.json({ error: 'invalid_body' }, { status: 400 })
+  }
 
   if (!FORMATS.includes(format)) {
     return NextResponse.json({ error: 'invalid_format' }, { status: 400 })
   }
 
-  const session = await auth()
-  const userId  = session?.user?.id
-  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
-
   const ctx = await getContext(userId)
   if (!ctx) return NextResponse.json({ error: 'no_candidate' }, { status: 400 })
 
-  const [system, user] = buildPrompt(format, issue, ctx.raceCtx)
-  const content = await ask(system, user, 800)
-
-  return NextResponse.json({ content })
+  try {
+    const [system, user] = buildPrompt(format, issue, ctx.raceCtx)
+    const content = await ask(system, user, 800)
+    return NextResponse.json({ content })
+  } catch {
+    return NextResponse.json({ error: 'ai_unavailable' }, { status: 500 })
+  }
 }

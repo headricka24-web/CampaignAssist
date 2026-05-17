@@ -59,7 +59,9 @@ function fmt(n: number) { return Math.round(n).toLocaleString() }
 
 function daysUntil(dateStr: string): number {
   if (!dateStr) return 0
-  return Math.max(0, Math.ceil((new Date(dateStr).getTime() - Date.now()) / 86_400_000))
+  const d = new Date(dateStr + 'T12:00')
+  if (isNaN(d.getTime())) return 0
+  return Math.max(0, Math.ceil((d.getTime() - Date.now()) / 86_400_000))
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────

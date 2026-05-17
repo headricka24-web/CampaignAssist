@@ -29,7 +29,7 @@ const BUDGET_LABELS: Record<Budget, string> = {
 async function getContext(userId: string) {
   const candidate = await prisma.candidate.findFirst({
     where: { userId },
-    select: { name: true, race: true, state: true, incumbent: true, raceLevel: true, district: true, county: true, city: true },
+    select: { name: true, race: true, state: true, party: true, incumbent: true, raceLevel: true, district: true, county: true, city: true },
   })
   if (!candidate) return null
   const raceCtx = buildRaceContext({ ...candidate, incumbent: candidate.incumbent ?? false })
@@ -37,15 +37,23 @@ async function getContext(userId: string) {
 }
 
 export async function POST(req: NextRequest) {
-  const { phase, budget } = await req.json() as { phase: Phase; budget: Budget }
+  // Auth first — before parsing body
+  const session = await auth()
+  const userId  = session?.user?.id
+  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+
+  let phase: Phase, budget: Budget
+  try {
+    const body = await req.json() as { phase: Phase; budget: Budget }
+    phase  = body.phase
+    budget = body.budget
+  } catch {
+    return NextResponse.json({ error: 'invalid_body' }, { status: 400 })
+  }
 
   if (!PHASES.includes(phase) || !BUDGETS.includes(budget)) {
     return NextResponse.json({ error: 'invalid_params' }, { status: 400 })
   }
-
-  const session = await auth()
-  const userId  = session?.user?.id
-  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   const ctx = await getContext(userId)
   if (!ctx) return NextResponse.json({ error: 'no_candidate' }, { status: 400 })
@@ -82,6 +90,10 @@ The 2–3 core message themes that should run in every ad this phase.
 
 Be specific to the race level and budget. Don't recommend TV buys for a $3,000 municipal budget.`
 
-  const content = await ask(system, user, 900)
-  return NextResponse.json({ content })
+  try {
+    const content = await ask(system, user, 900)
+    return NextResponse.json({ content })
+  } catch {
+    return NextResponse.json({ error: 'ai_unavailable' }, { status: 500 })
+  }
 }
