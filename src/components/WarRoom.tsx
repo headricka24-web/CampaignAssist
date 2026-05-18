@@ -1,39 +1,35 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import RichText from './RichText'
-import { useLocalStorage } from '@/lib/useLocalStorage'
-import { usePersistedContent, fmtGeneratedAt } from '@/lib/usePersistedContent'
 
 type Threat = {
-  raw: string
-  threat: string
-  severity: 'HIGH' | 'MEDIUM' | 'LOW'
-  angle: string
-  why: string
-}
-
-function parseThreat(block: string): Threat {
-  const get = (label: string) =>
-    block.match(new RegExp(`${label}:\\s*(.+)`, 'i'))?.[1]?.trim() ?? ''
-  const sev = get('SEVERITY').toUpperCase()
-  return {
-    raw:      block.trim(),
-    threat:   get('THREAT'),
-    severity: (sev === 'HIGH' || sev === 'MEDIUM' || sev === 'LOW') ? sev as Threat['severity'] : 'MEDIUM',
-    angle:    get('ANGLE'),
-    why:      get('WHY IT MATTERS'),
-  }
+  id:        string
+  threat:    string
+  severity:  'HIGH' | 'MEDIUM' | 'LOW'
+  angle:     string
+  why:       string
+  response:  string | null
+  scanId:    string | null
+  createdAt: string
 }
 
 const SEV_STYLE: Record<Threat['severity'], { badge: string; border: string; bar: string; icon: string }> = {
-  HIGH:   { badge: 'bg-red-100 text-red-700',    border: 'border-red-200',    bar: 'from-red-500 to-red-700',      icon: '🚨' },
+  HIGH:   { badge: 'bg-red-100 text-red-700',       border: 'border-red-200',    bar: 'from-red-500 to-red-700',      icon: '🚨' },
   MEDIUM: { badge: 'bg-yellow-100 text-yellow-700', border: 'border-yellow-200', bar: 'from-yellow-400 to-orange-500', icon: '⚠️' },
-  LOW:    { badge: 'bg-blue-100 text-blue-700',   border: 'border-blue-200',   bar: 'from-blue-400 to-blue-600',    icon: '👁' },
+  LOW:    { badge: 'bg-blue-100 text-blue-700',     border: 'border-blue-200',   bar: 'from-blue-400 to-blue-600',    icon: '👁' },
 }
 
-function ResponseModal({ threat, onClose }: { threat: Threat; onClose: () => void }) {
-  const [response, setResponse] = useState('')
+function ResponseModal({
+  threat,
+  onClose,
+  onResponseSaved,
+}: {
+  threat: Threat
+  onClose: () => void
+  onResponseSaved: (id: string, response: string) => void
+}) {
+  const [response, setResponse] = useState(threat.response ?? '')
   const [loading,  setLoading]  = useState(false)
   const [copied,   setCopied]   = useState(false)
 
@@ -41,19 +37,25 @@ function ResponseModal({ threat, onClose }: { threat: Threat; onClose: () => voi
     setLoading(true)
     try {
       const res  = await fetch('/api/war-room', {
-        method: 'POST',
+        method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'respond', threat: threat.raw }),
+        body:    JSON.stringify({ type: 'respond', threat: threat.threat, threatId: threat.id }),
       })
       const data = await res.json()
-      if (data.response) setResponse(data.response)
+      if (data.response) {
+        setResponse(data.response)
+        onResponseSaved(threat.id, data.response)
+      }
     } finally { setLoading(false) }
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-navy/70 backdrop-blur-sm" />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+      <div
+        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden"
+        onClick={e => e.stopPropagation()}
+      >
         <div className="h-1.5 bg-gradient-to-r from-red-500 to-gold-400" />
         <div className="flex items-start justify-between px-6 py-4 border-b border-gray-100">
           <div>
@@ -77,8 +79,10 @@ function ResponseModal({ threat, onClose }: { threat: Threat; onClose: () => voi
             <div className="text-center py-8">
               <div className="text-5xl mb-4">⚡</div>
               <p className="text-gray-500 text-sm mb-4">Generate a rapid-response package for this threat.</p>
-              <button onClick={generate}
-                className="bg-red-500 hover:bg-red-600 text-white font-black uppercase tracking-widest px-6 py-3 rounded-xl text-sm shadow-glow-red transition-colors">
+              <button
+                onClick={generate}
+                className="bg-red-500 hover:bg-red-600 text-white font-black uppercase tracking-widest px-6 py-3 rounded-xl text-sm shadow-glow-red transition-colors"
+              >
                 Generate Counter-Response
               </button>
             </div>
@@ -91,8 +95,11 @@ function ResponseModal({ threat, onClose }: { threat: Threat; onClose: () => voi
           )}
           {response && <RichText text={response} />}
           {response && (
-            <button onClick={generate} disabled={loading}
-              className="mt-4 text-xs text-gray-400 hover:text-navy font-bold border border-gray-200 hover:border-navy px-3 py-1.5 rounded-lg transition-colors">
+            <button
+              onClick={generate}
+              disabled={loading}
+              className="mt-4 text-xs text-gray-400 hover:text-navy font-bold border border-gray-200 hover:border-navy px-3 py-1.5 rounded-lg transition-colors"
+            >
               ↺ Regenerate
             </button>
           )}
@@ -102,9 +109,32 @@ function ResponseModal({ threat, onClose }: { threat: Threat; onClose: () => voi
   )
 }
 
-function ThreatCard({ threat, index }: { threat: Threat; index: number }) {
+function ThreatCard({
+  threat,
+  index,
+  onDismiss,
+  onResponseSaved,
+}: {
+  threat: Threat
+  index: number
+  onDismiss: (id: string) => void
+  onResponseSaved: (id: string, response: string) => void
+}) {
   const s = SEV_STYLE[threat.severity]
   const [showResponse, setShowResponse] = useState(false)
+  const [dismissing,   setDismissing]   = useState(false)
+
+  async function handleDismiss() {
+    setDismissing(true)
+    try {
+      await fetch('/api/war-room', {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ id: threat.id, dismissed: true }),
+      })
+      onDismiss(threat.id)
+    } finally { setDismissing(false) }
+  }
 
   return (
     <>
@@ -119,6 +149,14 @@ function ThreatCard({ threat, index }: { threat: Threat; index: number }) {
               </span>
               <span className="text-xs text-gray-300 font-bold">#{index + 1}</span>
             </div>
+            <button
+              onClick={handleDismiss}
+              disabled={dismissing}
+              title="Dismiss threat"
+              className="text-xs text-gray-300 hover:text-red-400 font-bold transition-colors leading-none"
+            >
+              {dismissing ? '…' : '✕'}
+            </button>
           </div>
 
           <h3 className="font-display font-black text-navy text-sm leading-snug mb-3">{threat.threat}</h3>
@@ -132,47 +170,79 @@ function ThreatCard({ threat, index }: { threat: Threat; index: number }) {
               <p className="text-[10px] font-black uppercase tracking-widest text-red-400 mb-1">Why It Matters</p>
               <p className="text-xs text-gray-700">{threat.why}</p>
             </div>
+            {threat.response && (
+              <div className="bg-green-50 rounded-xl px-4 py-2.5">
+                <p className="text-[10px] font-black uppercase tracking-widest text-green-600 mb-1">Response Drafted</p>
+                <p className="text-xs text-gray-700 line-clamp-2">{threat.response}</p>
+              </div>
+            )}
           </div>
 
           <button
             onClick={() => setShowResponse(true)}
             className="w-full bg-navy hover:bg-navy-700 text-white font-black uppercase tracking-widest text-xs py-2.5 rounded-xl transition-colors"
           >
-            ⚡ Generate Response
+            {threat.response ? '⚡ View / Regenerate Response' : '⚡ Generate Response'}
           </button>
         </div>
       </div>
 
-      {showResponse && <ResponseModal threat={threat} onClose={() => setShowResponse(false)} />}
+      {showResponse && (
+        <ResponseModal
+          threat={threat}
+          onClose={() => setShowResponse(false)}
+          onResponseSaved={onResponseSaved}
+        />
+      )}
     </>
   )
 }
 
 export default function WarRoom() {
-  const [threats, saveThreats, { clear: clearThreats, generatedAt: threatsAt }] = usePersistedContent<Threat[]>('war-room-threats', [])
-  const [loading, setLoading] = useState(false)
-  const [error,   setError]   = useState('')
+  const [threats,  setThreats]  = useState<Threat[]>([])
+  const [loading,  setLoading]  = useState(false)
+  const [fetching, setFetching] = useState(true)
+  const [error,    setError]    = useState('')
+
+  const loadThreats = useCallback(async () => {
+    setFetching(true)
+    try {
+      const res  = await fetch('/api/war-room')
+      const data = await res.json()
+      if (data.threats) setThreats(data.threats)
+    } finally { setFetching(false) }
+  }, [])
+
+  useEffect(() => { loadThreats() }, [loadThreats])
 
   async function handleScan() {
     setLoading(true)
     setError('')
     try {
       const res  = await fetch('/api/war-room', {
-        method: 'POST',
+        method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'scan' }),
+        body:    JSON.stringify({ type: 'scan' }),
       })
       const data = await res.json()
       if (data.error === 'no_articles') { setError('No articles found — run a News Tracker scan first.'); return }
       if (data.error) { setError('Scan failed. Try again.'); return }
-      const blocks = (data.threats as string).split('---').map((b: string) => b.trim()).filter(Boolean)
-      saveThreats(blocks.map(parseThreat))
+      // Re-fetch from DB to load newly persisted threats
+      await loadThreats()
     } catch { setError('Scan failed. Check your connection.') }
     finally { setLoading(false) }
   }
 
-  const highCount   = threats.filter(t => t.severity === 'HIGH').length
-  const medCount    = threats.filter(t => t.severity === 'MEDIUM').length
+  function handleDismiss(id: string) {
+    setThreats(prev => prev.filter(t => t.id !== id))
+  }
+
+  function handleResponseSaved(id: string, response: string) {
+    setThreats(prev => prev.map(t => t.id === id ? { ...t, response } : t))
+  }
+
+  const highCount = threats.filter(t => t.severity === 'HIGH').length
+  const medCount  = threats.filter(t => t.severity === 'MEDIUM').length
 
   return (
     <div className="space-y-8">
@@ -194,8 +264,11 @@ export default function WarRoom() {
           <p className="text-blue-200 text-lg max-w-xl mb-6">
             See every attack coming before it lands. The War Room analyzes your live news feed for opposition vulnerabilities, flags threats by severity, and generates a counter-response in seconds.
           </p>
-          <button onClick={handleScan} disabled={loading}
-            className="bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white font-black px-8 py-3 rounded-xl text-sm tracking-widest uppercase shadow-glow-red transition-colors focus:outline-none focus:ring-2 focus:ring-gold-400">
+          <button
+            onClick={handleScan}
+            disabled={loading || fetching}
+            className="bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white font-black px-8 py-3 rounded-xl text-sm tracking-widest uppercase shadow-glow-red transition-colors focus:outline-none focus:ring-2 focus:ring-gold-400"
+          >
             {loading
               ? <span className="flex items-center gap-2"><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block" />Scanning for threats…</span>
               : threats.length > 0 ? '↺ Rescan Threats' : '🚨 Scan for Threats'}
@@ -229,26 +302,36 @@ export default function WarRoom() {
             <div className="h-px flex-1 bg-gradient-to-r from-red-200 to-transparent" />
             <div className="text-center">
               <h2 className="text-xs font-black uppercase tracking-[0.3em] text-red-400">Active Threats</h2>
-              {threatsAt && <p className="text-[10px] text-gray-400 mt-0.5">{fmtGeneratedAt(threatsAt)}</p>}
             </div>
             <div className="h-px flex-1 bg-gradient-to-l from-red-200 to-transparent" />
-            <button onClick={() => clearThreats()}
-              className="text-xs text-gray-300 hover:text-red-400 font-bold transition-colors" title="Clear threats">
-              ✕ Clear
-            </button>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {threats.map((t, i) => <ThreatCard key={i} threat={t} index={i} />)}
+            {threats.map((t, i) => (
+              <ThreatCard
+                key={t.id}
+                threat={t}
+                index={i}
+                onDismiss={handleDismiss}
+                onResponseSaved={handleResponseSaved}
+              />
+            ))}
           </div>
         </div>
       )}
 
       {/* Empty state before scan */}
-      {threats.length === 0 && !loading && (
+      {threats.length === 0 && !loading && !fetching && (
         <div className="bg-white rounded-2xl border-2 border-dashed border-gray-200 py-16 text-center">
           <div className="text-5xl mb-4 opacity-30">🚨</div>
           <p className="text-gray-500 font-semibold">No scan run yet.</p>
           <p className="text-gray-400 text-sm mt-1">Hit the button above to scan today's news for attack opportunities.</p>
+        </div>
+      )}
+
+      {fetching && threats.length === 0 && (
+        <div className="flex items-center justify-center py-16 gap-3">
+          <span className="w-5 h-5 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+          <span className="text-sm text-gray-400">Loading threats…</span>
         </div>
       )}
     </div>
