@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import RichText from '@/components/RichText'
-import { usePersistedContent } from '@/lib/usePersistedContent'
+import { usePersistedContent, fmtGeneratedAt } from '@/lib/usePersistedContent'
 
 const FORMATS = [
   { id: 'tv-30',          icon: '📺', label: 'TV Spot',       sub: ':30 second',     color: 'text-red-600',    border: 'border-red-100',    bar: 'from-red-500 to-red-700'         },
@@ -59,7 +59,7 @@ function Modal({ fmt, content, onClose, onRegen }: {
 }
 
 function FormatCard({ fmt, issue }: { fmt: typeof FORMATS[number]; issue: string }) {
-  const [content, saveContent] = usePersistedContent(`ad-copy-${fmt.id}`, '')
+  const [content, saveContent, { generatedAt }] = usePersistedContent(`ad-copy-${fmt.id}`, '')
   const [loading,    setLoading]    = useState(false)
   const [error,      setError]      = useState('')
   const [open,       setOpen]       = useState(false)
@@ -115,6 +115,9 @@ function FormatCard({ fmt, issue }: { fmt: typeof FORMATS[number]; issue: string
           </div>
 
           {error && <p className="text-xs text-red-500">{error}</p>}
+          {content && !isStale && generatedAt && (
+            <p className="text-[10px] text-gray-400">{fmtGeneratedAt(generatedAt)}</p>
+          )}
           {isStale && (
             <p className="text-[10px] text-amber-600 font-bold bg-amber-50 rounded-lg px-2 py-1">
               ⚠ Issue changed — regenerate for new content
