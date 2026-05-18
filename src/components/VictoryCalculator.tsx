@@ -35,12 +35,20 @@ const WIN_THRESHOLD: Record<VictoryPlan['raceType'], number> = {
   'four-way':  28,
 }
 
-// Sensible defaults by race level — candidates can confirm/adjust later
+// Fallback defaults used only if prefill API is unreachable
 const RACE_DEFAULTS: Record<string, { voters: number; turnout: number; gopBase: number }> = {
   federal:   { voters: 500_000, turnout: 55, gopBase: 47 },
   state:     { voters: 60_000,  turnout: 45, gopBase: 46 },
   county:    { voters: 30_000,  turnout: 38, gopBase: 48 },
   municipal: { voters: 8_000,   turnout: 25, gopBase: 45 },
+}
+
+type Prefill = {
+  registeredVoters: number | null
+  turnout:  number
+  gopBase:  number
+  analysis: string
+  source:   string
 }
 
 const DEFAULT_PLAN: VictoryPlan = {
@@ -132,30 +140,49 @@ export default function VictoryCalculator({
   totalRaised:   number
 }) {
   const [plan, savePlan, { loading: planLoading }] = usePersistedContent<VictoryPlan>('victory-plan', DEFAULT_PLAN)
-  const [editing,  setEditing]  = useState(false)
-  const [draft,    setDraft]    = useState<VictoryPlan>(DEFAULT_PLAN)
-  const [step,     setStep]     = useState<1 | 2>(1) // setup wizard step
+  const [editing,     setEditing]     = useState(false)
+  const [draft,       setDraft]       = useState<VictoryPlan>(DEFAULT_PLAN)
+  const [step,        setStep]        = useState<1 | 2>(1)
+  const [prefill,     setPrefill]     = useState<Prefill | null>(null)
+  const [prefilling,  setPrefilling]  = useState(false)
 
   // Auto-open setup only after data loads and only if no election date is saved
   useEffect(() => {
     if (!planLoading && !plan.electionDate) { setEditing(true); setStep(1) }
   }, [planLoading, plan.electionDate])
 
-  const raceLevel = (candidate?.raceLevel ?? 'state').toLowerCase()
+  const raceLevel     = (candidate?.raceLevel ?? 'state').toLowerCase()
   const levelDefaults = RACE_DEFAULTS[raceLevel] ?? RACE_DEFAULTS.state
+
+  async function loadPrefill() {
+    setPrefilling(true)
+    try {
+      const res  = await fetch('/api/victory/prefill')
+      const data = await res.json()
+      if (!data.error) setPrefill(data as Prefill)
+      return data as Prefill
+    } catch {
+      return null
+    } finally {
+      setPrefilling(false)
+    }
+  }
 
   function openEdit() {
     setDraft({ ...plan })
     setStep(1)
     setEditing(true)
+    // Kick off prefill in background whenever edit modal opens
+    if (!prefill) loadPrefill()
   }
 
-  function applyEstimates() {
+  function applyEstimates(pf?: Prefill | null) {
+    const source = pf ?? prefill
     setDraft(d => ({
       ...d,
-      registeredVoters: levelDefaults.voters,
-      expectedTurnout:  levelDefaults.turnout,
-      gopBase:          levelDefaults.gopBase,
+      registeredVoters: source?.registeredVoters ?? levelDefaults.voters,
+      expectedTurnout:  source?.turnout          ?? levelDefaults.turnout,
+      gopBase:          source?.gopBase           ?? levelDefaults.gopBase,
       isEstimated:      true,
     }))
   }
@@ -268,7 +295,7 @@ export default function VictoryCalculator({
               <div>
                 <p className="text-sm font-bold text-amber-800">Numbers are estimated</p>
                 <p className="text-xs text-amber-600 mt-0.5">
-                  These are typical GOP district figures for a {raceLevel}-level race. Once you know your exact registered voter count and historical turnout, update your plan for precise targets.{' '}
+                  Based on Census ACS data and 2018–2024 historical election results for your geography. Confirm with your county clerk or state SOS for exact registered voter counts.{' '}
                   <button onClick={openEdit} className="underline font-semibold">Update now</button>
                 </p>
               </div>
@@ -497,18 +524,25 @@ export default function VictoryCalculator({
                   {/* Step 1 CTA */}
                   <div className="space-y-2 pt-2">
                     <button
-                      onClick={() => { setStep(2); applyEstimates() }}
-                      disabled={!draft.electionDate}
-                      className="w-full bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white font-black uppercase tracking-widest py-3 rounded-xl text-sm transition-colors"
+                      onClick={async () => {
+                        setStep(2)
+                        const pf = prefill ?? await loadPrefill()
+                        applyEstimates(pf)
+                      }}
+                      disabled={!draft.electionDate || prefilling}
+                      className="w-full bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white font-black uppercase tracking-widest py-3 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
                     >
-                      Next: Your Numbers →
+                      {prefilling
+                        ? <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Loading estimates…</>
+                        : 'Next: Your Numbers →'
+                      }
                     </button>
                     <button
                       onClick={saveEdit}
                       disabled={!draft.electionDate}
                       className="w-full border-2 border-gray-200 text-gray-500 hover:text-navy hover:border-navy disabled:opacity-50 font-bold py-2.5 rounded-xl text-xs transition-colors"
                     >
-                      Skip — use typical estimates for now
+                      Skip — use generic estimates for now
                     </button>
                   </div>
                 </>
@@ -518,11 +552,20 @@ export default function VictoryCalculator({
               {step === 2 && (
                 <>
                   {/* Estimates notice */}
-                  <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-700 leading-relaxed">
-                    <strong>Not sure about these numbers?</strong> That's OK. We've pre-filled typical GOP district figures for a {raceLevel}-level race.
-                    You can come back and update any field once you have real data.
-                    Good sources: your county clerk's office, state SOS website, or your state GOP.
-                  </div>
+                  {prefill ? (
+                    <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 space-y-1.5">
+                      <p className="text-xs font-black text-blue-800 uppercase tracking-wide">📊 Data loaded from Census & election history</p>
+                      {prefill.analysis && <p className="text-xs text-blue-700 leading-relaxed">{prefill.analysis}</p>}
+                      <p className="text-[10px] text-blue-500 leading-relaxed">{prefill.source}</p>
+                      <p className="text-[10px] text-blue-400">Adjust any slider below if you have more precise local data.</p>
+                    </div>
+                  ) : (
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-700 leading-relaxed">
+                      <strong>Not sure about these numbers?</strong> That&apos;s OK. We&apos;ve pre-filled typical GOP district figures for a {raceLevel}-level race.
+                      You can come back and update any field once you have real data.
+                      Good sources: your county clerk&apos;s office, state SOS website, or your state GOP.
+                    </div>
+                  )}
 
                   {/* Registered voters */}
                   <div>
