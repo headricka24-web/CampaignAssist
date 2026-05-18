@@ -45,9 +45,21 @@ async function getDashboardData(userId: string) {
   }
 
   // Parse hot buttons briefing into a short summary (first 300 chars)
-  const hotButtonSnippet = hotButtonsContent?.content
-    ? hotButtonsContent.content.replace(/\*\*/g, '').replace(/#{1,3}\s/g, '').replace(/\n+/g, ' ').slice(0, 280).trim()
-    : null
+  let hotButtonSnippet: string | null = null
+  if (hotButtonsContent?.content) {
+    let raw = hotButtonsContent.content
+    // unwrap double-encoded JSON strings (e.g. stored as `"\"text\""`)
+    try { const parsed = JSON.parse(raw); if (typeof parsed === 'string') raw = parsed } catch { /* ignore */ }
+    hotButtonSnippet = raw
+      .replace(/\*\*/g, '')
+      .replace(/#{1,3}\s[^\n]*/g, '')
+      .replace(/\\n/g, ' ')
+      .replace(/\n+/g, ' ')
+      .replace(/^["'\s]+|["'\s]+$/g, '')
+      .replace(/\s{2,}/g, ' ')
+      .slice(0, 280)
+      .trim() || null
+  }
 
   return {
     total, newToday, byBucket, bySentiment,
