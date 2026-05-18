@@ -12,19 +12,28 @@ type Candidate = {
   race: string
   state: string
   raceLevel: string | null
-  district: string | null
-  county: string | null
-  city: string | null
+  district:  string | null
+  county:    string | null
+  city:      string | null
 } | null
 
 type VictoryPlan = {
   electionDate:     string
+  raceType:         'two-way' | 'three-way' | 'four-way'
   registeredVoters: number
   expectedTurnout:  number
   gopBase:          number
-  raceType:         'two-way' | 'three-way' | 'four-way'
   conversionRate:   number
-  isEstimated:      boolean  // true = using placeholder numbers, not confirmed
+  dataSource:       string
+  analysis:         string
+}
+
+type Prefill = {
+  registeredVoters: number | null
+  turnout:          number
+  gopBase:          number
+  analysis:         string
+  source:           string
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -35,30 +44,22 @@ const WIN_THRESHOLD: Record<VictoryPlan['raceType'], number> = {
   'four-way':  28,
 }
 
-// Fallback defaults used only if prefill API is unreachable
-const RACE_DEFAULTS: Record<string, { voters: number; turnout: number; gopBase: number }> = {
+const FALLBACK: Record<string, { voters: number; turnout: number; gopBase: number }> = {
   federal:   { voters: 500_000, turnout: 55, gopBase: 47 },
-  state:     { voters: 60_000,  turnout: 45, gopBase: 46 },
+  state:     { voters: 750_000, turnout: 52, gopBase: 47 },
   county:    { voters: 30_000,  turnout: 38, gopBase: 48 },
   municipal: { voters: 8_000,   turnout: 25, gopBase: 45 },
 }
 
-type Prefill = {
-  registeredVoters: number | null
-  turnout:  number
-  gopBase:  number
-  analysis: string
-  source:   string
-}
-
 const DEFAULT_PLAN: VictoryPlan = {
   electionDate:     '',
+  raceType:         'two-way',
   registeredVoters: 0,
   expectedTurnout:  45,
   gopBase:          46,
-  raceType:         'two-way',
   conversionRate:   15,
-  isEstimated:      true,
+  dataSource:       '',
+  analysis:         '',
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -86,45 +87,14 @@ function Gauge({ value, max, color }: { value: number; max: number; color: strin
   )
 }
 
-function StatBox({ label, value, sub, accent, estimated }: {
-  label: string; value: string; sub?: string; accent: string; estimated?: boolean
+function StatBox({ label, value, sub, accent }: {
+  label: string; value: string; sub?: string; accent: string
 }) {
   return (
     <div className={`bg-white rounded-2xl border-2 ${accent} shadow-sm p-5`}>
-      <div className="flex items-center justify-between mb-2">
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">{label}</p>
-        {estimated && (
-          <span className="text-[9px] font-bold uppercase tracking-wider text-amber-500 bg-amber-50 px-1.5 py-0.5 rounded-full">Est.</span>
-        )}
-      </div>
+      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">{label}</p>
       <p className="font-display text-3xl font-black text-navy leading-none">{value}</p>
       {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
-    </div>
-  )
-}
-
-function SliderField({
-  label, hint, value, min, max, step = 1, unit = '%', onChange,
-}: {
-  label: string; hint?: string; value: number; min: number; max: number
-  step?: number; unit?: string; onChange: (v: number) => void
-}) {
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-1.5">
-        <label className="text-xs font-black uppercase tracking-widest text-gray-500">{label}</label>
-        <span className="text-sm font-black text-navy">{value.toLocaleString()}{unit}</span>
-      </div>
-      {hint && <p className="text-[11px] text-gray-400 mb-2 leading-relaxed">{hint}</p>}
-      <input
-        type="range" min={min} max={max} step={step} value={value}
-        onChange={e => onChange(Number(e.target.value))}
-        className="w-full accent-red-500"
-      />
-      <div className="flex justify-between text-[10px] text-gray-300 mt-0.5">
-        <span>{min.toLocaleString()}{unit}</span>
-        <span>{max.toLocaleString()}{unit}</span>
-      </div>
     </div>
   )
 }
@@ -140,98 +110,100 @@ export default function VictoryCalculator({
   totalRaised:   number
 }) {
   const [plan, savePlan, { loading: planLoading }] = usePersistedContent<VictoryPlan>('victory-plan', DEFAULT_PLAN)
-  const [editing,     setEditing]     = useState(false)
-  const [draft,       setDraft]       = useState<VictoryPlan>(DEFAULT_PLAN)
-  const [step,        setStep]        = useState<1 | 2>(1)
-  const [prefill,     setPrefill]     = useState<Prefill | null>(null)
-  const [prefilling,  setPrefilling]  = useState(false)
+  const [editing,    setEditing]    = useState(false)
+  const [date,       setDate]       = useState('')
+  const [raceType,   setRaceType]   = useState<VictoryPlan['raceType']>('two-way')
+  const [fetching,   setFetching]   = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
+  const [fetchError, setFetchError] = useState('')
 
-  // Auto-open setup only after data loads and only if no election date is saved
   useEffect(() => {
-    if (!planLoading && !plan.electionDate) { setEditing(true); setStep(1) }
+    if (!planLoading && !plan.electionDate) setEditing(true)
   }, [planLoading, plan.electionDate])
 
   const raceLevel     = (candidate?.raceLevel ?? 'state').toLowerCase()
-  const levelDefaults = RACE_DEFAULTS[raceLevel] ?? RACE_DEFAULTS.state
+  const levelFallback = FALLBACK[raceLevel] ?? FALLBACK.state
 
-  async function loadPrefill() {
-    setPrefilling(true)
+  async function fetchPrefill(): Promise<Prefill | null> {
     try {
       const res  = await fetch('/api/victory/prefill')
       const data = await res.json()
-      if (!data.error) setPrefill(data as Prefill)
+      if (data.error) return null
       return data as Prefill
     } catch {
       return null
-    } finally {
-      setPrefilling(false)
     }
   }
 
-  function openEdit() {
-    setDraft({ ...plan })
-    setStep(1)
-    setEditing(true)
-    // Kick off prefill in background whenever edit modal opens
-    if (!prefill) loadPrefill()
-  }
-
-  function applyEstimates(pf?: Prefill | null) {
-    const source = pf ?? prefill
-    setDraft(d => ({
-      ...d,
-      registeredVoters: source?.registeredVoters ?? levelDefaults.voters,
-      expectedTurnout:  source?.turnout          ?? levelDefaults.turnout,
-      gopBase:          source?.gopBase           ?? levelDefaults.gopBase,
-      isEstimated:      true,
-    }))
-  }
-
-  function saveEdit() {
-    // If no registeredVoters entered, silently apply level estimates
-    const final: VictoryPlan = {
-      ...draft,
-      registeredVoters: draft.registeredVoters > 0 ? draft.registeredVoters : levelDefaults.voters,
-      isEstimated: draft.registeredVoters === 0 || draft.isEstimated,
+  async function handleSave() {
+    if (!date) return
+    setFetching(true)
+    setFetchError('')
+    const pf = await fetchPrefill()
+    const saved: VictoryPlan = {
+      electionDate:     date,
+      raceType,
+      registeredVoters: pf?.registeredVoters ?? levelFallback.voters,
+      expectedTurnout:  pf?.turnout          ?? levelFallback.turnout,
+      gopBase:          pf?.gopBase           ?? levelFallback.gopBase,
+      conversionRate:   15,
+      dataSource:       pf?.source ?? 'Estimated from race-level historical averages.',
+      analysis:         pf?.analysis ?? '',
     }
-    savePlan(final)
+    await savePlan(saved)
+    setFetching(false)
     setEditing(false)
   }
 
-  // ── Electoral math ────────────────────────────────────────────────────────
-  const voters          = plan.registeredVoters > 0 ? plan.registeredVoters : levelDefaults.voters
-  const expectedVotes   = Math.round(voters * (plan.expectedTurnout / 100))
-  const threshold       = WIN_THRESHOLD[plan.raceType]
-  const winNumber       = Math.floor(expectedVotes * (threshold / 100)) + 1
-  const gopBaseVotes    = Math.round(expectedVotes * (plan.gopBase / 100))
-  const persuadable     = Math.max(0, winNumber - gopBaseVotes)
-  const contactsNeeded  = plan.conversionRate > 0 ? Math.round(persuadable / (plan.conversionRate / 100)) : 0
-  const days            = daysUntil(plan.electionDate)
-  const dailyTarget     = days > 0 ? Math.ceil(contactsNeeded / days) : contactsNeeded
-  const weeksLeft       = Math.floor(days / 7)
-  const isEst           = plan.isEstimated || plan.registeredVoters === 0
+  async function handleRefresh() {
+    setRefreshing(true)
+    setFetchError('')
+    const pf = await fetchPrefill()
+    if (pf) {
+      await savePlan({
+        ...plan,
+        registeredVoters: pf.registeredVoters ?? plan.registeredVoters,
+        expectedTurnout:  pf.turnout,
+        gopBase:          pf.gopBase,
+        dataSource:       pf.source,
+        analysis:         pf.analysis,
+      })
+    } else {
+      setFetchError('Could not refresh — check your connection.')
+    }
+    setRefreshing(false)
+  }
+
+  function openEdit() {
+    setDate(plan.electionDate)
+    setRaceType(plan.raceType)
+    setFetchError('')
+    setEditing(true)
+  }
+
+  // ── Electoral math ──────────────────────────────────────────────────────────
+  const voters        = plan.registeredVoters > 0 ? plan.registeredVoters : levelFallback.voters
+  const expectedVotes = Math.round(voters * (plan.expectedTurnout / 100))
+  const threshold     = WIN_THRESHOLD[plan.raceType]
+  const winNumber     = Math.floor(expectedVotes * (threshold / 100)) + 1
+  const gopBaseVotes  = Math.round(expectedVotes * (plan.gopBase / 100))
+  const persuadable   = Math.max(0, winNumber - gopBaseVotes)
+  const contactsNeeded = plan.conversionRate > 0 ? Math.round(persuadable / (plan.conversionRate / 100)) : 0
+  const days           = daysUntil(plan.electionDate)
+  const dailyTarget    = days > 0 ? Math.ceil(contactsNeeded / days) : contactsNeeded
+  const weeksLeft      = Math.floor(days / 7)
 
   const geo = (() => {
-    const level = raceLevel
-    if (level === 'federal'   && candidate?.district) return `${candidate.state} CD-${candidate.district}`
-    if (level === 'state'     && candidate?.district) return `${candidate.state} District ${candidate.district}`
-    if (level === 'county'    && candidate?.county)   return `${candidate.county} County`
-    if (level === 'municipal' && candidate?.city)     return candidate.city
+    if (raceLevel === 'federal'   && candidate?.district) return `${candidate.state} CD-${candidate.district}`
+    if (raceLevel === 'state'     && candidate?.district) return `${candidate.state} District ${candidate.district}`
+    if (raceLevel === 'county'    && candidate?.county)   return `${candidate.county} County`
+    if (raceLevel === 'municipal' && candidate?.city)     return candidate.city
     return candidate?.state ?? 'your district'
   })()
 
   const electionDateLabel = plan.electionDate
     ? new Date(plan.electionDate + 'T12:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
     : null
-
-  // ── Preview math for setup modal ─────────────────────────────────────────
-  const previewVoters = draft.registeredVoters > 0 ? draft.registeredVoters : levelDefaults.voters
-  const pev  = Math.round(previewVoters * (draft.expectedTurnout / 100))
-  const pwn  = Math.floor(pev * (WIN_THRESHOLD[draft.raceType] / 100)) + 1
-  const pgb  = Math.round(pev * (draft.gopBase / 100))
-  const ppt  = Math.max(0, pwn - pgb)
-  const ptc  = draft.conversionRate > 0 ? Math.round(ppt / (draft.conversionRate / 100)) : 0
-  const pd   = daysUntil(draft.electionDate)
 
   return (
     <div className="space-y-8">
@@ -258,25 +230,32 @@ export default function VictoryCalculator({
           )}
           <div className="flex items-center gap-3 flex-wrap">
             <button onClick={openEdit}
-              className="bg-gold-400 hover:bg-gold-500 text-navy font-black px-8 py-3 rounded-xl text-sm tracking-widest uppercase transition-colors focus:outline-none focus:ring-2 focus:ring-white">
-              {plan.electionDate ? '✎ Edit Plan' : '⚡ Set Up Your Victory Plan'}
+              className="bg-gold-400 hover:bg-gold-500 text-navy font-black px-8 py-3 rounded-xl text-sm tracking-widest uppercase transition-colors">
+              {plan.electionDate ? '✎ Edit Election Date' : '⚡ Set Your Election Date'}
             </button>
-            {isEst && plan.electionDate && (
-              <span className="text-amber-300 text-xs font-bold bg-amber-500/20 px-3 py-1.5 rounded-full">
-                ⚠ Using estimated numbers — confirm when ready
-              </span>
+            {plan.electionDate && (
+              <button
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="flex items-center gap-2 text-white/60 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors disabled:opacity-40"
+              >
+                {refreshing
+                  ? <><span className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin" /> Refreshing…</>
+                  : '↺ Refresh Data'
+                }
+              </button>
             )}
           </div>
         </div>
       </div>
 
-      {/* ── No election date yet ─────────────────────────────────────────── */}
+      {/* ── No election date yet ──────────────────────────────────────────── */}
       {!plan.electionDate && !editing && (
         <div className="bg-white rounded-2xl border-2 border-dashed border-gray-200 py-16 text-center">
           <p className="text-4xl mb-4 opacity-30">🗳</p>
           <p className="text-gray-600 font-semibold">No victory plan yet.</p>
           <p className="text-gray-400 text-sm mt-1 mb-6 max-w-xs mx-auto">
-            All you need to start is your election date — everything else uses proven baseline targets you can refine later.
+            Enter your election date and we&apos;ll build your win number from Census data and voting history.
           </p>
           <button onClick={openEdit}
             className="bg-navy text-white font-black px-8 py-3 rounded-xl text-sm uppercase tracking-widest hover:bg-navy-700 transition-colors">
@@ -285,20 +264,18 @@ export default function VictoryCalculator({
         </div>
       )}
 
-      {/* ── Main content (shown once we have election date) ───────────────── */}
+      {/* ── Main content ──────────────────────────────────────────────────── */}
       {plan.electionDate && (
         <>
-          {/* Estimated data warning */}
-          {isEst && (
-            <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-              <span className="text-amber-500 text-lg shrink-0 mt-0.5">⚠</span>
+          {/* Data source attribution */}
+          {plan.dataSource && (
+            <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3">
+              <span className="text-blue-400 text-base shrink-0 mt-0.5">📊</span>
               <div>
-                <p className="text-sm font-bold text-amber-800">Numbers are estimated</p>
-                <p className="text-xs text-amber-600 mt-0.5">
-                  Based on Census ACS data and 2018–2024 historical election results for your geography. Confirm with your county clerk or state SOS for exact registered voter counts.{' '}
-                  <button onClick={openEdit} className="underline font-semibold">Update now</button>
-                </p>
+                {plan.analysis && <p className="text-xs font-semibold text-blue-800 mb-0.5">{plan.analysis}</p>}
+                <p className="text-[11px] text-blue-500 leading-relaxed">{plan.dataSource}</p>
               </div>
+              {fetchError && <p className="text-xs text-red-500 ml-auto shrink-0">{fetchError}</p>}
             </div>
           )}
 
@@ -316,10 +293,10 @@ export default function VictoryCalculator({
 
           {/* Key numbers */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatBox label="Win Number"       value={fmt(winNumber)}    sub={`${threshold}%+ of expected turnout`}             accent="border-red-200"    estimated={isEst} />
-            <StatBox label="GOP Base Votes"   value={fmt(gopBaseVotes)} sub={`${plan.gopBase}% of ${fmt(expectedVotes)} voters`} accent="border-blue-100"   estimated={isEst} />
-            <StatBox label="Votes Needed"     value={fmt(persuadable)}  sub="from persuadable voters"                          accent="border-yellow-200" estimated={isEst} />
-            <StatBox label="Days Remaining"   value={String(days)}      sub={weeksLeft > 0 ? `${weeksLeft} weeks left` : 'Final stretch!'} accent={days <= 30 ? 'border-red-300' : 'border-green-100'} />
+            <StatBox label="Win Number"     value={fmt(winNumber)}    sub={`${threshold}%+ of expected turnout`}              accent="border-red-200"    />
+            <StatBox label="GOP Base Votes" value={fmt(gopBaseVotes)} sub={`${plan.gopBase}% of ${fmt(expectedVotes)} voters`} accent="border-blue-100"   />
+            <StatBox label="Votes Needed"   value={fmt(persuadable)}  sub="from persuadable voters"                           accent="border-yellow-200" />
+            <StatBox label="Days Remaining" value={String(days)}      sub={weeksLeft > 0 ? `${weeksLeft} weeks left` : 'Final stretch!'} accent={days <= 30 ? 'border-red-300' : 'border-green-100'} />
           </div>
 
           {/* Field math */}
@@ -334,7 +311,6 @@ export default function VictoryCalculator({
                   <div className="text-center py-4 bg-red-50 rounded-xl">
                     <p className="font-display text-5xl font-black text-red-600 leading-none">{fmt(dailyTarget)}</p>
                     <p className="text-xs font-black uppercase tracking-widest text-red-400 mt-2">voter contacts / day</p>
-                    {isEst && <p className="text-[10px] text-amber-500 mt-1">estimated</p>}
                   </div>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between items-center py-2 border-b border-gray-100">
@@ -392,13 +368,13 @@ export default function VictoryCalculator({
                 <h2 className="text-xs font-black uppercase tracking-[0.25em] text-gray-400 mb-5">Victory Math</h2>
                 <div className="space-y-3">
                   {[
-                    { label: 'Registered voters',            value: fmt(voters),         note: isEst ? 'estimated' : 'confirmed',          highlight: false },
-                    { label: `Turnout (${plan.expectedTurnout}%)`,   value: fmt(expectedVotes),  note: 'likely voters',                   highlight: false },
-                    { label: `Win threshold (${threshold}%+)`,       value: fmt(winNumber),      note: 'votes needed to win ✓',           highlight: true  },
-                    { label: `GOP base (${plan.gopBase}%)`,          value: fmt(gopBaseVotes),   note: 'solid Republican votes',          highlight: false },
-                    { label: 'Persuadables needed',          value: fmt(persuadable),    note: 'votes to earn',                           highlight: true  },
-                    { label: `At ${plan.conversionRate}% conversion`, value: fmt(contactsNeeded), note: 'total contacts needed',          highlight: false },
-                    { label: `Over ${days} days`,            value: `${fmt(dailyTarget)}/day`, note: 'daily target',                    highlight: true  },
+                    { label: 'Registered voters',                    value: fmt(voters),          note: 'from Census ACS data',            highlight: false },
+                    { label: `Turnout (${plan.expectedTurnout}%)`,   value: fmt(expectedVotes),   note: 'likely voters',                   highlight: false },
+                    { label: `Win threshold (${threshold}%+)`,       value: fmt(winNumber),       note: 'votes needed to win ✓',           highlight: true  },
+                    { label: `GOP base (${plan.gopBase}%)`,          value: fmt(gopBaseVotes),    note: 'solid Republican votes',          highlight: false },
+                    { label: 'Persuadables needed',                  value: fmt(persuadable),     note: 'votes to earn',                   highlight: true  },
+                    { label: `At ${plan.conversionRate}% conversion`,value: fmt(contactsNeeded),  note: 'total contacts needed',           highlight: false },
+                    { label: `Over ${days} days`,                    value: `${fmt(dailyTarget)}/day`, note: 'daily target',              highlight: true  },
                   ].map((row, i) => (
                     <div key={i} className={`flex items-start justify-between gap-2 px-3 py-2 rounded-lg ${row.highlight ? 'bg-gold-50 border border-gold-200' : ''}`}>
                       <div>
@@ -469,19 +445,17 @@ export default function VictoryCalculator({
       {editing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => plan.electionDate && setEditing(false)}>
           <div className="absolute inset-0 bg-navy/70 backdrop-blur-sm" />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="h-1.5 bg-gradient-to-r from-red-500 to-gold-400" />
 
             {/* Header */}
             <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
               <div>
                 <h2 className="font-display font-black text-navy uppercase tracking-wide text-sm">
-                  {step === 1 ? 'Step 1 of 2 — The Basics' : 'Step 2 of 2 — Your Numbers'}
+                  Your Election Date
                 </h2>
                 <p className="text-xs text-gray-400 mt-0.5">
-                  {step === 1
-                    ? 'Just your election date and race type to get started'
-                    : "Optional — we'll use typical GOP district numbers if you're not sure yet"}
+                  We&apos;ll pull registered voters, turnout, and party data automatically.
                 </p>
               </div>
               {plan.electionDate && (
@@ -491,154 +465,63 @@ export default function VictoryCalculator({
 
             <div className="p-6 space-y-6">
 
-              {/* ── STEP 1 ──────────────────────────────────────────── */}
-              {step === 1 && (
-                <>
-                  <div>
-                    <label className="block text-xs font-black uppercase tracking-widest text-gray-500 mb-2">
-                      Election Date <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      value={draft.electionDate}
-                      onChange={e => setDraft(d => ({ ...d, electionDate: e.target.value }))}
-                      className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-gold-400 focus:border-transparent"
-                    />
-                  </div>
+              {/* Election date */}
+              <div>
+                <label className="block text-xs font-black uppercase tracking-widest text-gray-500 mb-2">
+                  Election Date <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="date"
+                  value={date}
+                  onChange={e => setDate(e.target.value)}
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-gold-400 focus:border-transparent"
+                />
+              </div>
 
-                  <div>
-                    <label className="block text-xs font-black uppercase tracking-widest text-gray-500 mb-2">Race Type</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {(['two-way', 'three-way', 'four-way'] as const).map(rt => (
-                        <button key={rt} onClick={() => setDraft(d => ({ ...d, raceType: rt }))}
-                          className={`py-2.5 rounded-xl text-xs font-black uppercase tracking-widest border-2 transition-all ${
-                            draft.raceType === rt ? 'bg-navy text-white border-navy' : 'border-gray-200 text-gray-400 hover:border-navy hover:text-navy'
-                          }`}>
-                          {rt.replace('-', ' ')}
-                          <span className="block text-[9px] opacity-60 normal-case font-normal mt-0.5">{WIN_THRESHOLD[rt]}%+ to win</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Step 1 CTA */}
-                  <div className="space-y-2 pt-2">
-                    <button
-                      onClick={async () => {
-                        setStep(2)
-                        const pf = prefill ?? await loadPrefill()
-                        applyEstimates(pf)
-                      }}
-                      disabled={!draft.electionDate || prefilling}
-                      className="w-full bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white font-black uppercase tracking-widest py-3 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
-                    >
-                      {prefilling
-                        ? <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Loading estimates…</>
-                        : 'Next: Your Numbers →'
-                      }
+              {/* Race type */}
+              <div>
+                <label className="block text-xs font-black uppercase tracking-widest text-gray-500 mb-2">Race Type</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(['two-way', 'three-way', 'four-way'] as const).map(rt => (
+                    <button key={rt} onClick={() => setRaceType(rt)}
+                      className={`py-2.5 rounded-xl text-xs font-black uppercase tracking-widest border-2 transition-all ${
+                        raceType === rt ? 'bg-navy text-white border-navy' : 'border-gray-200 text-gray-400 hover:border-navy hover:text-navy'
+                      }`}>
+                      {rt.replace('-', ' ')}
+                      <span className="block text-[9px] opacity-60 normal-case font-normal mt-0.5">{WIN_THRESHOLD[rt]}%+ to win</span>
                     </button>
-                    <button
-                      onClick={saveEdit}
-                      disabled={!draft.electionDate}
-                      className="w-full border-2 border-gray-200 text-gray-500 hover:text-navy hover:border-navy disabled:opacity-50 font-bold py-2.5 rounded-xl text-xs transition-colors"
-                    >
-                      Skip — use generic estimates for now
-                    </button>
-                  </div>
-                </>
-              )}
+                  ))}
+                </div>
+              </div>
 
-              {/* ── STEP 2 ──────────────────────────────────────────── */}
-              {step === 2 && (
-                <>
-                  {/* Estimates notice */}
-                  {prefill ? (
-                    <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 space-y-1.5">
-                      <p className="text-xs font-black text-blue-800 uppercase tracking-wide">📊 Data loaded from Census & election history</p>
-                      {prefill.analysis && <p className="text-xs text-blue-700 leading-relaxed">{prefill.analysis}</p>}
-                      <p className="text-[10px] text-blue-500 leading-relaxed">{prefill.source}</p>
-                      <p className="text-[10px] text-blue-400">Adjust any slider below if you have more precise local data.</p>
-                    </div>
-                  ) : (
-                    <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-700 leading-relaxed">
-                      <strong>Not sure about these numbers?</strong> That&apos;s OK. We&apos;ve pre-filled typical GOP district figures for a {raceLevel}-level race.
-                      You can come back and update any field once you have real data.
-                      Good sources: your county clerk&apos;s office, state SOS website, or your state GOP.
-                    </div>
-                  )}
+              {/* What we'll fetch */}
+              <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3">
+                <p className="text-[10px] font-black uppercase tracking-wide text-blue-600 mb-2">We&apos;ll automatically pull:</p>
+                <ul className="space-y-1">
+                  {[
+                    'Registered voters from 2023 Census ACS data',
+                    'Historical turnout for your race type & geography',
+                    'GOP base performance from 2018–2024 election results',
+                  ].map(item => (
+                    <li key={item} className="flex items-center gap-2 text-[11px] text-blue-700">
+                      <span className="text-blue-400">✓</span> {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
-                  {/* Registered voters */}
-                  <div>
-                    <label className="block text-xs font-black uppercase tracking-widest text-gray-500 mb-1.5">
-                      Registered Voters in Your Universe
-                    </label>
-                    <p className="text-[11px] text-gray-400 mb-2">
-                      Total registered voters in your district. Find this at your county clerk or state SOS website.
-                    </p>
-                    <input
-                      type="number"
-                      value={draft.registeredVoters || ''}
-                      onChange={e => setDraft(d => ({ ...d, registeredVoters: parseInt(e.target.value) || 0, isEstimated: !e.target.value }))}
-                      placeholder={`~${levelDefaults.voters.toLocaleString()} (typical for ${raceLevel} race)`}
-                      className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-gold-400 focus:border-transparent"
-                    />
-                  </div>
+              {fetchError && <p className="text-xs text-red-500">{fetchError}</p>}
 
-                  <SliderField
-                    label="Expected Turnout"
-                    hint="What % of registered voters are likely to vote? Check historical results from your county for similar elections."
-                    value={draft.expectedTurnout} min={15} max={90}
-                    onChange={v => setDraft(d => ({ ...d, expectedTurnout: v }))}
-                  />
-
-                  <SliderField
-                    label="GOP Base Performance"
-                    hint="What % of total expected votes are solid Republican? Check past presidential or top-of-ticket results in your district."
-                    value={draft.gopBase} min={10} max={65}
-                    onChange={v => setDraft(d => ({ ...d, gopBase: v }))}
-                  />
-
-                  <SliderField
-                    label="Contact → Vote Conversion"
-                    hint="What % of voter contacts you make result in a confirmed vote? Typical first-time campaigns see 10–20%."
-                    value={draft.conversionRate} min={5} max={35}
-                    onChange={v => setDraft(d => ({ ...d, conversionRate: v }))}
-                  />
-
-                  {/* Live preview */}
-                  <div className="bg-gold-50 border-2 border-gold-200 rounded-xl px-5 py-4">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">Preview</p>
-                    <div className="grid grid-cols-2 gap-3">
-                      {[
-                        { l: 'Win number',          v: fmt(pwn) },
-                        { l: 'Persuadables needed', v: fmt(ppt) },
-                        { l: 'Total contacts',      v: fmt(ptc) },
-                        { l: 'Daily target',        v: pd > 0 ? `${fmt(Math.ceil(ptc / pd))}/day` : '—' },
-                      ].map(({ l, v }) => (
-                        <div key={l}>
-                          <p className="text-[10px] text-gray-500">{l}</p>
-                          <p className="font-display text-xl font-black text-red-600">{v}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => setStep(1)}
-                      className="border-2 border-gray-200 text-gray-500 hover:border-navy hover:text-navy font-bold py-3 px-4 rounded-xl text-sm transition-colors"
-                    >
-                      ← Back
-                    </button>
-                    <button
-                      onClick={saveEdit}
-                      className="flex-1 bg-red-500 hover:bg-red-600 text-white font-black uppercase tracking-widest py-3 rounded-xl text-sm transition-colors shadow-glow-red"
-                    >
-                      Save Victory Plan
-                    </button>
-                  </div>
-                </>
-              )}
+              <button
+                onClick={handleSave}
+                disabled={!date || fetching}
+                className="w-full bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white font-black uppercase tracking-widest py-3 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
+              >
+                {fetching
+                  ? <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Pulling data…</>
+                  : '⚡ Build My Victory Plan'
+                }
+              </button>
             </div>
           </div>
         </div>
