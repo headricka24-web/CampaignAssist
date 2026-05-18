@@ -37,11 +37,14 @@ function stateFips(state: string): string | null {
   return STATE_FIPS[state.trim().toUpperCase()] ?? null
 }
 
-// Parse district to a zero-padded 2-digit string, returns null if not numeric
+// Parse district to a zero-padded 2-digit string.
+// Returns "00" for at-large (0, "AL", "at-large"). Returns null only when no district is provided.
 function parseDistrict(d: string | null): string | null {
   if (!d) return null
-  const n = parseInt(d.replace(/\D/g, ''))
-  if (isNaN(n) || n < 1) return null
+  const trimmed = d.trim().toLowerCase()
+  if (trimmed === 'al' || trimmed === 'at-large' || trimmed === 'at large') return '00'
+  const n = parseInt(d.replace(/\D/g, ''), 10)
+  if (isNaN(n) || n < 0) return null
   return String(n).padStart(2, '0')
 }
 
@@ -104,10 +107,14 @@ async function fetchCVAP(
       const cvap = parseInt(rows?.[1]?.[0] ?? '')
       if (cvap > 0) return Math.round(cvap * 0.75)
     }
-    // Fallback: estimate statewide CVAP ÷ typical number of districts
-    const rows = await censusGet(`${ACS}?get=B29001_001E&for=state:${fips}&key=${CENSUS_KEY}`)
-    const stateCvap = parseInt(rows?.[1]?.[0] ?? '')
-    if (stateCvap > 0) return Math.round((stateCvap / 50) * 0.75) // rough single-district estimate
+    // Fallback: statewide CVAP ÷ actual number of districts (fetched from Census)
+    const [stateRows, distRows] = await Promise.all([
+      censusGet(`${ACS}?get=B29001_001E&for=state:${fips}&key=${CENSUS_KEY}`),
+      censusGet(`${ACS}?get=B29001_001E&for=state%20legislative%20district%20(upper%20chamber):*&in=state:${fips}&key=${CENSUS_KEY}`),
+    ])
+    const stateCvap  = parseInt(stateRows?.[1]?.[0] ?? '')
+    const distCount  = distRows ? Math.max(1, distRows.length - 1) : 50
+    if (stateCvap > 0) return Math.round((stateCvap / distCount) * 0.75)
   }
 
   // ── County ───────────────────────────────────────────────────────────────

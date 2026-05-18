@@ -35,6 +35,7 @@ export async function POST() {
         { rawText: { contains: '%' } },
       ]
     },
+    include: { outlet: { select: { name: true } } },
     orderBy: { datePublished: 'desc' },
     take: 30,
   })
@@ -44,7 +45,7 @@ export async function POST() {
   }
 
   const articleList = articles
-    .map(a => `TITLE: ${a.title}\nSOURCE: ${a.outletId ?? 'Unknown'}\nDATE: ${new Date(a.datePublished).toLocaleDateString()}\nSNIPPET: ${a.rawText?.slice(0, 300) ?? ''}`)
+    .map(a => `TITLE: ${a.title}\nSOURCE: ${a.outlet?.name ?? 'Unknown'}\nDATE: ${new Date(a.datePublished).toLocaleDateString()}\nSNIPPET: ${a.rawText?.slice(0, 300) ?? ''}`)
     .join('\n\n---\n\n')
 
   const raw = await ask(

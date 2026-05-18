@@ -138,7 +138,15 @@ export default function AdStrategyAdvisor() {
         {error && <p className="text-sm text-red-500">{error}</p>}
 
         {/* Output */}
-        {content && (
+        {loading && (
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-3 animate-pulse">
+            <div className="h-3 bg-gray-100 rounded w-1/2" />
+            <div className="h-3 bg-gray-100 rounded w-3/4" />
+            <div className="h-3 bg-gray-100 rounded w-2/3" />
+            <div className="h-3 bg-gray-100 rounded w-1/2" />
+          </div>
+        )}
+        {content && !loading && (
           <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <div className="flex items-center gap-2">

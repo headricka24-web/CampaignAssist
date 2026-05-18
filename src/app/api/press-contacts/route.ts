@@ -76,6 +76,10 @@ export async function POST(req: NextRequest) {
   // ── update outreach status ──────────────────────────────────────────────
   if (body.action === 'update-outreach') {
     const { id, status } = body as { id: string; status: string }
+    const outreach = await prisma.pressOutreach.findUnique({ where: { id }, select: { candidateId: true } })
+    if (!outreach || outreach.candidateId !== cid) {
+      return NextResponse.json({ error: 'not found' }, { status: 404 })
+    }
     const entry = await prisma.pressOutreach.update({
       where: { id },
       data:  { status },
@@ -86,6 +90,10 @@ export async function POST(req: NextRequest) {
   // ── update contact relationship ─────────────────────────────────────────
   if (body.action === 'update-relationship') {
     const { id, relationship } = body as { id: string; relationship: string }
+    const existing = await prisma.mediaContact.findUnique({ where: { id }, select: { candidateId: true } })
+    if (!existing || existing.candidateId !== cid) {
+      return NextResponse.json({ error: 'not found' }, { status: 404 })
+    }
     const contact = await prisma.mediaContact.update({
       where:   { id },
       data:    { relationship },

@@ -49,6 +49,23 @@ export async function POST(req: NextRequest) {
     notes?: string
   }
 
+  const VALID_TYPES      = ['income', 'expense']
+  const VALID_CATEGORIES = ['Donations', 'In-Kind', 'Loan', 'Refund', 'Staff', 'Advertising', 'Events', 'Printing', 'Travel', 'Consulting', 'Legal', 'Office', 'Polling', 'Other']
+  const VALID_METHODS    = ['check', 'card', 'cash', 'transfer', 'in-kind']
+
+  if (!VALID_TYPES.includes(body.type)) {
+    return NextResponse.json({ error: 'invalid_type' }, { status: 400 })
+  }
+  if (!VALID_CATEGORIES.includes(body.category)) {
+    return NextResponse.json({ error: 'invalid_category' }, { status: 400 })
+  }
+  if (typeof body.amount !== 'number' || body.amount <= 0 || !isFinite(body.amount)) {
+    return NextResponse.json({ error: 'invalid_amount' }, { status: 400 })
+  }
+  if (body.paymentMethod && !VALID_METHODS.includes(body.paymentMethod)) {
+    return NextResponse.json({ error: 'invalid_payment_method' }, { status: 400 })
+  }
+
   const tx = await prisma.budgetTransaction.create({
     data: {
       candidateId:   cid,

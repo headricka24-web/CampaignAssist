@@ -28,5 +28,5 @@ export async function POST(req: NextRequest) {
     data: { username, password: hashed },
   })
 
-  return NextResponse.json({ id: user.id, username: user.username }, { status: 201 })
+  return NextResponse.json({ username: user.username }, { status: 201 })
 }

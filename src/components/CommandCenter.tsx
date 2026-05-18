@@ -9,12 +9,14 @@ import { useState, useEffect } from 'react'
 function SuggestedActionsWidget() {
   const [actions, setActions] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
+  const [hasData, setHasData] = useState(false)
   const [open,    setOpen]    = useState(false)
 
   useEffect(() => {
     fetch('/api/suggested-actions')
-      .then(r => r.json())
-      .then(d => { if (d.actions?.length) setActions(d.actions) })
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(d => { if (d.actions?.length) { setActions(d.actions); setHasData(true) } })
+      .catch(() => { /* silently fail — badge will show grey */ })
       .finally(() => setLoading(false))
   }, [])
 
@@ -30,8 +32,8 @@ function SuggestedActionsWidget() {
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-lg leading-none">📓</span>
           <span className="relative flex h-1.5 w-1.5 shrink-0">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-60" />
-            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-400" />
+            {hasData && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-60" />}
+            <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${hasData ? 'bg-green-400' : loading ? 'bg-yellow-400' : 'bg-gray-500'}`} />
           </span>
         </div>
 
@@ -207,8 +209,14 @@ const DEPARTMENTS = [
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+const NAME_SUFFIXES = new Set(['jr', 'sr', 'ii', 'iii', 'iv', 'v', 'esq', 'md', 'phd'])
+
 function lastName(fullName: string) {
   const parts = fullName.trim().split(/\s+/)
+  // Strip trailing suffixes to get the actual surname
+  while (parts.length > 1 && NAME_SUFFIXES.has(parts[parts.length - 1].toLowerCase().replace(/\.$/, ''))) {
+    parts.pop()
+  }
   return parts[parts.length - 1] || 'Campaign'
 }
 

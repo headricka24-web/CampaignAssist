@@ -80,7 +80,8 @@ End with a one-line "Bottom Line" summary sentence focused on the Republican pat
 
   // ── DEMOGRAPHICS ──────────────────────────────────────────────────────────
   if (type === 'demographics') {
-    const issueList = (issues ?? []).slice(0, 5).map((iss, i) => `${i + 1}. ${iss}`).join('\n')
+    const safeIssues = Array.isArray(issues) ? issues : []
+    const issueList = safeIssues.slice(0, 5).map((iss, i) => `${i + 1}. ${iss}`).join('\n')
 
     const demographics = await ask(
       `You are an expert Republican political strategist and communications director. Write from a conservative perspective — focus on winning GOP voters, persuading independents, and identifying Democratic weaknesses with each group. Be specific, tactical, and actionable.`,

@@ -202,7 +202,7 @@ export async function POST(req: NextRequest) {
   // Batch insert in chunks of 500
   const CHUNK = 500
   for (let i = 0; i < toInsert.length; i += CHUNK) {
-    await prisma.voter.createMany({ data: toInsert.slice(i, i + CHUNK), skipDuplicates: false })
+    await prisma.voter.createMany({ data: toInsert.slice(i, i + CHUNK), skipDuplicates: true })
   }
 
   const withPhone = toInsert.filter(v => v.phone).length

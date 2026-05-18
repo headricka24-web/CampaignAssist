@@ -68,7 +68,7 @@ function fmt(n: number) { return Math.round(n).toLocaleString() }
 
 function daysUntil(dateStr: string): number {
   if (!dateStr) return 0
-  const d = new Date(dateStr + 'T12:00')
+  const d = new Date(dateStr + 'T12:00:00Z')
   if (isNaN(d.getTime())) return 0
   return Math.max(0, Math.ceil((d.getTime() - Date.now()) / 86_400_000))
 }
@@ -146,7 +146,7 @@ export default function VictoryCalculator({
       registeredVoters: pf?.registeredVoters ?? levelFallback.voters,
       expectedTurnout:  pf?.turnout          ?? levelFallback.turnout,
       gopBase:          pf?.gopBase           ?? levelFallback.gopBase,
-      conversionRate:   15,
+      conversionRate:   plan.conversionRate,
       dataSource:       pf?.source ?? 'Estimated from race-level historical averages.',
       analysis:         pf?.analysis ?? '',
     }

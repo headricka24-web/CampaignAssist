@@ -60,9 +60,12 @@ function Modal({ fmt, content, onClose, onRegen }: {
 
 function FormatCard({ fmt, issue }: { fmt: typeof FORMATS[number]; issue: string }) {
   const [content, saveContent] = usePersistedContent(`ad-copy-${fmt.id}`, '')
-  const [loading, setLoading]  = useState(false)
-  const [error,   setError]    = useState('')
-  const [open,    setOpen]     = useState(false)
+  const [loading,    setLoading]    = useState(false)
+  const [error,      setError]      = useState('')
+  const [open,       setOpen]       = useState(false)
+  const [savedIssue, setSavedIssue] = useState(issue)
+
+  const isStale = Boolean(content) && savedIssue !== issue
 
   async function generate() {
     setLoading(true)
@@ -77,6 +80,7 @@ function FormatCard({ fmt, issue }: { fmt: typeof FORMATS[number]; issue: string
       if (data.error === 'no_candidate') { setError('Add a candidate first.'); return }
       if (data.error) { setError('Something went wrong.'); return }
       await saveContent(data.content)
+      setSavedIssue(issue)
       setOpen(true)
     } catch {
       setError('Network error.')
@@ -111,6 +115,11 @@ function FormatCard({ fmt, issue }: { fmt: typeof FORMATS[number]; issue: string
           </div>
 
           {error && <p className="text-xs text-red-500">{error}</p>}
+          {isStale && (
+            <p className="text-[10px] text-amber-600 font-bold bg-amber-50 rounded-lg px-2 py-1">
+              ⚠ Issue changed — regenerate for new content
+            </p>
+          )}
 
           <div className="mt-auto pt-2 flex gap-2">
             <button
