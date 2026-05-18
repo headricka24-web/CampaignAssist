@@ -20,45 +20,40 @@ function SuggestedActionsWidget() {
 
   return (
     <>
-      {/* ── Notebook button (stays in hero) ── */}
+      {/* ── Single-line bar trigger ── */}
       <button
         onClick={() => setOpen(true)}
-        className="group relative w-52 rounded-2xl overflow-hidden text-left transition-all duration-200 hover:scale-[1.02]"
-        style={{ background: 'rgba(4,14,31,0.80)', border: '1.5px solid rgba(212,160,23,0.4)', backdropFilter: 'blur(6px)' }}
+        className="group w-full flex items-center gap-4 px-5 py-3 transition-all hover:bg-white/[0.04]"
+        style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
       >
-        {/* Binding strip */}
-        <div className="h-1.5 bg-gradient-to-r from-gold-400 via-gold-300/70 to-gold-400/20" />
-
-        {/* Spiral holes */}
-        <div className="flex items-center gap-[7px] px-4 py-2">
-          {Array.from({ length: 9 }).map((_, i) => (
-            <div key={i} className="w-2.5 h-2.5 rounded-full shrink-0"
-              style={{ background: '#040e1f', border: '1px solid rgba(212,160,23,0.35)', boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.6)' }} />
-          ))}
+        {/* Icon + live dot */}
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-lg leading-none">📓</span>
+          <span className="relative flex h-1.5 w-1.5 shrink-0">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-60" />
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-400" />
+          </span>
         </div>
 
-        {/* Body */}
-        <div className="px-4 pb-5 pt-1">
-          <div className="flex items-center gap-2 mb-2.5">
-            <span className="text-3xl leading-none">📓</span>
-            <div className="flex items-center gap-1.5">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-60" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400" />
-              </span>
-              <span className="text-[9px] font-black uppercase tracking-widest text-green-400/80">Live</span>
-            </div>
-          </div>
-
-          <p className="text-sm font-black text-white/90 leading-tight mb-1">Today's<br/>Recommended Actions</p>
-          <p className="text-[11px] text-white/40 mb-4">
-            {loading ? 'Generating…' : `${actions.length} priorities ready`}
-          </p>
-
-          <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest transition-colors text-gold-400/60 group-hover:text-gold-400">
-            Open notebook <span className="transition-transform group-hover:translate-x-0.5">→</span>
-          </div>
+        {/* Label */}
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <span className="text-[11px] font-black uppercase tracking-widest text-white/70 group-hover:text-white transition-colors whitespace-nowrap">
+            Today&apos;s Recommended Actions
+          </span>
+          {!loading && (
+            <span className="text-[10px] font-bold text-white/30 whitespace-nowrap">
+              · {actions.length} {actions.length === 1 ? 'priority' : 'priorities'} ready
+            </span>
+          )}
+          {loading && (
+            <span className="text-[10px] text-white/25">· loading…</span>
+          )}
         </div>
+
+        {/* Arrow */}
+        <span className="text-[10px] font-black uppercase tracking-widest text-gold-400/50 group-hover:text-gold-400 transition-colors shrink-0">
+          Open →
+        </span>
       </button>
 
       {/* ── Slide-out panel from right ── */}
@@ -331,16 +326,16 @@ export default function CommandCenter({ candidate, electionDate }: { candidate: 
               </div>
             </div>
 
-            {/* ── Right: Suggested Actions widget ── */}
-            <div className="hidden lg:block shrink-0">
-              <SuggestedActionsWidget />
-            </div>
-
           </div>
         </div>
 
         <div className="h-1 bg-red-gradient opacity-60" />
         <div className="h-px bg-gold-gradient opacity-30" />
+      </div>
+
+      {/* ── Suggested Actions bar ─────────────────────────────────────────── */}
+      <div className="bg-[#0a1e38]">
+        <SuggestedActionsWidget />
       </div>
 
       {/* ── Campaign Timeline ─────────────────────────────────────────────── */}
