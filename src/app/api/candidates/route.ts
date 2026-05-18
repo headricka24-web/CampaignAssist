@@ -4,10 +4,11 @@ import { auth } from '@/auth'
 
 export async function GET() {
   const session = await auth()
-  const userId  = session?.user?.id ?? null
+  const userId  = session?.user?.id
+  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   const candidates = await prisma.candidate.findMany({
-    where:   userId ? { userId } : { userId: null },
+    where:   { userId },
     orderBy: { name: 'asc' },
   })
   return NextResponse.json(candidates)
@@ -15,7 +16,8 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const session = await auth()
-  const userId  = session?.user?.id ?? null
+  const userId  = session?.user?.id
+  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   const { name, race, state, party, incumbent, raceLevel, district, county, city, zip, opponentName } = await req.json()
   const candidate = await prisma.candidate.create({
@@ -36,13 +38,14 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   const session = await auth()
-  const userId  = session?.user?.id ?? null
+  const userId  = session?.user?.id
+  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   const { id, name, race, state, party, incumbent, raceLevel, district, county, city, zip, opponentName } = await req.json()
   if (!id) return NextResponse.json({ error: 'missing id' }, { status: 400 })
 
   // Verify ownership
-  const existing = await prisma.candidate.findFirst({ where: { id, userId: userId ?? undefined } })
+  const existing = await prisma.candidate.findFirst({ where: { id, userId } })
   if (!existing) return NextResponse.json({ error: 'not found' }, { status: 404 })
 
   const candidate = await prisma.candidate.update({
@@ -66,13 +69,14 @@ export async function PATCH(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const session = await auth()
-  const userId  = session?.user?.id ?? null
+  const userId  = session?.user?.id
+  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   const { id } = await req.json() as { id: string }
   if (!id) return NextResponse.json({ error: 'missing id' }, { status: 400 })
 
   // Verify ownership
-  const existing = await prisma.candidate.findFirst({ where: { id, userId: userId ?? undefined } })
+  const existing = await prisma.candidate.findFirst({ where: { id, userId } })
   if (!existing) return NextResponse.json({ error: 'not found' }, { status: 404 })
 
   // Cascade: bins → binItems, briefs, exports → candidate

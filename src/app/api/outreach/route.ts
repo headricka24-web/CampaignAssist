@@ -19,9 +19,10 @@ function monthStart(d: Date) {
 
 export async function GET() {
   const session    = await auth()
-  const userId     = session?.user?.id ?? null
+  const userId     = session?.user?.id
+  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   const candidate  = await prisma.candidate.findFirst({
-    where: userId ? { userId } : { userId: null },
+    where: { userId },
   })
   const cid        = candidate?.id ?? null
 

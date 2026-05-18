@@ -6,7 +6,8 @@ import { auth } from '@/auth'
 
 export async function POST(req: NextRequest) {
   const session = await auth()
-  const userId  = session?.user?.id ?? null
+  const userId  = session?.user?.id
+  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   const { binId, format } = await req.json() as { binId: string; format: ExportFormat }
 

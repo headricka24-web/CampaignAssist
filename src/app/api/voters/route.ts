@@ -8,11 +8,12 @@ const CONTACT_STATUSES = ['Not Contacted', 'Reached', 'Left Message', 'Wrong Num
 
 export async function GET(req: NextRequest) {
   const session = await auth()
-  const userId  = session?.user?.id ?? null
+  const userId  = session?.user?.id
+  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   // Scope to this user's candidates only
   const userCandidates = await prisma.candidate.findMany({
-    where:  userId ? { userId } : { userId: null },
+    where:  { userId },
     select: { id: true },
   })
   const candidateIds = userCandidates.map(c => c.id)

@@ -114,6 +114,10 @@ Focus on offense — where the Republican message is strongest and where Democra
 }
 
 export async function POST(req: NextRequest) {
+  const session = await auth()
+  const userId  = session?.user?.id
+  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+
   const { section, tone = 'Punchy', issue = '' } = await req.json() as {
     section: Section
     tone?: string
@@ -122,10 +126,6 @@ export async function POST(req: NextRequest) {
   if (!SECTIONS.includes(section)) {
     return NextResponse.json({ error: 'invalid_section' }, { status: 400 })
   }
-
-  const session = await auth()
-  const userId  = session?.user?.id
-  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   const ctx = await getContext(userId)
 
   // Talking points: scrape news for the issue then generate points

@@ -4,27 +4,30 @@ import { auth } from '@/auth'
 
 export async function DELETE() {
   const session = await auth()
-  const userId  = session?.user?.id ?? null
+  const userId  = session?.user?.id
+  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   await prisma.binItem.deleteMany({
-    where: { bin: { candidate: { userId: userId ?? undefined } } },
+    where: { bin: { candidate: { userId } } },
   })
-  await prisma.article.deleteMany({ where: { userId: userId ?? null } })
+  await prisma.article.deleteMany({ where: { userId } })
   return NextResponse.json({ ok: true })
 }
 
 export async function GET(req: NextRequest) {
   const session = await auth()
-  const userId  = session?.user?.id ?? null
+  const userId  = session?.user?.id
+  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   const { searchParams } = new URL(req.url)
   const bucket    = searchParams.get('bucket')
   const sentiment = searchParams.get('sentiment')
-  const limit     = Math.min(parseInt(searchParams.get('limit') ?? '50') || 50, 200)
+  const rawLimit  = parseInt(searchParams.get('limit') ?? '50')
+  const limit     = Math.min(Math.max(rawLimit > 0 ? rawLimit : 50, 1), 200)
 
   const articles = await prisma.article.findMany({
     where: {
-      userId: userId ?? null,
+      userId,
       ...(bucket    ? { bucket }    : {}),
       ...(sentiment ? { sentiment } : {}),
     },

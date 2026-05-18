@@ -6,7 +6,8 @@ import { auth } from '@/auth'
 
 export async function POST(req: NextRequest) {
   const session = await auth()
-  const userId  = session?.user?.id ?? null
+  const userId  = session?.user?.id
+  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   const { binId, type, topic } = await req.json() as { binId: string; type: BriefType; topic?: string }
 
@@ -43,7 +44,8 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   const session = await auth()
-  const userId  = session?.user?.id ?? null
+  const userId  = session?.user?.id
+  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   const { searchParams } = new URL(req.url)
   const binId = searchParams.get('binId')

@@ -121,6 +121,10 @@ TEMPLATE 3 — MAJOR DONOR: (treat them as a key partner)`,
 }
 
 export async function POST(req: NextRequest) {
+  const session = await auth()
+  const userId  = session?.user?.id
+  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+
   const { type, demographic = 'General', issue = 'General', tone = 'Punchy' } = await req.json() as {
     type: FundType
     demographic?: string
@@ -128,10 +132,6 @@ export async function POST(req: NextRequest) {
     tone?: string
   }
   if (!TYPES.includes(type)) return NextResponse.json({ error: 'invalid_type' }, { status: 400 })
-
-  const session = await auth()
-  const userId  = session?.user?.id
-  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   const ctx = await getContext(userId)
   const [system, user] = prompts[type](ctx, demographic, issue)
   const content = await ask(system + toneInstruction(tone), user, 500)

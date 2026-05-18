@@ -87,6 +87,10 @@ async function aiIssueTags(
 // ── Upload Handler ────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  const session = await auth()
+  const userId  = session?.user?.id
+  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+
   const formData = await req.formData()
   const file     = formData.get('file') as File | null
   const mappings = JSON.parse((formData.get('mappings') as string | null) ?? '{}') as Record<string, string>
@@ -100,10 +104,6 @@ export async function POST(req: NextRequest) {
   const rows     = XLSX.utils.sheet_to_json<Record<string, string>>(sheet, { defval: '' })
 
   if (rows.length === 0) return NextResponse.json({ error: 'File appears to be empty' }, { status: 400 })
-
-  const session = await auth()
-  const userId  = session?.user?.id ?? null
-  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   const candidate   = await prisma.candidate.findFirst({ where: { userId } })
   const candidateId = candidate?.id ?? null
 

@@ -9,10 +9,11 @@ const delay = (ms: number) => new Promise(r => setTimeout(r, ms))
 
 export async function POST() {
   const session = await auth()
-  const userId  = session?.user?.id ?? null
+  const userId  = session?.user?.id
+  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   const pending = await prisma.article.findMany({
-    where:   { summary: null, userId: userId ?? null },
+    where:   { summary: null, userId },
     include: { outlet: true },
     take: 10,
   })
@@ -44,7 +45,7 @@ export async function POST() {
   }
 
   const totalPending = await prisma.article.count({
-    where: { summary: null, userId: userId ?? null },
+    where: { summary: null, userId },
   })
 
   return NextResponse.json({

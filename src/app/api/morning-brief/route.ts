@@ -13,7 +13,7 @@ function todayKey() {
 export async function GET() {
   const session = await auth()
   const userId  = session?.user?.id
-  if (!userId) return NextResponse.json({ content: null })
+  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   const date     = todayKey()
   const existing = await prisma.dailyBrief.findFirst({

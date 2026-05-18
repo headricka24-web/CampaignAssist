@@ -5,10 +5,11 @@ import { auth } from '@/auth'
 
 export async function GET() {
   const session = await auth()
-  const userId  = session?.user?.id ?? null
+  const userId  = session?.user?.id
+  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   const userCandidates = await prisma.candidate.findMany({
-    where:  userId ? { userId } : { userId: null },
+    where:  { userId },
     select: { id: true },
   })
   const candidateIds = userCandidates.map(c => c.id)
@@ -23,7 +24,8 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const session = await auth()
-  const userId  = session?.user?.id ?? null
+  const userId  = session?.user?.id
+  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   const { candidateId, name, articleIds } = await req.json() as {
     candidateId: string
@@ -33,7 +35,7 @@ export async function POST(req: NextRequest) {
 
   // Verify the candidate belongs to this user
   const candidate = await prisma.candidate.findFirst({
-    where: { id: candidateId, ...(userId ? { userId } : { userId: null }) },
+    where: { id: candidateId, userId },
   })
   if (!candidate) return NextResponse.json({ error: 'Candidate not found' }, { status: 404 })
 
