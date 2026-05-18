@@ -6,7 +6,23 @@ import { useLocalStorage } from '@/lib/useLocalStorage'
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type Priority  = 'high' | 'medium' | 'low'
-type ModalType = 'contact' | 'donor' | 'volunteer' | 'event' | 'draft' | 'import-preview' | null
+type ModalType = 'contact' | 'donor' | 'volunteer' | 'event' | 'draft' | 'import-preview' | 'edit-contact' | 'edit-donor' | 'edit-volunteer' | null
+type DashTab   = 'overview' | 'contacts' | 'donors' | 'volunteers'
+
+type ContactRecord = {
+  id: string; name: string; phone: string | null; email: string | null
+  method: string; status: string; notes: string | null; contactedAt: string
+}
+type DonorRecord = {
+  id: string; name: string; email: string | null; phone: string | null
+  amount: number; donatedAt: string; method: string | null; followUpDue: string | null
+  notes: string | null; status: string
+}
+type VolunteerRecord = {
+  id: string; name: string; email: string | null; phone: string | null
+  role: string | null; shiftDate: string; shiftStart: string | null; shiftEnd: string | null
+  status: string; notes: string | null
+}
 
 type ImportDonor    = { name: string; amount: number | null; email: string | null; phone: string | null; method: string | null; notes: string | null }
 type ImportVolunteer = { name: string; email: string | null; phone: string | null; role: string | null; shiftDate: string | null; notes: string | null }
@@ -186,9 +202,11 @@ function ContactForm({ onDone }: { onDone: () => void }) {
 
 function DonorForm({ onDone }: { onDone: () => void }) {
   const today = new Date().toISOString().slice(0, 10)
-  const [form, setForm] = useState({ name: '', email: '', phone: '', amount: '', donatedAt: today, method: 'online', followUpDue: '', notes: '', status: 'received' })
+  const [form, setForm] = useState({ name: '', email: '', phone: '', amount: '', donatedAt: today, method: 'online', followUpDue: '', notes: '', status: 'received', employer: '', occupation: '' })
   const [saving, setSaving] = useState(false)
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
+  const amountNum = parseFloat(form.amount)
+  const needsFEC  = !isNaN(amountNum) && amountNum >= 200
 
   async function submit() {
     if (!form.name.trim() || !form.amount) return
@@ -224,6 +242,16 @@ function DonorForm({ onDone }: { onDone: () => void }) {
         <Field label="Email"><input className={inputCls} type="email" value={form.email} onChange={e => set('email', e.target.value)} placeholder="donor@email.com" /></Field>
         <Field label="Phone"><input className={inputCls} type="tel" value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="(555) 123-4567" /></Field>
       </div>
+      {/* FEC required fields — shown when amount ≥ $200 */}
+      {needsFEC && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 space-y-3">
+          <p className="text-[10px] font-black uppercase tracking-widest text-amber-700">⚠ FEC Required at $200+</p>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Employer *"><input className={inputCls} value={form.employer} onChange={e => set('employer', e.target.value)} placeholder="ABC Corp" /></Field>
+            <Field label="Occupation *"><input className={inputCls} value={form.occupation} onChange={e => set('occupation', e.target.value)} placeholder="Attorney" /></Field>
+          </div>
+        </div>
+      )}
       <Field label="Notes (optional)">
         <textarea className={`${inputCls} resize-none`} rows={2} value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Any notes…" />
       </Field>
@@ -360,6 +388,205 @@ function DraftForm({ onDone }: { onDone: () => void }) {
   )
 }
 
+// ── Edit Modals ───────────────────────────────────────────────────────────────
+
+function EditContactModal({ record, onClose, onSaved }: {
+  record: ContactRecord
+  onClose: () => void
+  onSaved: (r: ContactRecord) => void
+}) {
+  const [form, setForm] = useState({
+    name:   record.name,
+    phone:  record.phone  ?? '',
+    email:  record.email  ?? '',
+    method: record.method,
+    status: record.status,
+    notes:  record.notes  ?? '',
+  })
+  const [saving, setSaving] = useState(false)
+  const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
+
+  async function submit() {
+    if (!form.name.trim()) return
+    setSaving(true)
+    const res  = await fetch('/api/outreach/contacts', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: record.id, ...form }),
+    })
+    const data = await res.json()
+    setSaving(false)
+    if (res.ok) onSaved(data)
+  }
+
+  return (
+    <Modal title="Edit Contact" onClose={onClose}>
+      <Field label="Voter Name *"><input className={inputCls} value={form.name} onChange={e => set('name', e.target.value)} /></Field>
+      <Field label="Phone"><input className={inputCls} value={form.phone} onChange={e => set('phone', e.target.value)} /></Field>
+      <Field label="Email"><input className={inputCls} type="email" value={form.email} onChange={e => set('email', e.target.value)} /></Field>
+      <div className="grid grid-cols-2 gap-4">
+        <Field label="Contact Method">
+          <select className={selectCls} value={form.method} onChange={e => set('method', e.target.value)}>
+            <option value="door">Door Knock</option>
+            <option value="phone">Phone Call</option>
+            <option value="text">Text</option>
+            <option value="email">Email</option>
+          </select>
+        </Field>
+        <Field label="Outcome">
+          <select className={selectCls} value={form.status} onChange={e => set('status', e.target.value)}>
+            <option value="completed">Contacted</option>
+            <option value="attempted">No Answer</option>
+            <option value="pending">Left Message</option>
+          </select>
+        </Field>
+      </div>
+      <Field label="Notes">
+        <textarea className={`${inputCls} resize-none`} rows={2} value={form.notes} onChange={e => set('notes', e.target.value)} />
+      </Field>
+      <button onClick={submit} disabled={saving || !form.name.trim()}
+        className="w-full bg-navy hover:bg-navy-700 disabled:opacity-50 text-white font-black uppercase tracking-widest py-3 rounded-xl text-sm transition-all">
+        {saving ? 'Saving…' : 'Save Changes'}
+      </button>
+    </Modal>
+  )
+}
+
+function EditDonorModal({ record, onClose, onSaved }: {
+  record: DonorRecord
+  onClose: () => void
+  onSaved: (r: DonorRecord) => void
+}) {
+  const [form, setForm] = useState({
+    name:        record.name,
+    email:       record.email       ?? '',
+    phone:       record.phone       ?? '',
+    amount:      String(record.amount),
+    donatedAt:   record.donatedAt   ? record.donatedAt.slice(0, 10) : '',
+    method:      record.method      ?? 'online',
+    followUpDue: record.followUpDue ? record.followUpDue.slice(0, 10) : '',
+    notes:       record.notes       ?? '',
+    status:      record.status,
+  })
+  const [saving, setSaving] = useState(false)
+  const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
+
+  async function submit() {
+    if (!form.name.trim() || !form.amount) return
+    setSaving(true)
+    const res  = await fetch('/api/outreach/donors', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: record.id, ...form }),
+    })
+    const data = await res.json()
+    setSaving(false)
+    if (res.ok) onSaved(data)
+  }
+
+  return (
+    <Modal title="Edit Donor" onClose={onClose}>
+      <Field label="Donor Name *"><input className={inputCls} value={form.name} onChange={e => set('name', e.target.value)} /></Field>
+      <div className="grid grid-cols-2 gap-4">
+        <Field label="Amount ($) *"><input className={inputCls} type="number" min="0" step="0.01" value={form.amount} onChange={e => set('amount', e.target.value)} /></Field>
+        <Field label="Date"><input className={inputCls} type="date" value={form.donatedAt} onChange={e => set('donatedAt', e.target.value)} /></Field>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <Field label="Method">
+          <select className={selectCls} value={form.method} onChange={e => set('method', e.target.value)}>
+            <option value="online">Online</option>
+            <option value="check">Check</option>
+            <option value="cash">Cash</option>
+            <option value="card">Credit Card</option>
+          </select>
+        </Field>
+        <Field label="Status">
+          <select className={selectCls} value={form.status} onChange={e => set('status', e.target.value)}>
+            <option value="received">Received</option>
+            <option value="pledged">Pledged</option>
+            <option value="refunded">Refunded</option>
+          </select>
+        </Field>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <Field label="Email"><input className={inputCls} type="email" value={form.email} onChange={e => set('email', e.target.value)} /></Field>
+        <Field label="Phone"><input className={inputCls} type="tel" value={form.phone} onChange={e => set('phone', e.target.value)} /></Field>
+      </div>
+      <Field label="Follow-up Date"><input className={inputCls} type="date" value={form.followUpDue} onChange={e => set('followUpDue', e.target.value)} /></Field>
+      <Field label="Notes">
+        <textarea className={`${inputCls} resize-none`} rows={2} value={form.notes} onChange={e => set('notes', e.target.value)} />
+      </Field>
+      <button onClick={submit} disabled={saving || !form.name.trim() || !form.amount}
+        className="w-full bg-navy hover:bg-navy-700 disabled:opacity-50 text-white font-black uppercase tracking-widest py-3 rounded-xl text-sm transition-all">
+        {saving ? 'Saving…' : 'Save Changes'}
+      </button>
+    </Modal>
+  )
+}
+
+function EditVolunteerModal({ record, onClose, onSaved }: {
+  record: VolunteerRecord
+  onClose: () => void
+  onSaved: (r: VolunteerRecord) => void
+}) {
+  const [form, setForm] = useState({
+    name:       record.name,
+    email:      record.email      ?? '',
+    phone:      record.phone      ?? '',
+    role:       record.role       ?? '',
+    shiftDate:  record.shiftDate  ? record.shiftDate.slice(0, 10) : '',
+    shiftStart: record.shiftStart ?? '',
+    shiftEnd:   record.shiftEnd   ?? '',
+    status:     record.status,
+    notes:      record.notes      ?? '',
+  })
+  const [saving, setSaving] = useState(false)
+  const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
+
+  async function submit() {
+    if (!form.name.trim()) return
+    setSaving(true)
+    const res  = await fetch('/api/outreach/volunteers', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: record.id, ...form }),
+    })
+    const data = await res.json()
+    setSaving(false)
+    if (res.ok) onSaved(data)
+  }
+
+  return (
+    <Modal title="Edit Volunteer" onClose={onClose}>
+      <Field label="Volunteer Name *"><input className={inputCls} value={form.name} onChange={e => set('name', e.target.value)} /></Field>
+      <div className="grid grid-cols-2 gap-4">
+        <Field label="Phone"><input className={inputCls} type="tel" value={form.phone} onChange={e => set('phone', e.target.value)} /></Field>
+        <Field label="Email"><input className={inputCls} type="email" value={form.email} onChange={e => set('email', e.target.value)} /></Field>
+      </div>
+      <Field label="Role / Task"><input className={inputCls} value={form.role} onChange={e => set('role', e.target.value)} /></Field>
+      <div className="grid grid-cols-2 gap-4">
+        <Field label="Shift Date *"><input className={inputCls} type="date" value={form.shiftDate} onChange={e => set('shiftDate', e.target.value)} /></Field>
+        <Field label="Status">
+          <select className={selectCls} value={form.status} onChange={e => set('status', e.target.value)}>
+            <option value="scheduled">Scheduled</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </Field>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <Field label="Start Time"><input className={inputCls} type="time" value={form.shiftStart} onChange={e => set('shiftStart', e.target.value)} /></Field>
+        <Field label="End Time"><input className={inputCls} type="time" value={form.shiftEnd} onChange={e => set('shiftEnd', e.target.value)} /></Field>
+      </div>
+      <Field label="Notes">
+        <textarea className={`${inputCls} resize-none`} rows={2} value={form.notes} onChange={e => set('notes', e.target.value)} />
+      </Field>
+      <button onClick={submit} disabled={saving || !form.name.trim()}
+        className="w-full bg-navy hover:bg-navy-700 disabled:opacity-50 text-white font-black uppercase tracking-widest py-3 rounded-xl text-sm transition-all">
+        {saving ? 'Saving…' : 'Save Changes'}
+      </button>
+    </Modal>
+  )
+}
+
 // ── Main Dashboard ────────────────────────────────────────────────────────────
 
 export default function OutreachDashboard() {
@@ -368,6 +595,67 @@ export default function OutreachDashboard() {
   const [error,                   setError]                   = useState('')
   const [modal,                   setModal]                   = useState<ModalType>(null)
   const [approvingId,             setApprovingId]             = useState<string | null>(null)
+
+  // ── Lists tab state ───────────────────────────────────────────────────────
+  const [dashTab,           setDashTab]           = useState<DashTab>('overview')
+  const [contactsList,      setContactsList]      = useState<ContactRecord[] | null>(null)
+  const [donorsList,        setDonorsList]        = useState<DonorRecord[] | null>(null)
+  const [volunteersList,    setVolunteersList]     = useState<VolunteerRecord[] | null>(null)
+  const [listLoading,       setListLoading]       = useState(false)
+  const [contactSearch,     setContactSearch]     = useState('')
+  const [donorSearch,       setDonorSearch]       = useState('')
+  const [volunteerSearch,   setVolunteerSearch]   = useState('')
+  const [editContact,       setEditContact]       = useState<ContactRecord | null>(null)
+  const [editDonor,         setEditDonor]         = useState<DonorRecord | null>(null)
+  const [editVolunteer,     setEditVolunteer]     = useState<VolunteerRecord | null>(null)
+
+  async function loadContacts(force = false) {
+    if (contactsList && !force) return
+    setListLoading(true)
+    try {
+      const res = await fetch('/api/outreach/contacts')
+      setContactsList(await res.json())
+    } finally { setListLoading(false) }
+  }
+  async function loadDonors(force = false) {
+    if (donorsList && !force) return
+    setListLoading(true)
+    try {
+      const res = await fetch('/api/outreach/donors')
+      setDonorsList(await res.json())
+    } finally { setListLoading(false) }
+  }
+  async function loadVolunteers(force = false) {
+    if (volunteersList && !force) return
+    setListLoading(true)
+    try {
+      const res = await fetch('/api/outreach/volunteers')
+      setVolunteersList(await res.json())
+    } finally { setListLoading(false) }
+  }
+
+  function switchTab(tab: DashTab) {
+    setDashTab(tab)
+    if (tab === 'contacts')   loadContacts()
+    if (tab === 'donors')     loadDonors()
+    if (tab === 'volunteers') loadVolunteers()
+  }
+
+  async function deleteContact(id: string) {
+    if (!confirm('Delete this contact? This cannot be undone.')) return
+    await fetch('/api/outreach/contacts', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
+    setContactsList(l => l ? l.filter(c => c.id !== id) : l)
+  }
+  async function deleteDonor(id: string) {
+    if (!confirm('Delete this donor record? This cannot be undone.')) return
+    await fetch('/api/outreach/donors', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
+    setDonorsList(l => l ? l.filter(d => d.id !== id) : l)
+  }
+  async function deleteVolunteer(id: string) {
+    if (!confirm('Delete this volunteer? This cannot be undone.')) return
+    await fetch('/api/outreach/volunteers', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
+    setVolunteersList(l => l ? l.filter(v => v.id !== id) : l)
+  }
 
   // Cross-connection generation modal
   const [genModal, setGenModal] = useState<{ title: string; content: string; loading: boolean } | null>(null)
@@ -579,6 +867,288 @@ export default function OutreachDashboard() {
       </div>
 
       {error && <p className="text-sm text-red-500">{error}</p>}
+
+      {/* ── Tab bar ───────────────────────────────────────────────────── */}
+      <div className="flex gap-1 bg-white rounded-2xl border border-gray-100 shadow-sm p-1">
+        {([
+          { id: 'overview',    label: '📊 Overview'    },
+          { id: 'contacts',    label: '📞 Contacts'    },
+          { id: 'donors',      label: '💵 Donors'      },
+          { id: 'volunteers',  label: '👥 Volunteers'  },
+        ] as { id: DashTab; label: string }[]).map(({ id, label }) => (
+          <button key={id} onClick={() => switchTab(id)}
+            className={`flex-1 text-xs font-black uppercase tracking-widest py-2.5 rounded-xl transition-all ${
+              dashTab === id
+                ? 'bg-navy text-white shadow-sm'
+                : 'text-gray-400 hover:text-navy hover:bg-gray-50'
+            }`}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Contacts List Tab ─────────────────────────────────────────── */}
+      {dashTab === 'contacts' && (
+        <div className="bg-white rounded-2xl border-2 border-navy-100 shadow-sm overflow-hidden">
+          <div className="h-1.5 bg-gradient-to-r from-navy to-blue-500" />
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-4 gap-3">
+              <h3 className="font-display font-black text-navy text-xs uppercase tracking-widest">All Contacts</h3>
+              <div className="flex items-center gap-2 flex-1 max-w-xs">
+                <input
+                  className={inputCls + ' py-2'}
+                  placeholder="Search by name…"
+                  value={contactSearch}
+                  onChange={e => setContactSearch(e.target.value)}
+                />
+              </div>
+              <button onClick={() => loadContacts(true)} disabled={listLoading}
+                className="text-[10px] font-black uppercase tracking-widest px-3 py-2 rounded-xl bg-navy/10 hover:bg-navy hover:text-white text-navy transition-all disabled:opacity-50">
+                {listLoading ? '↺' : '↺ Refresh'}
+              </button>
+              <button onClick={() => setModal('contact')}
+                className="text-[10px] font-black uppercase tracking-widest px-3 py-2 rounded-xl bg-navy text-white hover:bg-navy-700 transition-all">
+                + Add
+              </button>
+            </div>
+            {listLoading && !contactsList ? (
+              <div className="py-12 flex justify-center"><span className="w-6 h-6 border-2 border-navy border-t-transparent rounded-full animate-spin" /></div>
+            ) : !contactsList || contactsList.length === 0 ? (
+              <div className="py-12 text-center">
+                <p className="text-3xl mb-2 opacity-20">📞</p>
+                <p className="text-sm text-gray-400">No contacts logged yet</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-100">
+                      {['Name', 'Phone', 'Method', 'Status', 'Date', 'Notes', ''].map(h => (
+                        <th key={h} className="text-left text-[10px] font-black uppercase tracking-widest text-gray-400 pb-2 pr-4">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {contactsList
+                      .filter(c => c.name.toLowerCase().includes(contactSearch.toLowerCase()))
+                      .map(c => (
+                        <tr key={c.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                          <td className="py-2.5 pr-4 font-semibold text-navy">{c.name}</td>
+                          <td className="py-2.5 pr-4 text-gray-500 text-xs">{c.phone ?? '—'}</td>
+                          <td className="py-2.5 pr-4 text-xs capitalize">{c.method}</td>
+                          <td className="py-2.5 pr-4">
+                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                              c.status === 'completed' ? 'bg-green-100 text-green-700' :
+                              c.status === 'attempted' ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-gray-100 text-gray-500'
+                            }`}>{c.status}</span>
+                          </td>
+                          <td className="py-2.5 pr-4 text-xs text-gray-400">{fmtDate(c.contactedAt)}</td>
+                          <td className="py-2.5 pr-4 text-xs text-gray-400 max-w-[160px] truncate">{c.notes ?? '—'}</td>
+                          <td className="py-2.5">
+                            <div className="flex items-center gap-1.5">
+                              <button onClick={() => { setEditContact(c); setModal('edit-contact') }}
+                                className="text-[10px] font-black px-2 py-1 rounded-lg bg-navy/10 hover:bg-navy hover:text-white text-navy transition-colors">
+                                Edit
+                              </button>
+                              <button onClick={() => deleteContact(c.id)}
+                                className="text-[10px] font-black px-2 py-1 rounded-lg bg-red-50 hover:bg-red-500 hover:text-white text-red-500 transition-colors">
+                                Del
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+                {contactsList.filter(c => c.name.toLowerCase().includes(contactSearch.toLowerCase())).length === 0 && (
+                  <p className="text-center text-sm text-gray-400 py-6">No contacts match &ldquo;{contactSearch}&rdquo;</p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Donors List Tab ───────────────────────────────────────────── */}
+      {dashTab === 'donors' && (
+        <div className="bg-white rounded-2xl border-2 border-green-100 shadow-sm overflow-hidden">
+          <div className="h-1.5 bg-gradient-to-r from-green-500 to-green-700" />
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-4 gap-3">
+              <h3 className="font-display font-black text-navy text-xs uppercase tracking-widest">All Donors</h3>
+              <div className="flex items-center gap-2 flex-1 max-w-xs">
+                <input
+                  className={inputCls + ' py-2'}
+                  placeholder="Search by name…"
+                  value={donorSearch}
+                  onChange={e => setDonorSearch(e.target.value)}
+                />
+              </div>
+              <button onClick={() => loadDonors(true)} disabled={listLoading}
+                className="text-[10px] font-black uppercase tracking-widest px-3 py-2 rounded-xl bg-green-50 hover:bg-green-600 hover:text-white text-green-700 transition-all disabled:opacity-50">
+                {listLoading ? '↺' : '↺ Refresh'}
+              </button>
+              <button onClick={() => setModal('donor')}
+                className="text-[10px] font-black uppercase tracking-widest px-3 py-2 rounded-xl bg-navy text-white hover:bg-navy-700 transition-all">
+                + Add
+              </button>
+            </div>
+            {listLoading && !donorsList ? (
+              <div className="py-12 flex justify-center"><span className="w-6 h-6 border-2 border-navy border-t-transparent rounded-full animate-spin" /></div>
+            ) : !donorsList || donorsList.length === 0 ? (
+              <div className="py-12 text-center">
+                <p className="text-3xl mb-2 opacity-20">💵</p>
+                <p className="text-sm text-gray-400">No donors logged yet</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-100">
+                      {['Name', 'Amount', 'Date', 'Method', 'Status', 'Follow-up', 'Notes', ''].map(h => (
+                        <th key={h} className="text-left text-[10px] font-black uppercase tracking-widest text-gray-400 pb-2 pr-4">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {donorsList
+                      .filter(d => d.name.toLowerCase().includes(donorSearch.toLowerCase()))
+                      .map(d => {
+                        const overdue = d.followUpDue ? new Date(d.followUpDue) < new Date() : false
+                        return (
+                          <tr key={d.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                            <td className="py-2.5 pr-4 font-semibold text-navy">{d.name}</td>
+                            <td className="py-2.5 pr-4 font-bold text-green-700">{fmt$(d.amount)}</td>
+                            <td className="py-2.5 pr-4 text-xs text-gray-400">{fmtDate(d.donatedAt)}</td>
+                            <td className="py-2.5 pr-4 text-xs capitalize">{d.method ?? '—'}</td>
+                            <td className="py-2.5 pr-4">
+                              <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                                d.status === 'received'  ? 'bg-green-100 text-green-700' :
+                                d.status === 'pledged'   ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-gray-100 text-gray-500'
+                              }`}>{d.status}</span>
+                            </td>
+                            <td className={`py-2.5 pr-4 text-xs font-semibold ${overdue ? 'text-red-500' : 'text-gray-400'}`}>
+                              {d.followUpDue ? fmtDate(d.followUpDue) + (overdue ? ' !' : '') : '—'}
+                            </td>
+                            <td className="py-2.5 pr-4 text-xs text-gray-400 max-w-[140px] truncate">{d.notes ?? '—'}</td>
+                            <td className="py-2.5">
+                              <div className="flex items-center gap-1.5">
+                                <button onClick={() => { setEditDonor(d); setModal('edit-donor') }}
+                                  className="text-[10px] font-black px-2 py-1 rounded-lg bg-navy/10 hover:bg-navy hover:text-white text-navy transition-colors">
+                                  Edit
+                                </button>
+                                <button onClick={() => deleteDonor(d.id)}
+                                  className="text-[10px] font-black px-2 py-1 rounded-lg bg-red-50 hover:bg-red-500 hover:text-white text-red-500 transition-colors">
+                                  Del
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                  </tbody>
+                </table>
+                {donorsList.filter(d => d.name.toLowerCase().includes(donorSearch.toLowerCase())).length === 0 && (
+                  <p className="text-center text-sm text-gray-400 py-6">No donors match &ldquo;{donorSearch}&rdquo;</p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Volunteers List Tab ───────────────────────────────────────── */}
+      {dashTab === 'volunteers' && (
+        <div className="bg-white rounded-2xl border-2 border-green-100 shadow-sm overflow-hidden">
+          <div className="h-1.5 bg-gradient-to-r from-green-500 to-teal-500" />
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-4 gap-3">
+              <h3 className="font-display font-black text-navy text-xs uppercase tracking-widest">All Volunteers</h3>
+              <div className="flex items-center gap-2 flex-1 max-w-xs">
+                <input
+                  className={inputCls + ' py-2'}
+                  placeholder="Search by name…"
+                  value={volunteerSearch}
+                  onChange={e => setVolunteerSearch(e.target.value)}
+                />
+              </div>
+              <button onClick={() => loadVolunteers(true)} disabled={listLoading}
+                className="text-[10px] font-black uppercase tracking-widest px-3 py-2 rounded-xl bg-green-50 hover:bg-green-600 hover:text-white text-green-700 transition-all disabled:opacity-50">
+                {listLoading ? '↺' : '↺ Refresh'}
+              </button>
+              <button onClick={() => setModal('volunteer')}
+                className="text-[10px] font-black uppercase tracking-widest px-3 py-2 rounded-xl bg-navy text-white hover:bg-navy-700 transition-all">
+                + Add
+              </button>
+            </div>
+            {listLoading && !volunteersList ? (
+              <div className="py-12 flex justify-center"><span className="w-6 h-6 border-2 border-navy border-t-transparent rounded-full animate-spin" /></div>
+            ) : !volunteersList || volunteersList.length === 0 ? (
+              <div className="py-12 text-center">
+                <p className="text-3xl mb-2 opacity-20">👥</p>
+                <p className="text-sm text-gray-400">No volunteers scheduled yet</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-100">
+                      {['Name', 'Role', 'Shift Date', 'Time', 'Status', 'Phone / Email', ''].map(h => (
+                        <th key={h} className="text-left text-[10px] font-black uppercase tracking-widest text-gray-400 pb-2 pr-4">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {volunteersList
+                      .filter(v => v.name.toLowerCase().includes(volunteerSearch.toLowerCase()))
+                      .map(v => (
+                        <tr key={v.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                          <td className="py-2.5 pr-4 font-semibold text-navy">{v.name}</td>
+                          <td className="py-2.5 pr-4 text-xs text-gray-500">{v.role ?? '—'}</td>
+                          <td className="py-2.5 pr-4 text-xs text-gray-500">{fmtDate(v.shiftDate)}</td>
+                          <td className="py-2.5 pr-4 text-xs text-gray-400">
+                            {v.shiftStart ? `${v.shiftStart}${v.shiftEnd ? ` – ${v.shiftEnd}` : ''}` : '—'}
+                          </td>
+                          <td className="py-2.5 pr-4">
+                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                              v.status === 'confirmed'  ? 'bg-green-100 text-green-700' :
+                              v.status === 'scheduled'  ? 'bg-blue-100 text-blue-700'  :
+                              v.status === 'completed'  ? 'bg-gray-100 text-gray-500'  :
+                              'bg-red-100 text-red-600'
+                            }`}>{v.status}</span>
+                          </td>
+                          <td className="py-2.5 pr-4 text-xs text-gray-400">
+                            {[v.phone, v.email].filter(Boolean).join(' · ') || '—'}
+                          </td>
+                          <td className="py-2.5">
+                            <div className="flex items-center gap-1.5">
+                              <button onClick={() => { setEditVolunteer(v); setModal('edit-volunteer') }}
+                                className="text-[10px] font-black px-2 py-1 rounded-lg bg-navy/10 hover:bg-navy hover:text-white text-navy transition-colors">
+                                Edit
+                              </button>
+                              <button onClick={() => deleteVolunteer(v.id)}
+                                className="text-[10px] font-black px-2 py-1 rounded-lg bg-red-50 hover:bg-red-500 hover:text-white text-red-500 transition-colors">
+                                Del
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+                {volunteersList.filter(v => v.name.toLowerCase().includes(volunteerSearch.toLowerCase())).length === 0 && (
+                  <p className="text-center text-sm text-gray-400 py-6">No volunteers match &ldquo;{volunteerSearch}&rdquo;</p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Overview tab content ──────────────────────────────────────── */}
+      {dashTab === 'overview' && <>
 
       {/* ── Big Stats Row ──────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -975,12 +1545,51 @@ export default function OutreachDashboard() {
         </div>
       </div>
 
+      {/* end overview tab */}
+      </>}
+
       {/* ── Modals ────────────────────────────────────────────────────── */}
       {modal === 'contact'   && <Modal title="Log Voter Contact"   onClose={closeModal}><ContactForm   onDone={closeModal} /></Modal>}
       {modal === 'donor'     && <Modal title="Log Donation"        onClose={closeModal}><DonorForm     onDone={closeModal} /></Modal>}
       {modal === 'volunteer' && <Modal title="Schedule Volunteer"  onClose={closeModal}><VolunteerForm onDone={closeModal} /></Modal>}
       {modal === 'event'     && <Modal title="Add Campaign Event"  onClose={closeModal}><EventForm     onDone={closeModal} /></Modal>}
       {modal === 'draft'     && <Modal title="Submit Content Draft" onClose={closeModal}><DraftForm    onDone={closeModal} /></Modal>}
+
+      {/* ── Edit Contact Modal ──────────────────────────────────────── */}
+      {modal === 'edit-contact' && editContact && (
+        <EditContactModal
+          record={editContact}
+          onClose={() => { setModal(null); setEditContact(null) }}
+          onSaved={updated => {
+            setContactsList(l => l ? l.map(c => c.id === updated.id ? updated : c) : l)
+            setModal(null); setEditContact(null)
+          }}
+        />
+      )}
+
+      {/* ── Edit Donor Modal ────────────────────────────────────────── */}
+      {modal === 'edit-donor' && editDonor && (
+        <EditDonorModal
+          record={editDonor}
+          onClose={() => { setModal(null); setEditDonor(null) }}
+          onSaved={updated => {
+            setDonorsList(l => l ? l.map(d => d.id === updated.id ? updated : d) : l)
+            setModal(null); setEditDonor(null)
+          }}
+        />
+      )}
+
+      {/* ── Edit Volunteer Modal ─────────────────────────────────────── */}
+      {modal === 'edit-volunteer' && editVolunteer && (
+        <EditVolunteerModal
+          record={editVolunteer}
+          onClose={() => { setModal(null); setEditVolunteer(null) }}
+          onSaved={updated => {
+            setVolunteersList(l => l ? l.map(v => v.id === updated.id ? updated : v) : l)
+            setModal(null); setEditVolunteer(null)
+          }}
+        />
+      )}
 
       {/* Generation modal */}
       {genModal && (

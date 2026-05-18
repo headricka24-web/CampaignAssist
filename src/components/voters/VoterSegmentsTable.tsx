@@ -33,16 +33,28 @@ type APIResponse = {
   tagCounts:     Record<string, number>
 }
 
+type AdvancedFilters = {
+  parties:       string[]
+  supportLevels: string[]
+  turnoutMin:    string
+  turnoutMax:    string
+  hasPhone:      boolean
+  hasEmail:      boolean
+}
+
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const CONTACT_STATUSES = [
-  { key: 'Not Contacted', icon: '⭕', color: 'text-gray-500' },
-  { key: 'Reached',       icon: '✅', color: 'text-green-600' },
-  { key: 'Left Message',  icon: '📬', color: 'text-yellow-600' },
+  { key: 'Not Contacted',   icon: '⭕', color: 'text-gray-500' },
+  { key: 'Reached',         icon: '✅', color: 'text-green-600' },
+  { key: 'Left Message',    icon: '📬', color: 'text-yellow-600' },
   { key: 'Needs Follow-Up', icon: '🔁', color: 'text-blue-600' },
-  { key: 'Wrong Number',  icon: '❌', color: 'text-orange-500' },
-  { key: 'Do Not Contact',icon: '🚫', color: 'text-red-600' },
+  { key: 'Wrong Number',    icon: '❌', color: 'text-orange-500' },
+  { key: 'Do Not Contact',  icon: '🚫', color: 'text-red-600' },
 ]
+
+const PARTY_OPTIONS    = ['Republican', 'Democrat', 'Independent', 'Unknown']
+const SUPPORT_OPTIONS  = ['Strong Support', 'Lean Support', 'Persuadable', 'Opposed', 'Unknown']
 
 const PARTY_STYLE: Record<string, string> = {
   Republican:  'bg-red-100 text-red-700',
@@ -51,12 +63,70 @@ const PARTY_STYLE: Record<string, string> = {
 }
 
 const STATUS_STYLE: Record<string, string> = {
-  'Not Contacted':  'bg-gray-100 text-gray-500',
-  'Reached':        'bg-green-100 text-green-700',
-  'Left Message':   'bg-yellow-100 text-yellow-700',
-  'Wrong Number':   'bg-orange-100 text-orange-700',
-  'Do Not Contact': 'bg-red-100 text-red-600',
-  'Needs Follow-Up':'bg-blue-100 text-blue-700',
+  'Not Contacted':   'bg-gray-100 text-gray-500',
+  'Reached':         'bg-green-100 text-green-700',
+  'Left Message':    'bg-yellow-100 text-yellow-700',
+  'Wrong Number':    'bg-orange-100 text-orange-700',
+  'Do Not Contact':  'bg-red-100 text-red-600',
+  'Needs Follow-Up': 'bg-blue-100 text-blue-700',
+}
+
+const EMPTY_FILTERS: AdvancedFilters = {
+  parties:       [],
+  supportLevels: [],
+  turnoutMin:    '',
+  turnoutMax:    '',
+  hasPhone:      false,
+  hasEmail:      false,
+}
+
+// ── CSV helpers ───────────────────────────────────────────────────────────────
+
+function csvEscape(val: string | null | undefined): string {
+  if (val == null) return ''
+  const s = String(val)
+  if (s.includes('"') || s.includes(',') || s.includes('\n') || s.includes('\r')) {
+    return '"' + s.replace(/"/g, '""') + '"'
+  }
+  return s
+}
+
+export function votersToCSV(voters: Voter[]): string {
+  const headers = [
+    'First Name', 'Last Name', 'Address', 'City', 'Zip', 'Phone', 'Email',
+    'Party', 'Support Level', 'Turnout Score', 'Contact Status', 'Precinct',
+    'Tags', 'Notes', 'Last Contacted',
+  ]
+  const rows = voters.map(v => [
+    csvEscape(v.firstName),
+    csvEscape(v.lastName),
+    csvEscape(v.address),
+    csvEscape(v.city),
+    csvEscape(v.zip),
+    csvEscape(v.phone),
+    csvEscape(v.email),
+    csvEscape(v.party),
+    csvEscape(v.supportLevel),
+    v.turnoutScore != null ? String(Math.round(v.turnoutScore)) : '',
+    csvEscape(v.contactStatus),
+    csvEscape(v.precinct),
+    csvEscape(v.tags.join('; ')),
+    csvEscape(v.notes),
+    v.lastContactedAt ? new Date(v.lastContactedAt).toLocaleDateString('en-US') : '',
+  ].join(','))
+  return [headers.join(','), ...rows].join('\r\n')
+}
+
+function downloadCSV(csv: string, filename: string) {
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url  = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href     = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
 }
 
 // ── Profile Drawer ────────────────────────────────────────────────────────────
@@ -68,14 +138,14 @@ function VoterProfileDrawer({
   onClose:  () => void
   onUpdate: (updated: Voter) => void
 }) {
-  const [status,        setStatus]        = useState(voter.contactStatus)
-  const [notes,         setNotes]         = useState(voter.notes ?? '')
-  const [tags,          setTags]          = useState<string[]>(voter.tags)
-  const [tagInput,      setTagInput]      = useState('')
-  const [saving,        setSaving]        = useState(false)
-  const [dirty,         setDirty]         = useState(false)
-  const [loggedOutreach,setLoggedOutreach]= useState(false)
-  const [loggingOut,    setLoggingOut]    = useState(false)
+  const [status,         setStatus]         = useState(voter.contactStatus)
+  const [notes,          setNotes]          = useState(voter.notes ?? '')
+  const [tags,           setTags]           = useState<string[]>(voter.tags)
+  const [tagInput,       setTagInput]       = useState('')
+  const [saving,         setSaving]         = useState(false)
+  const [dirty,          setDirty]          = useState(false)
+  const [loggedOutreach, setLoggedOutreach] = useState(false)
+  const [loggingOut,     setLoggingOut]     = useState(false)
 
   const contactedStatuses = ['Reached', 'Left Message', 'Needs Follow-Up']
 
@@ -94,20 +164,20 @@ function VoterProfileDrawer({
   async function logToOutreach() {
     setLoggingOut(true)
     const methodMap: Record<string, string> = {
-      'Reached':        'phone',
-      'Left Message':   'phone',
-      'Needs Follow-Up':'phone',
+      'Reached':         'phone',
+      'Left Message':    'phone',
+      'Needs Follow-Up': 'phone',
     }
     await fetch('/api/outreach/contacts', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        name:   `${voter.firstName} ${voter.lastName}`.trim(),
-        phone:  voter.phone,
-        email:  voter.email,
-        address:voter.address,
-        method: methodMap[status] ?? 'phone',
-        status: status === 'Reached' ? 'completed' : 'attempted',
-        notes:  notes || null,
+        name:    `${voter.firstName} ${voter.lastName}`.trim(),
+        phone:   voter.phone,
+        email:   voter.email,
+        address: voter.address,
+        method:  methodMap[status] ?? 'phone',
+        status:  status === 'Reached' ? 'completed' : 'attempted',
+        notes:   notes || null,
       }),
     })
     setLoggingOut(false)
@@ -163,8 +233,8 @@ function VoterProfileDrawer({
           {/* Contact info */}
           <div className="space-y-1.5">
             {voter.address && <p className="text-sm text-gray-600">📍 {voter.address}{voter.city ? `, ${voter.city}` : ''}{voter.zip ? ` ${voter.zip}` : ''}</p>}
-            {voter.phone   && <p className="text-sm text-gray-600">📞 <a href={`tel:${voter.phone}`} className="text-navy hover:underline">{voter.phone}</a></p>}
-            {voter.email   && <p className="text-sm text-gray-600">📧 <a href={`mailto:${voter.email}`} className="text-navy hover:underline">{voter.email}</a></p>}
+            {voter.phone   && <p className="text-sm text-gray-600">📞 <a href={`tel:${voter.phone}`}      className="text-navy hover:underline">{voter.phone}</a></p>}
+            {voter.email   && <p className="text-sm text-gray-600">📧 <a href={`mailto:${voter.email}`}   className="text-navy hover:underline">{voter.email}</a></p>}
           </div>
 
           {/* Contact status */}
@@ -250,20 +320,27 @@ function VoterProfileDrawer({
   )
 }
 
-// ── Sidebar ───────────────────────────────────────────────────────────────────
+// ── Segment Sidebar ────────────────────────────────────────────────────────────
 
 function SegmentSidebar({
   segmentCounts, tagCounts, segment, onSegment, onUploadMore,
+  filters, onFiltersChange,
 }: {
-  segmentCounts: Record<string, number>
-  tagCounts:     Record<string, number>
-  segment:       string
-  onSegment:     (s: string) => void
-  onUploadMore:  () => void
+  segmentCounts:   Record<string, number>
+  tagCounts:       Record<string, number>
+  segment:         string
+  onSegment:       (s: string) => void
+  onUploadMore:    () => void
+  filters:         AdvancedFilters
+  onFiltersChange: (f: AdvancedFilters) => void
 }) {
   const activeTags = Object.entries(tagCounts)
     .filter(([, c]) => c > 0)
     .sort((a, b) => b[1] - a[1])
+
+  function toggleArrayValue<T>(arr: T[], val: T): T[] {
+    return arr.includes(val) ? arr.filter(x => x !== val) : [...arr, val]
+  }
 
   function SidebarBtn({ label, icon, count, active }: { label: string; icon?: string; count: number; active: boolean }) {
     return (
@@ -283,8 +360,8 @@ function SegmentSidebar({
   }
 
   return (
-    <div className="w-52 shrink-0 border-r border-gray-100 pr-1">
-      <div className="flex items-center justify-between mb-3 pr-3">
+    <div className="w-56 shrink-0 border-r border-gray-100 pr-2 overflow-y-auto max-h-[80vh]">
+      <div className="flex items-center justify-between mb-3 pr-1">
         <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Contacts</p>
         <button onClick={onUploadMore}
           className="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg bg-navy/10 hover:bg-navy hover:text-white text-navy transition-all">
@@ -332,8 +409,110 @@ function SegmentSidebar({
           </ul>
         </>
       )}
+
+      {/* ── Advanced Filters ── */}
+      <div className="mt-5 border-t border-gray-100 pt-4 space-y-4">
+        <p className="text-[9px] font-black uppercase tracking-widest text-gray-300 px-1">Advanced Filters</p>
+
+        {/* Party */}
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5 px-1">Party</p>
+          <div className="space-y-1">
+            {PARTY_OPTIONS.map(p => (
+              <label key={p} className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-gray-50 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="accent-navy w-3 h-3"
+                  checked={filters.parties.includes(p)}
+                  onChange={() => onFiltersChange({ ...filters, parties: toggleArrayValue(filters.parties, p) })}
+                />
+                <span className="text-xs text-gray-600">{p}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Support Level */}
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5 px-1">Support Level</p>
+          <div className="space-y-1">
+            {SUPPORT_OPTIONS.map(s => (
+              <label key={s} className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-gray-50 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="accent-navy w-3 h-3"
+                  checked={filters.supportLevels.includes(s)}
+                  onChange={() => onFiltersChange({ ...filters, supportLevels: toggleArrayValue(filters.supportLevels, s) })}
+                />
+                <span className="text-xs text-gray-600">{s}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Turnout Score */}
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5 px-1">Turnout Score</p>
+          <div className="flex items-center gap-2 px-1">
+            <input
+              type="number"
+              min={0}
+              max={100}
+              placeholder="Min"
+              className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 text-navy focus:outline-none focus:ring-1 focus:ring-gold-400"
+              value={filters.turnoutMin}
+              onChange={e => onFiltersChange({ ...filters, turnoutMin: e.target.value })}
+            />
+            <span className="text-gray-300 text-xs shrink-0">–</span>
+            <input
+              type="number"
+              min={0}
+              max={100}
+              placeholder="Max"
+              className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 text-navy focus:outline-none focus:ring-1 focus:ring-gold-400"
+              value={filters.turnoutMax}
+              onChange={e => onFiltersChange({ ...filters, turnoutMax: e.target.value })}
+            />
+          </div>
+        </div>
+
+        {/* Has Phone / Has Email */}
+        <div className="space-y-1 px-1">
+          <label className="flex items-center gap-2 py-1 rounded-lg hover:bg-gray-50 cursor-pointer">
+            <input
+              type="checkbox"
+              className="accent-navy w-3 h-3"
+              checked={filters.hasPhone}
+              onChange={e => onFiltersChange({ ...filters, hasPhone: e.target.checked })}
+            />
+            <span className="text-xs text-gray-600">Has Phone</span>
+          </label>
+          <label className="flex items-center gap-2 py-1 rounded-lg hover:bg-gray-50 cursor-pointer">
+            <input
+              type="checkbox"
+              className="accent-navy w-3 h-3"
+              checked={filters.hasEmail}
+              onChange={e => onFiltersChange({ ...filters, hasEmail: e.target.checked })}
+            />
+            <span className="text-xs text-gray-600">Has Email</span>
+          </label>
+        </div>
+      </div>
     </div>
   )
+}
+
+// ── Active filter count helper ─────────────────────────────────────────────────
+
+function countActiveFilters(filters: AdvancedFilters): number {
+  let n = 0
+  if (filters.parties.length)       n++
+  if (filters.supportLevels.length) n++
+  if (filters.turnoutMin !== '')     n++
+  if (filters.turnoutMax !== '')     n++
+  if (filters.hasPhone)              n++
+  if (filters.hasEmail)              n++
+  return n
 }
 
 // ── Main Table ────────────────────────────────────────────────────────────────
@@ -346,17 +525,26 @@ export default function VoterSegmentsTable({ onUploadMore }: { onUploadMore: () 
   const [page,          setPage]          = useState(1)
   const [selectedVoter, setSelectedVoter] = useState<Voter | null>(null)
   const [searchInput,   setSearchInput]   = useState('')
+  const [filters,       setFilters]       = useState<AdvancedFilters>(EMPTY_FILTERS)
+  const [exporting,     setExporting]     = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
     const params = new URLSearchParams({ page: String(page), limit: '50' })
     if (segment !== 'All Contacts') params.set('segment', segment)
     if (search) params.set('search', search)
+    // Advanced filters
+    if (filters.parties.length)       params.set('parties',      filters.parties.join(','))
+    if (filters.supportLevels.length) params.set('supportLevels',filters.supportLevels.join(','))
+    if (filters.turnoutMin !== '')     params.set('turnoutMin',   filters.turnoutMin)
+    if (filters.turnoutMax !== '')     params.set('turnoutMax',   filters.turnoutMax)
+    if (filters.hasPhone)             params.set('hasPhone',     '1')
+    if (filters.hasEmail)             params.set('hasEmail',     '1')
     const res  = await fetch(`/api/voters?${params}`)
     const json = await res.json()
     setData(json)
     setLoading(false)
-  }, [segment, search, page])
+  }, [segment, search, page, filters])
 
   useEffect(() => { load() }, [load])
 
@@ -373,15 +561,64 @@ export default function VoterSegmentsTable({ onUploadMore }: { onUploadMore: () 
     setSearchInput('')
   }
 
+  function handleFiltersChange(f: AdvancedFilters) {
+    setFilters(f)
+    setPage(1)
+  }
+
+  function clearAllFilters() {
+    setFilters(EMPTY_FILTERS)
+    setSearch('')
+    setSearchInput('')
+    setPage(1)
+  }
+
   function updateVoter(updated: Voter) {
     setData(d => d ? { ...d, voters: d.voters.map(v => v.id === updated.id ? updated : v) } : d)
     setSelectedVoter(updated)
     load()
   }
 
-  const counts    = data?.segmentCounts ?? {}
-  const tagCounts = data?.tagCounts     ?? {}
-  const totalPages = data ? Math.ceil(data.total / data.limit) : 1
+  // Client-side CSV export of currently visible/filtered voters
+  function handleExportCSV() {
+    if (!data) return
+    const csv = votersToCSV(data.voters)
+    downloadCSV(csv, `voters-${segment.toLowerCase().replace(/\s+/g, '-')}.csv`)
+  }
+
+  // Full server-side export (all matching voters, not just current page)
+  async function handleFullExport() {
+    setExporting(true)
+    try {
+      const params = new URLSearchParams()
+      if (segment !== 'All Contacts') params.set('segment', segment)
+      if (search) params.set('search', search)
+      if (filters.parties.length)       params.set('parties',       filters.parties.join(','))
+      if (filters.supportLevels.length) params.set('supportLevels', filters.supportLevels.join(','))
+      if (filters.turnoutMin !== '')     params.set('turnoutMin',    filters.turnoutMin)
+      if (filters.turnoutMax !== '')     params.set('turnoutMax',    filters.turnoutMax)
+      if (filters.hasPhone)             params.set('hasPhone',      '1')
+      if (filters.hasEmail)             params.set('hasEmail',      '1')
+      const res  = await fetch(`/api/voters/export?${params}`)
+      const blob = await res.blob()
+      const url  = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href     = url
+      link.download = `voters-${new Date().toISOString().slice(0, 10)}.csv`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  const counts       = data?.segmentCounts ?? {}
+  const tagCounts    = data?.tagCounts     ?? {}
+  const totalPages   = data ? Math.ceil(data.total / data.limit) : 1
+  const activeFilters = countActiveFilters(filters)
+  const hasAnyFilter  = activeFilters > 0 || !!search
 
   return (
     <div className="flex gap-0 min-h-[600px]">
@@ -392,16 +629,48 @@ export default function VoterSegmentsTable({ onUploadMore }: { onUploadMore: () 
         segment={segment}
         onSegment={handleSegment}
         onUploadMore={onUploadMore}
+        filters={filters}
+        onFiltersChange={handleFiltersChange}
       />
 
       {/* ── Voter Table ── */}
       <div className="flex-1 min-w-0 pl-5">
         {/* Search + header */}
-        <div className="flex items-center gap-3 mb-4">
-          <div className="flex-1">
-            <h3 className="font-display font-black text-navy text-base">{segment}</h3>
+        <div className="flex items-center gap-3 mb-4 flex-wrap">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <h3 className="font-display font-black text-navy text-base">{segment}</h3>
+              {activeFilters > 0 && (
+                <span className="text-[10px] font-black bg-gold-400 text-navy px-2 py-0.5 rounded-full">
+                  {activeFilters} filter{activeFilters !== 1 ? 's' : ''} active
+                </span>
+              )}
+            </div>
             <p className="text-[11px] text-gray-400">{data ? `${data.total.toLocaleString()} contact${data.total !== 1 ? 's' : ''}` : '…'}</p>
           </div>
+
+          {/* Export buttons */}
+          <div className="flex gap-2 items-center">
+            {data && data.voters.length > 0 && (
+              <button
+                onClick={handleExportCSV}
+                className="text-xs font-black px-3 py-2 rounded-xl border border-gray-200 text-gray-600 hover:border-navy hover:text-navy transition-all"
+                title="Export this page as CSV"
+              >
+                ↓ Export Page
+              </button>
+            )}
+            <button
+              onClick={handleFullExport}
+              disabled={exporting}
+              className="text-xs font-black px-3 py-2 rounded-xl bg-navy text-white hover:bg-navy-700 disabled:opacity-50 transition-all"
+              title="Export all matching voters as CSV"
+            >
+              {exporting ? 'Exporting…' : '↓ Export CSV'}
+            </button>
+          </div>
+
+          {/* Search form */}
           <form onSubmit={handleSearch} className="flex gap-2">
             <input
               className="text-sm border border-gray-200 rounded-xl px-3 py-2 text-navy w-48 focus:outline-none focus:ring-2 focus:ring-gold-400"
@@ -413,10 +682,10 @@ export default function VoterSegmentsTable({ onUploadMore }: { onUploadMore: () 
               className="text-xs font-black px-3 py-2 rounded-xl bg-navy text-white hover:bg-navy-700 transition-colors">
               Search
             </button>
-            {search && (
-              <button type="button" onClick={() => { setSearch(''); setSearchInput(''); setPage(1) }}
+            {hasAnyFilter && (
+              <button type="button" onClick={clearAllFilters}
                 className="text-xs font-black px-3 py-2 rounded-xl border border-gray-200 text-gray-500 hover:text-navy transition-colors">
-                Clear
+                Clear All
               </button>
             )}
           </form>
@@ -431,6 +700,12 @@ export default function VoterSegmentsTable({ onUploadMore }: { onUploadMore: () 
           <div className="py-16 text-center">
             <p className="text-4xl mb-3 opacity-20">🗳️</p>
             <p className="text-sm text-gray-500 font-semibold">No contacts in this segment</p>
+            {hasAnyFilter && (
+              <button onClick={clearAllFilters}
+                className="mt-3 text-xs font-black px-4 py-2 rounded-xl border border-gray-200 text-gray-500 hover:text-navy transition-colors">
+                Clear filters
+              </button>
+            )}
           </div>
         ) : (
           <>
@@ -440,6 +715,7 @@ export default function VoterSegmentsTable({ onUploadMore }: { onUploadMore: () 
                   <tr>
                     <th className="px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-gray-400">Name</th>
                     <th className="px-3 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-gray-400">Party</th>
+                    <th className="px-3 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-gray-400">Support</th>
                     <th className="px-3 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-gray-400">Turnout</th>
                     <th className="px-3 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-gray-400">Tags</th>
                     <th className="px-3 py-2.5 text-left text-[10px] font-black uppercase tracking-widest text-gray-400">Status</th>
@@ -460,6 +736,13 @@ export default function VoterSegmentsTable({ onUploadMore }: { onUploadMore: () 
                         {voter.party ? (
                           <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${PARTY_STYLE[voter.party] ?? 'bg-gray-100 text-gray-500'}`}>
                             {voter.party.slice(0, 3).toUpperCase()}
+                          </span>
+                        ) : <span className="text-gray-300">—</span>}
+                      </td>
+                      <td className="px-3 py-2.5">
+                        {voter.supportLevel ? (
+                          <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-navy/10 text-navy">
+                            {voter.supportLevel.split(' ')[0]}
                           </span>
                         ) : <span className="text-gray-300">—</span>}
                       </td>

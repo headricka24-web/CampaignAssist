@@ -186,6 +186,28 @@ export default function BudgetTracker() {
   const txs = data?.transactions ?? []
   const categories = [...new Set(txs.map(t => t.category))]
 
+  function exportCSV() {
+    const rows = txs
+      .filter(t => filter === 'all' || t.type === filter)
+      .filter(t => catFilter === 'all' || t.category === catFilter)
+    const headers = ['Date', 'Type', 'Category', 'Amount', 'Vendor', 'Description', 'Payment Method', 'Notes']
+    const esc = (v: string | null) => `"${(v ?? '').replace(/"/g, '""')}"`
+    const csv = [
+      headers.map(esc).join(','),
+      ...rows.map(t => [
+        esc(new Date(t.txDate).toLocaleDateString()),
+        esc(t.type), esc(t.category),
+        esc(t.amount.toFixed(2)),
+        esc(t.vendor), esc(t.description), esc(t.paymentMethod), esc(t.notes),
+      ].join(',')),
+    ].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href = url; a.download = 'budget.csv'; a.click()
+    URL.revokeObjectURL(url)
+  }
+
   const visible = txs
     .filter(t => filter === 'all' || t.type === filter)
     .filter(t => catFilter === 'all' || t.category === catFilter)
@@ -211,6 +233,13 @@ export default function BudgetTracker() {
           <p className="text-sm text-gray-500 mt-0.5">Track income, expenses, and cash on hand</p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={exportCSV}
+            disabled={txs.length === 0}
+            className="border border-gray-300 text-gray-600 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-gray-50 transition disabled:opacity-40"
+          >
+            ↓ Export CSV
+          </button>
           <button
             onClick={() => setShowImport(true)}
             className="border border-[#1e3a5f] text-[#1e3a5f] px-4 py-2 rounded-xl text-sm font-semibold hover:bg-[#1e3a5f] hover:text-white transition"

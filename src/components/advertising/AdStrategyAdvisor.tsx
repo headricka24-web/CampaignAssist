@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import RichText from '@/components/RichText'
 import { usePersistedContent } from '@/lib/usePersistedContent'
 
@@ -33,12 +33,41 @@ function CopyButton({ text }: { text: string }) {
   )
 }
 
+function autoPhase(electionDate: string): Phase | null {
+  if (!electionDate) return null
+  const days = Math.ceil((new Date(electionDate + 'T12:00:00Z').getTime() - Date.now()) / 86_400_000)
+  if (days > 180) return 'early'
+  if (days > 60)  return 'middle'
+  if (days > 14)  return 'final-push'
+  return 'gotv'
+}
+
 export default function AdStrategyAdvisor() {
-  const [phase,   setPhase]   = useState<Phase | null>(null)
-  const [budget,  setBudget]  = useState<Budget | null>(null)
+  const [phase,     setPhase]     = useState<Phase | null>(null)
+  const [autoPhaseLabel, setAutoPhaseLabel] = useState<Phase | null>(null)
+  const [budget,    setBudget]    = useState<Budget | null>(null)
   const [content, saveContent, { loading: loadingCached }] = usePersistedContent('ad-strategy', '')
-  const [loading, setLoading] = useState(false)
-  const [error,   setError]   = useState('')
+  const [loading,   setLoading]   = useState(false)
+  const [error,     setError]     = useState('')
+
+  // Auto-select phase from victory plan on mount
+  useEffect(() => {
+    fetch('/api/generated-content?type=victory-plan')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data?.content) return
+        try {
+          const plan = JSON.parse(data.content)
+          const detected = autoPhase(plan.electionDate ?? '')
+          if (detected && !phase) {
+            setPhase(detected)
+            setAutoPhaseLabel(detected)
+          }
+        } catch { /* ignore */ }
+      })
+      .catch(() => { /* ignore */ })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   async function generate() {
     if (!phase || !budget) return
@@ -95,7 +124,9 @@ export default function AdStrategyAdvisor() {
                 }`}
               >
                 <span className="text-2xl">{p.icon}</span>
-                <p className={`text-xs font-black leading-tight ${phase === p.id ? 'text-orange-700' : 'text-navy'}`}>{p.label}</p>
+                <p className={`text-xs font-black leading-tight ${phase === p.id ? 'text-orange-700' : 'text-navy'}`}>
+                  {p.label}{phase === p.id && autoPhaseLabel === p.id ? ' (auto)' : ''}
+                </p>
                 <p className="text-[10px] text-gray-400">{p.sub}</p>
               </button>
             ))}

@@ -200,6 +200,8 @@ model Donor {
   followUpDue DateTime?
   notes       String?
   status      String    @default("received") // received | follow_up_needed | thanked
+  employer    String?   // required for FEC itemization at $200+
+  occupation  String?   // required for FEC itemization at $200+
 
   @@index([candidateId])
 }
@@ -324,4 +326,52 @@ model Voter {
   @@index([candidateId])
   @@index([party])
   @@index([contactStatus])
+}
+
+// ── Opposition Research ───────────────────────────────────────────────────────
+
+model ThreatScan {
+  id          String        @id @default(cuid())
+  createdAt   DateTime      @default(now())
+  candidateId String?
+  threats     ThreatRecord[]
+
+  @@index([candidateId])
+}
+
+model ThreatRecord {
+  id          String      @id @default(cuid())
+  createdAt   DateTime    @default(now())
+  candidateId String?
+  scanId      String?
+  scan        ThreatScan? @relation(fields: [scanId], references: [id], onDelete: SetNull)
+  threat      String      // short name
+  angle       String      // attack angle / framing
+  why         String      // why it matters
+  severity    String      @default("MEDIUM") // HIGH | MEDIUM | LOW
+  response    String?     // generated counter-response (stored when drafted)
+  dismissed   Boolean     @default(false)
+  notes       String?     // campaign team notes
+
+  @@index([candidateId])
+  @@index([scanId])
+}
+
+// ── O.R. Dossier ─────────────────────────────────────────────────────────────
+
+model OppResearchEntry {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  candidateId String?
+  type        String   // vote | quote | donor | affiliation | ad | other
+  title       String
+  detail      String   @db.Text
+  date        DateTime?
+  source      String?
+  citation    String?
+  tags        String   @default("[]") // JSON array
+
+  @@index([candidateId])
+  @@index([type])
 }

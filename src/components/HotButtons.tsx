@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import RichText from './RichText'
-import { usePersistedContent } from '@/lib/usePersistedContent'
+import { usePersistedContent, fmtGeneratedAt } from '@/lib/usePersistedContent'
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false)
@@ -64,9 +64,9 @@ function DemographicCard({ title, body }: { title: string; body: string }) {
 }
 
 export default function HotButtons() {
-  const [briefing,     saveBriefing,     { setLocal: setBriefing,     clear: clearBriefing     }] = usePersistedContent('hot-buttons-briefing', '')
-  const [issues,       saveIssues,       { setLocal: setIssues                                  }] = usePersistedContent<string[]>('hot-buttons-issues', [])
-  const [demographics, saveDemographics, { setLocal: setDemographics, clear: clearDemographics }] = usePersistedContent('hot-buttons-demographics', '')
+  const [briefing,     saveBriefing,     { setLocal: setBriefing,     clear: clearBriefing,     generatedAt: briefingAt     }] = usePersistedContent('hot-buttons-briefing', '')
+  const [issues,       saveIssues,       { setLocal: setIssues                                                                }] = usePersistedContent<string[]>('hot-buttons-issues', [])
+  const [demographics, saveDemographics, { setLocal: setDemographics, clear: clearDemographics, generatedAt: demographicsAt }] = usePersistedContent('hot-buttons-demographics', '')
   const [loadingBrief, setLoadingBrief] = useState(false)
   const [loadingDemog, setLoadingDemog] = useState(false)
   const [briefError,   setBriefError]   = useState('')
@@ -148,7 +148,7 @@ export default function HotButtons() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="font-display font-black text-navy uppercase tracking-wide text-sm">Hot Button Issues Briefing</h2>
-                <p className="text-xs text-gray-400">Generated from live Google News · {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
+                <p className="text-xs text-gray-400">{fmtGeneratedAt(briefingAt) ?? `Generated from live Google News · ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`}</p>
               </div>
               <div className="flex items-center gap-2">
                 <CopyButton text={briefing} />

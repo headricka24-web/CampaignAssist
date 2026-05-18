@@ -1,4 +1,3 @@
-import { NextResponse } from 'next/server'
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/db'
 import { Prisma } from '@prisma/client'
@@ -6,12 +5,20 @@ import { auth } from '@/auth'
 
 const CONTACT_STATUSES = ['Not Contacted', 'Reached', 'Left Message', 'Wrong Number', 'Do Not Contact', 'Needs Follow-Up']
 
+function csvEscape(val: string | number | null | undefined): string {
+  if (val == null) return ''
+  const s = String(val)
+  if (s.includes('"') || s.includes(',') || s.includes('\n') || s.includes('\r')) {
+    return '"' + s.replace(/"/g, '""') + '"'
+  }
+  return s
+}
+
 export async function GET(req: NextRequest) {
   const session = await auth()
   const userId  = session?.user?.id
-  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  if (!userId) return new Response('Unauthorized', { status: 401 })
 
-  // Scope to this user's candidates only
   const userCandidates = await prisma.candidate.findMany({
     where:  { userId },
     select: { id: true },
@@ -20,14 +27,8 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url)
   const segment      = searchParams.get('segment')      ?? ''
-  const party        = searchParams.get('party')        ?? ''
-  const status       = searchParams.get('status')       ?? ''
   const search       = searchParams.get('search')       ?? ''
-  const page         = Math.max(1, parseInt(searchParams.get('page')  ?? '1'))
-  const limit        = Math.min(100, parseInt(searchParams.get('limit') ?? '50'))
-  const skip         = (page - 1) * limit
 
-  // Advanced filters
   const partiesParam       = searchParams.get('parties')       ?? ''
   const supportLevelsParam = searchParams.get('supportLevels') ?? ''
   const turnoutMinParam    = searchParams.get('turnoutMin')     ?? ''
@@ -42,29 +43,18 @@ export async function GET(req: NextRequest) {
     candidateId: { in: candidateIds },
   }
 
-  // Legacy single-value filters
-  if (party)  where.party         = party
-  if (status) where.contactStatus = status
-
-  // Multi-value party filter (from advanced panel)
   if (partiesFilter.length) {
     where.party = { in: partiesFilter }
   }
-
-  // Support level filter
   if (supportLevelsFilter.length) {
     where.supportLevel = { in: supportLevelsFilter }
   }
-
-  // Turnout score range
   if (turnoutMinParam || turnoutMaxParam) {
     const turnoutFilter: Prisma.FloatNullableFilter = {}
     if (turnoutMinParam) turnoutFilter.gte = parseFloat(turnoutMinParam)
     if (turnoutMaxParam) turnoutFilter.lte = parseFloat(turnoutMaxParam)
     where.turnoutScore = turnoutFilter
   }
-
-  // Has phone / has email
   if (hasPhoneParam) where.phone = { not: null }
   if (hasEmailParam) where.email = { not: null }
 
@@ -83,34 +73,47 @@ export async function GET(req: NextRequest) {
     where.tags = { contains: segment }
   }
 
-  const [voters, total] = await Promise.all([
-    prisma.voter.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
-    prisma.voter.count({ where }),
-  ])
-
-  // Segment counts for sidebar (scoped to same user)
-  const allVoters = await prisma.voter.findMany({
-    where:  { candidateId: { in: candidateIds } },
-    select: { tags: true, contactStatus: true },
+  const voters = await prisma.voter.findMany({
+    where,
+    orderBy: { createdAt: 'desc' },
   })
-  const segmentCounts: Record<string, number> = { 'All Contacts': allVoters.length }
-  for (const s of CONTACT_STATUSES) {
-    segmentCounts[s] = allVoters.filter(v => v.contactStatus === s).length
-  }
 
-  // Dynamic tag counts from actual data
-  const tagCounts: Record<string, number> = {}
-  for (const v of allVoters) {
-    try {
-      const tags = JSON.parse(v.tags) as string[]
-      for (const t of tags) { tagCounts[t] = (tagCounts[t] ?? 0) + 1 }
-    } catch {}
-  }
+  const headers = [
+    'First Name', 'Last Name', 'Address', 'City', 'Zip', 'Phone', 'Email',
+    'Party', 'Support Level', 'Turnout Score', 'Contact Status', 'Precinct',
+    'Tags', 'Notes', 'Last Contacted',
+  ]
 
-  const parsed = voters.map(v => ({
-    ...v,
-    tags: (() => { try { return JSON.parse(v.tags) } catch { return [] } })(),
-  }))
+  const rows = voters.map(v => {
+    let tags: string[] = []
+    try { tags = JSON.parse(v.tags) as string[] } catch {}
+    return [
+      csvEscape(v.firstName),
+      csvEscape(v.lastName),
+      csvEscape(v.address),
+      csvEscape(v.city),
+      csvEscape(v.zip),
+      csvEscape(v.phone),
+      csvEscape(v.email),
+      csvEscape(v.party),
+      csvEscape(v.supportLevel),
+      v.turnoutScore != null ? String(Math.round(v.turnoutScore)) : '',
+      csvEscape(v.contactStatus),
+      csvEscape(v.precinct),
+      csvEscape(tags.join('; ')),
+      csvEscape(v.notes),
+      v.lastContactedAt
+        ? new Date(v.lastContactedAt).toLocaleDateString('en-US')
+        : '',
+    ].join(',')
+  })
 
-  return NextResponse.json({ voters: parsed, total, page, limit, segmentCounts, tagCounts })
+  const csv = [headers.join(','), ...rows].join('\r\n')
+
+  return new Response(csv, {
+    headers: {
+      'Content-Type':        'text/csv',
+      'Content-Disposition': `attachment; filename="voters.csv"`,
+    },
+  })
 }

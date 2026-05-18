@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import RichText from './RichText'
 import { useLocalStorage } from '@/lib/useLocalStorage'
-import { usePersistedContent } from '@/lib/usePersistedContent'
+import { usePersistedContent, fmtGeneratedAt } from '@/lib/usePersistedContent'
 
 type Threat = {
   raw: string
@@ -149,7 +149,7 @@ function ThreatCard({ threat, index }: { threat: Threat; index: number }) {
 }
 
 export default function WarRoom() {
-  const [threats, saveThreats, { clear: clearThreats }] = usePersistedContent<Threat[]>('war-room-threats', [])
+  const [threats, saveThreats, { clear: clearThreats, generatedAt: threatsAt }] = usePersistedContent<Threat[]>('war-room-threats', [])
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState('')
 
@@ -227,7 +227,10 @@ export default function WarRoom() {
         <div>
           <div className="flex items-center gap-3 mb-4">
             <div className="h-px flex-1 bg-gradient-to-r from-red-200 to-transparent" />
-            <h2 className="text-xs font-black uppercase tracking-[0.3em] text-red-400">Active Threats</h2>
+            <div className="text-center">
+              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-red-400">Active Threats</h2>
+              {threatsAt && <p className="text-[10px] text-gray-400 mt-0.5">{fmtGeneratedAt(threatsAt)}</p>}
+            </div>
             <div className="h-px flex-1 bg-gradient-to-l from-red-200 to-transparent" />
             <button onClick={() => clearThreats()}
               className="text-xs text-gray-300 hover:text-red-400 font-bold transition-colors" title="Clear threats">

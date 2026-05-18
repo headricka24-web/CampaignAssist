@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import { usePersistedContent } from '@/lib/usePersistedContent'
 
 type Candidate = {
   name:      string
@@ -122,20 +123,22 @@ export default function CampaignCompliance({ candidate }: { candidate: Candidate
   const isFederal = (candidate?.raceLevel ?? '').toLowerCase() === 'federal'
   const level     = candidate?.raceLevel ? candidate.raceLevel.charAt(0).toUpperCase() + candidate.raceLevel.slice(1) : 'Campaign'
 
+  const [savedChecklist, saveChecklist, { loading: checklistLoading }] = usePersistedContent<Record<string, boolean>>('compliance-checklist', {})
   const [checked, setChecked] = useState<Record<string, boolean>>({})
   const [openStep, setOpenStep] = useState<number | null>(null)
+  const initialized = useRef(false)
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('compliance-checklist')
-      if (saved) setChecked(JSON.parse(saved))
-    } catch {}
-  }, [])
+    if (!checklistLoading && !initialized.current) {
+      initialized.current = true
+      setChecked(savedChecklist)
+    }
+  }, [checklistLoading, savedChecklist])
 
   function toggle(id: string) {
     setChecked(prev => {
       const next = { ...prev, [id]: !prev[id] }
-      try { localStorage.setItem('compliance-checklist', JSON.stringify(next)) } catch {}
+      saveChecklist(next)
       return next
     })
   }

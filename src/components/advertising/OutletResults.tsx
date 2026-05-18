@@ -1,5 +1,38 @@
 'use client'
 
+import { useState } from 'react'
+
+// ── Add to Press Contacts ─────────────────────────────────────────────────────
+
+function AddContactButton({ outlet, beat }: { outlet: string; beat: string }) {
+  const [state, setState] = useState<'idle' | 'adding' | 'done'>('idle')
+  async function add() {
+    setState('adding')
+    try {
+      await fetch('/api/press-contacts', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ name: `${outlet} Reporter`, outlet, beat, role: 'Reporter' }),
+      })
+      setState('done')
+      setTimeout(() => setState('idle'), 2500)
+    } catch { setState('idle') }
+  }
+  return (
+    <button
+      onClick={add}
+      disabled={state !== 'idle'}
+      className={`ml-2 text-[10px] font-bold px-2 py-0.5 rounded-lg transition-colors whitespace-nowrap ${
+        state === 'done'
+          ? 'bg-green-100 text-green-700'
+          : 'bg-navy/10 text-navy hover:bg-navy hover:text-white'
+      }`}
+    >
+      {state === 'done' ? '✓ Added' : state === 'adding' ? '…' : '+ Contacts'}
+    </button>
+  )
+}
+
 // ── Outlet section config ─────────────────────────────────────────────────────
 
 const SECTION_STYLES: Record<string, { icon: string; color: string; bg: string; border: string; bar: string }> = {
@@ -52,7 +85,7 @@ function parseTable(rows: string[]): { headers: string[]; body: string[][] } | n
   return { headers: parse(header), body: body.map(parse) }
 }
 
-function OutletTable({ rows }: { rows: string[] }) {
+function OutletTable({ rows, beat }: { rows: string[]; beat: string }) {
   const table = parseTable(rows)
   if (!table) return null
   return (
@@ -65,6 +98,7 @@ function OutletTable({ rows }: { rows: string[] }) {
                 {h}
               </th>
             ))}
+            <th className="px-4 py-2.5" />
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-50">
@@ -75,6 +109,9 @@ function OutletTable({ rows }: { rows: string[] }) {
                   {inlineFormat(cell)}
                 </td>
               ))}
+              <td className="px-4 py-3 text-right">
+                {row[0] && <AddContactButton outlet={row[0].replace(/\*\*/g, '').trim()} beat={beat} />}
+              </td>
             </tr>
           ))}
         </tbody>
@@ -101,14 +138,14 @@ function Callout({ text }: { text: string }) {
 
 // ── Section body renderer ─────────────────────────────────────────────────────
 
-function SectionBody({ lines }: { lines: string[] }) {
+function SectionBody({ lines, beat }: { lines: string[]; beat: string }) {
   const elements: React.ReactNode[] = []
   let tableBuffer: string[] = []
   let bulletBuffer: string[] = []
 
   function flushTable() {
     if (tableBuffer.length) {
-      elements.push(<OutletTable key={elements.length} rows={tableBuffer} />)
+      elements.push(<OutletTable key={elements.length} rows={tableBuffer} beat={beat} />)
       tableBuffer = []
     }
   }
@@ -182,7 +219,7 @@ function SectionCard({ title, lines }: { title: string; lines: string[] }) {
       </div>
       {/* Body */}
       <div className="px-5 pb-5 pt-1 bg-white">
-        <SectionBody lines={lines} />
+        <SectionBody lines={lines} beat={title} />
       </div>
     </div>
   )
