@@ -62,6 +62,15 @@ type OutreachForm = {
   status:  string
 }
 
+type LookupResult = {
+  found:         boolean
+  contacts?:     { name: string; role: string; beat: string; email: string | null; phone: string | null; twitter: string | null; notes: string | null }[]
+  newsroomEmail?: string | null
+  newsroomPhone?: string | null
+  confidence?:   'high' | 'medium' | 'low'
+  disclaimer?:   string
+}
+
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const ROLES         = ['Reporter', 'Editor', 'Producer', 'Anchor', 'Columnist', 'Blogger', 'Other']
@@ -115,6 +124,11 @@ export default function PressContacts() {
   const [relFilter,      setRelFilter]      = useState<'all' | Relationship>('all')
   const [search,         setSearch]         = useState('')
   const [deleting,       setDeleting]       = useState<string | null>(null)
+  // lookup state
+  const [searching,      setSearching]      = useState(false)
+  const [lookupResult,   setLookupResult]   = useState<LookupResult | null>(null)
+  const [lookupError,    setLookupError]    = useState('')
+  const [lookupOutlet,   setLookupOutlet]   = useState<string | null>(null) // which contact row triggered lookup
   // import state
   const [showImport,     setShowImport]     = useState(false)
   const [importing,      setImporting]      = useState(false)
@@ -191,6 +205,59 @@ export default function PressContacts() {
     setDeleting(null)
   }
 
+  async function searchContact(outlet: string, prefillForm = false) {
+    if (!outlet.trim()) return
+    setSearching(true)
+    setLookupError('')
+    setLookupResult(null)
+    setLookupOutlet(outlet)
+    try {
+      const res  = await fetch('/api/press-contacts/lookup', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ outlet }),
+      })
+      const data: LookupResult = await res.json()
+      if (!data.found || !data.contacts?.length) {
+        setLookupError(`No contact info found for "${outlet}". Try adding manually.`)
+      } else {
+        setLookupResult(data)
+        if (prefillForm && data.contacts[0]) {
+          const c = data.contacts[0]
+          setForm(f => ({
+            ...f,
+            name:    f.name    || c.name   || '',
+            role:    f.role    || c.role   || '',
+            beat:    f.beat    || c.beat   || '',
+            email:   f.email   || c.email  || '',
+            phone:   f.phone   || c.phone  || '',
+            twitter: f.twitter || c.twitter || '',
+            notes:   f.notes   || c.notes  || '',
+          }))
+        }
+      }
+    } catch {
+      setLookupError('Search failed. Try again.')
+    } finally {
+      setSearching(false)
+    }
+  }
+
+  function applyLookupContact(c: NonNullable<LookupResult['contacts']>[0]) {
+    setForm(f => ({
+      ...f,
+      name:    c.name    || f.name,
+      role:    c.role    || f.role,
+      beat:    c.beat    || f.beat,
+      email:   c.email   || f.email,
+      phone:   c.phone   || f.phone,
+      twitter: c.twitter || f.twitter,
+      notes:   c.notes   || f.notes,
+    }))
+    setLookupResult(null)
+    setLookupOutlet(null)
+  }
+
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -252,7 +319,7 @@ export default function PressContacts() {
             ↑ Import File
           </button>
           <button
-            onClick={() => setShowAddForm(true)}
+            onClick={() => { setForm(DEFAULT_CONTACT); setLookupResult(null); setLookupError(''); setShowAddForm(true) }}
             className="bg-[#1e3a5f] text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-[#16304f] transition"
           >
             + Add Contact
@@ -356,6 +423,15 @@ export default function PressContacts() {
 
                   {/* Actions */}
                   <div className="flex items-center gap-2">
+                    {!contact.email && (
+                      <button
+                        onClick={() => { setShowAddForm(true); setForm({ ...DEFAULT_CONTACT, outlet: contact.outlet }); setTimeout(() => searchContact(contact.outlet, true), 100) }}
+                        disabled={searching && lookupOutlet === contact.outlet}
+                        className="text-xs border border-navy text-navy px-3 py-1.5 rounded-xl hover:bg-navy hover:text-white transition font-semibold whitespace-nowrap disabled:opacity-50"
+                      >
+                        {searching && lookupOutlet === contact.outlet ? '…' : '🔍 Find Info'}
+                      </button>
+                    )}
                     <button
                       onClick={() => { setOutreachModal(contact.id); setOutreachForm(DEFAULT_OUTREACH) }}
                       className="text-xs bg-[#1e3a5f] text-white px-3 py-1.5 rounded-xl hover:bg-[#16304f] transition font-semibold whitespace-nowrap"
@@ -547,31 +623,90 @@ export default function PressContacts() {
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-bold text-gray-900">Add Media Contact</h2>
-              <button onClick={() => setShowAddForm(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+              <button onClick={() => { setShowAddForm(false); setLookupResult(null); setLookupError('') }} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
             </div>
 
             <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-gray-500 mb-1 block">Name *</label>
-                  <input
-                    type="text"
-                    placeholder="Full name"
-                    value={form.name}
-                    onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-500 mb-1 block">Outlet *</label>
+              {/* Outlet + Search */}
+              <div>
+                <label className="text-xs font-semibold text-gray-500 mb-1 block">Outlet *</label>
+                <div className="flex gap-2">
                   <input
                     type="text"
                     placeholder="Publication or station"
                     value={form.outlet}
-                    onChange={e => setForm(f => ({ ...f, outlet: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm"
+                    onChange={e => { setForm(f => ({ ...f, outlet: e.target.value })); setLookupResult(null); setLookupError('') }}
+                    className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm"
                   />
+                  <button
+                    type="button"
+                    disabled={form.outlet.trim().length < 3 || searching}
+                    onClick={() => searchContact(form.outlet)}
+                    className="shrink-0 flex items-center gap-1.5 border border-navy text-navy px-3 py-2 rounded-xl text-xs font-bold hover:bg-navy hover:text-white transition disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                  >
+                    {searching ? <><span className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin inline-block" /> Searching…</> : '🔍 Search'}
+                  </button>
                 </div>
+              </div>
+
+              {/* Lookup error */}
+              {lookupError && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-xs text-amber-700">{lookupError}</div>
+              )}
+
+              {/* Lookup results */}
+              {lookupResult?.found && lookupResult.contacts && (
+                <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-black uppercase tracking-wide text-blue-700">
+                      AI-suggested contacts
+                      {lookupResult.confidence && (
+                        <span className={`ml-2 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                          lookupResult.confidence === 'high'   ? 'bg-emerald-100 text-emerald-700' :
+                          lookupResult.confidence === 'medium' ? 'bg-amber-100 text-amber-700' :
+                          'bg-gray-100 text-gray-500'
+                        }`}>{lookupResult.confidence} confidence</span>
+                      )}
+                    </p>
+                  </div>
+                  {lookupResult.contacts.map((c, i) => (
+                    <div key={i} className="bg-white rounded-xl border border-blue-100 px-3 py-2.5 flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-800">{c.name}</p>
+                        <p className="text-xs text-gray-500">{[c.role, c.beat].filter(Boolean).join(' · ')}</p>
+                        {c.email && <p className="text-xs text-blue-600 mt-0.5">{c.email}</p>}
+                        {c.notes && <p className="text-xs text-gray-400 mt-0.5 italic">{c.notes}</p>}
+                      </div>
+                      <button
+                        onClick={() => applyLookupContact(c)}
+                        className="shrink-0 text-xs bg-navy text-white px-3 py-1.5 rounded-lg font-bold hover:bg-navy-700 transition"
+                      >
+                        Use →
+                      </button>
+                    </div>
+                  ))}
+                  {lookupResult.newsroomEmail && (
+                    <div className="flex items-center gap-2 text-xs text-blue-600 px-1">
+                      <span className="text-gray-400">Newsroom:</span>
+                      <span>{lookupResult.newsroomEmail}</span>
+                      {lookupResult.newsroomPhone && <span className="text-gray-400">· {lookupResult.newsroomPhone}</span>}
+                    </div>
+                  )}
+                  {lookupResult.disclaimer && (
+                    <p className="text-[10px] text-blue-400 px-1">⚠ {lookupResult.disclaimer}</p>
+                  )}
+                </div>
+              )}
+
+              <div>
+                <label className="text-xs font-semibold text-gray-500 mb-1 block">Name *</label>
+                <input
+                  type="text"
+                  placeholder="Full name"
+                  value={form.name}
+                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm"
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
