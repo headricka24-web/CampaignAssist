@@ -4,7 +4,7 @@ import { useState } from 'react'
 import RichText from './RichText'
 import { usePersistedContent } from '@/lib/usePersistedContent'
 
-type Section = 'facebook' | 'instagram' | 'newsletter' | 'taglines' | 'strategy' | 'talking-points'
+type Section = 'facebook' | 'instagram' | 'newsletter' | 'taglines' | 'strategy' | 'talking-points' | 'press-release'
 
 const TONES = ['Punchy', 'Sophisticated', 'Intellectual', 'Policy-Oriented'] as const
 type Tone = typeof TONES[number]
@@ -15,7 +15,8 @@ const CARDS: { id: Section; icon: string; title: string; subtitle: string; color
   { id: 'instagram',       icon: '📸', title: 'Instagram Content',  subtitle: 'Captions + hashtags for 3 posts',         color: 'text-orange-500', border: 'border-orange-100', bar: 'from-yellow-400 to-pink-500'     },
   { id: 'newsletter',      icon: '📧', title: 'Newsletter Draft',   subtitle: 'Subject, preview text, and full body',    color: 'text-navy',       border: 'border-navy-100',   bar: 'from-navy to-blue-500'           },
   { id: 'taglines',        icon: '⚡', title: 'Taglines & Signage', subtitle: 'Punchy lines + yard sign ideas',          color: 'text-yellow-600', border: 'border-yellow-100', bar: 'from-yellow-400 to-gold-400'     },
-  { id: 'talking-points',  icon: '💬', title: 'Talking Points',     subtitle: 'Enter an issue, get 3 GOP talking points', color: 'text-green-700',  border: 'border-green-100',  bar: 'from-green-500 to-green-700'     },
+  { id: 'talking-points',  icon: '💬', title: 'Talking Points',     subtitle: 'Enter an issue, get 3 sharp talking points', color: 'text-green-700',  border: 'border-green-100',  bar: 'from-green-500 to-green-700'     },
+  { id: 'press-release',   icon: '📰', title: 'Press Release',      subtitle: 'AP-style release ready to send to media',    color: 'text-purple-700', border: 'border-purple-100', bar: 'from-purple-500 to-purple-700'   },
 ]
 
 function CopyButton({ text }: { text: string }) {
@@ -102,7 +103,11 @@ function StudioCard({ id, icon, title, subtitle, color, border, bar, tone }: typ
             type="text"
             value={issue}
             onChange={e => setIssue(e.target.value)}
-            placeholder={id === 'talking-points' ? 'e.g. immigration, tax cuts, school choice…' : 'Keyword or topic (optional) — e.g. Mother\'s Day, immigration…'}
+            placeholder={
+              id === 'talking-points' ? 'e.g. immigration, tax cuts, school choice…' :
+              id === 'press-release'  ? 'Topic or announcement — e.g. endorsement, policy position, event…' :
+              'Keyword or topic (optional) — e.g. Mother\'s Day, immigration…'
+            }
             className="w-full text-xs border border-gray-200 rounded-xl px-3 py-2.5 mb-3 text-navy placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-gold-400"
           />
 

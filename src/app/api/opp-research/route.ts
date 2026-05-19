@@ -69,6 +69,8 @@ export async function PATCH(req: NextRequest) {
   if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   const cid = await getCandidateId(userId)
+  if (!cid) return NextResponse.json({ error: 'not found' }, { status: 404 })
+
   const { id, type, title, detail, date, source, citation, tags } = await req.json() as {
     id: string; type?: string; title?: string; detail?: string
     date?: string | null; source?: string; citation?: string; tags?: string[]
@@ -103,6 +105,8 @@ export async function DELETE(req: NextRequest) {
   if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   const cid = await getCandidateId(userId)
+  if (!cid) return NextResponse.json({ error: 'not found' }, { status: 404 })
+
   const { id } = await req.json() as { id: string }
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
 

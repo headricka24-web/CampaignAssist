@@ -13,9 +13,10 @@ export async function POST() {
   const candidate = await prisma.candidate.findFirst({
     where: { userId },
   })
-  const name  = candidate?.name  ?? 'the candidate'
-  const state = candidate?.state ?? 'the state'
-  const race  = candidate?.race  ?? 'this race'
+  const name  = candidate?.name          ?? 'the candidate'
+  const state = candidate?.state         ?? 'the state'
+  const race  = candidate?.race          ?? 'this race'
+  const party = candidate?.party?.trim() || 'Independent'
 
   // Find articles that likely contain polling data
   const articles = await prisma.article.findMany({
@@ -50,7 +51,7 @@ export async function POST() {
 
   const raw = await ask(
     `You are a political data analyst. Extract and synthesize polling data from news articles. Return ONLY valid JSON, no markdown, no explanation.`,
-    `Candidate: ${name} (Republican), running for ${race} in ${state}.
+    `Candidate: ${name} (${party}), running for ${race} in ${state}.
 
 News articles that may contain polling data:
 ${articleList}
@@ -68,12 +69,12 @@ Extract all polling data mentioned. Return a JSON object with this exact structu
       ]
     }
   ],
-  "summary": "2-3 sentence synthesis of what the polling shows overall for the Republican candidate"
+  "summary": "2-3 sentence synthesis of what the polling shows overall for the candidate"
 }
 
 Rules:
 - Only include polls with actual percentage numbers
-- isOurs = true for ${name} or the Republican candidate
+- isOurs = true for ${name} or the ${party} candidate
 - If no real polling numbers exist in the articles, return { "polls": [], "summary": "No specific polling data found in current news coverage." }
 - Return ONLY the JSON object, nothing else`,
     800,

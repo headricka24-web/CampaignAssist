@@ -7,7 +7,7 @@ import { buildRaceContext, buildCandidateStanceContext } from '@/lib/raceContext
 
 export const maxDuration = 60
 
-const SECTIONS = ['facebook', 'instagram', 'newsletter', 'taglines', 'strategy', 'talking-points'] as const
+const SECTIONS = ['facebook', 'instagram', 'newsletter', 'taglines', 'strategy', 'talking-points', 'press-release'] as const
 type Section = typeof SECTIONS[number]
 
 function toneInstruction(tone: string): string {
@@ -113,6 +113,38 @@ Focus on offense — where this candidate's message is strongest. Separate each 
   ],
 
   'talking-points': (_ctx, _issue) => ['', ''], // handled separately
+
+  'press-release': (ctx, issue) => [
+    `You are an experienced campaign communications director. Write polished, publication-ready press releases that command media attention and drive the narrative. Write in proper AP style.`,
+    `${ctx.raceCtx}
+${issueNote(issue)}
+Write a complete press release for this ${ctx.party} campaign. Use the candidate's actual positions and background from CANDIDATE STANCE CONTEXT above. Structure it exactly as follows:
+
+FOR IMMEDIATE RELEASE
+
+[HEADLINE — bold, under 12 words, present tense, newsy]
+
+[DATELINE] — [LEAD PARAGRAPH: The most important news in one punchy sentence. Who, what, where, when, why.]
+
+[BODY PARAGRAPH 1: Context and significance — why this matters to voters in this race's geography and at this race level.]
+
+[BODY PARAGRAPH 2: Policy substance — connect to the candidate's specific positions and the current news environment.]
+
+CANDIDATE QUOTE:
+"[A compelling 2-3 sentence quote from ${ctx.name} that sounds natural and quotable — grounded in the candidate's voice and actual stances]"
+— ${ctx.name}, ${ctx.race}
+
+[CLOSING PARAGRAPH: Call to action or forward-looking statement. Keep it tight.]
+
+###
+
+ABOUT THE CAMPAIGN:
+[2-sentence boilerplate about the candidate and campaign — background, race, and why they're running.]
+
+PRESS CONTACT:
+[Name], Communications Director
+[email@campaign.com] | [555-000-0000]`,
+  ],
 }
 
 export async function POST(req: NextRequest) {

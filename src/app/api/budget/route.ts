@@ -98,6 +98,8 @@ export async function DELETE(req: NextRequest) {
   })
   const cid = candidate?.id ?? null
 
+  if (!cid) return NextResponse.json({ error: 'not found' }, { status: 404 })
+
   const tx = await prisma.budgetTransaction.findUnique({ where: { id } })
   if (!tx || tx.candidateId !== cid) {
     return NextResponse.json({ error: 'not found' }, { status: 404 })
