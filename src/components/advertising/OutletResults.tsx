@@ -1,12 +1,19 @@
 'use client'
 
 import { useState } from 'react'
+import { usePersistedContent } from '@/lib/usePersistedContent'
 
 // ── Add to Press Contacts ─────────────────────────────────────────────────────
 
-function AddContactButton({ outlet, beat }: { outlet: string; beat: string }) {
-  const [state, setState] = useState<'idle' | 'adding' | 'done'>('idle')
+function AddContactButton({
+  outlet, beat, added, onAdded,
+}: {
+  outlet: string; beat: string; added: boolean; onAdded: (outlet: string) => void
+}) {
+  const [state, setState] = useState<'idle' | 'adding'>(added ? 'idle' : 'idle')
+
   async function add() {
+    if (added) return
     setState('adding')
     try {
       await fetch('/api/press-contacts', {
@@ -14,21 +21,22 @@ function AddContactButton({ outlet, beat }: { outlet: string; beat: string }) {
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ name: `${outlet} Reporter`, outlet, beat, role: 'Reporter' }),
       })
-      setState('done')
-      setTimeout(() => setState('idle'), 2500)
+      onAdded(outlet)
     } catch { setState('idle') }
   }
+
+  const done = added
   return (
     <button
       onClick={add}
-      disabled={state !== 'idle'}
+      disabled={done || state === 'adding'}
       className={`ml-2 text-[10px] font-bold px-2 py-0.5 rounded-lg transition-colors whitespace-nowrap ${
-        state === 'done'
-          ? 'bg-green-100 text-green-700'
+        done
+          ? 'bg-green-100 text-green-700 cursor-default'
           : 'bg-navy/10 text-navy hover:bg-navy hover:text-white'
       }`}
     >
-      {state === 'done' ? '✓ Added' : state === 'adding' ? '…' : '+ Contacts'}
+      {done ? '✓ Added' : state === 'adding' ? '…' : '+ Contacts'}
     </button>
   )
 }
@@ -85,7 +93,7 @@ function parseTable(rows: string[]): { headers: string[]; body: string[][] } | n
   return { headers: parse(header), body: body.map(parse) }
 }
 
-function OutletTable({ rows, beat }: { rows: string[]; beat: string }) {
+function OutletTable({ rows, beat, addedOutlets, onAdded }: { rows: string[]; beat: string; addedOutlets: Set<string>; onAdded: (outlet: string) => void }) {
   const table = parseTable(rows)
   if (!table) return null
   return (
@@ -110,7 +118,14 @@ function OutletTable({ rows, beat }: { rows: string[]; beat: string }) {
                 </td>
               ))}
               <td className="px-4 py-3 text-right">
-                {row[0] && <AddContactButton outlet={row[0].replace(/\*\*/g, '').trim()} beat={beat} />}
+                {row[0] && (
+                  <AddContactButton
+                    outlet={row[0].replace(/\*\*/g, '').trim()}
+                    beat={beat}
+                    added={addedOutlets.has(row[0].replace(/\*\*/g, '').trim())}
+                    onAdded={onAdded}
+                  />
+                )}
               </td>
             </tr>
           ))}
@@ -138,14 +153,14 @@ function Callout({ text }: { text: string }) {
 
 // ── Section body renderer ─────────────────────────────────────────────────────
 
-function SectionBody({ lines, beat }: { lines: string[]; beat: string }) {
+function SectionBody({ lines, beat, addedOutlets, onAdded }: { lines: string[]; beat: string; addedOutlets: Set<string>; onAdded: (outlet: string) => void }) {
   const elements: React.ReactNode[] = []
   let tableBuffer: string[] = []
   let bulletBuffer: string[] = []
 
   function flushTable() {
     if (tableBuffer.length) {
-      elements.push(<OutletTable key={elements.length} rows={tableBuffer} beat={beat} />)
+      elements.push(<OutletTable key={elements.length} rows={tableBuffer} beat={beat} addedOutlets={addedOutlets} onAdded={onAdded} />)
       tableBuffer = []
     }
   }
@@ -206,7 +221,7 @@ function SectionBody({ lines, beat }: { lines: string[]; beat: string }) {
 
 // ── Section card ──────────────────────────────────────────────────────────────
 
-function SectionCard({ title, lines }: { title: string; lines: string[] }) {
+function SectionCard({ title, lines, addedOutlets, onAdded }: { title: string; lines: string[]; addedOutlets: Set<string>; onAdded: (outlet: string) => void }) {
   const style = getSectionStyle(title)
   return (
     <div className={`rounded-2xl border ${style.border} overflow-hidden`}>
@@ -219,7 +234,7 @@ function SectionCard({ title, lines }: { title: string; lines: string[] }) {
       </div>
       {/* Body */}
       <div className="px-5 pb-5 pt-1 bg-white">
-        <SectionBody lines={lines} beat={title} />
+        <SectionBody lines={lines} beat={title} addedOutlets={addedOutlets} onAdded={onAdded} />
       </div>
     </div>
   )
@@ -228,6 +243,14 @@ function SectionCard({ title, lines }: { title: string; lines: string[] }) {
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function OutletResults({ content, geo }: { content: string; geo?: string }) {
+  const [addedList, saveAddedList] = usePersistedContent<string[]>('press-contacts-added', [])
+  const addedOutlets = new Set(addedList)
+
+  function handleAdded(outlet: string) {
+    const next = [...new Set([...addedList, outlet])]
+    saveAddedList(next)
+  }
+
   const lines = content.split('\n')
 
   // Extract title (first non-empty lines before any ##)
@@ -291,7 +314,7 @@ export default function OutletResults({ content, geo }: { content: string; geo?:
       {sections
         .filter(s => s.lines.some(l => l.trim() && !/^[-*_]{2,}$/.test(l.trim())))
         .map((s, i) => (
-          <SectionCard key={i} title={s.title} lines={s.lines} />
+          <SectionCard key={i} title={s.title} lines={s.lines} addedOutlets={addedOutlets} onAdded={handleAdded} />
         ))}
     </div>
   )

@@ -9,7 +9,7 @@ export const maxDuration = 60
 async function getContext(userId: string) {
   const candidate = await prisma.candidate.findFirst({
     where: { userId },
-    select: { name: true, race: true, state: true, raceLevel: true, district: true, county: true, city: true },
+    select: { name: true, race: true, state: true, raceLevel: true, district: true, county: true, city: true, bio: true, topIssues: true, electionDate: true, fundraisingGoal: true },
   })
   return candidate ?? null
 }
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
 
   const targetGeo = customGeo ?? geo
 
-  const system = `You are a Republican political media buyer and campaign consultant. You provide accurate, practical media outlet lists for political ad placement. You know the local TV stations, radio stations, digital news sites, and print publications for every region of the country.`
+  const system = `You are an experienced political media buyer and campaign consultant. You provide accurate, practical media outlet lists for political ad placement. You know the local TV stations, radio stations, digital news sites, and print publications for every region of the country.`
 
   const user = `CANDIDATE: ${c.name}, running for ${c.race} in ${targetGeo}.
 RACE LEVEL: ${c.raceLevel ?? 'General'}
@@ -65,7 +65,7 @@ For county and municipal races: list any community newsletters, local Facebook g
 ## MEDIA BUYING TIP
 One practical tip specific to this race's geography and level for getting the best ad placement value.
 
-Be as specific as possible with real outlet names. If the exact market has many options, prioritize the most politically relevant for a Republican campaign.`
+Be as specific as possible with real outlet names. If the exact market has many options, prioritize the most relevant for this candidate's race level and geography.`
 
   try {
     const content = await ask(system, user, 900)

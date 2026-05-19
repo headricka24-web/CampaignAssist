@@ -226,62 +226,66 @@ export default function BudgetTracker() {
 
   return (
     <div className="min-h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Campaign Budget</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Track income, expenses, and cash on hand</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={exportCSV}
-            disabled={txs.length === 0}
-            className="border border-gray-300 text-gray-600 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-gray-50 transition disabled:opacity-40"
-          >
-            ↓ Export CSV
-          </button>
-          <button
-            onClick={() => setShowImport(true)}
-            className="border border-[#1e3a5f] text-[#1e3a5f] px-4 py-2 rounded-xl text-sm font-semibold hover:bg-[#1e3a5f] hover:text-white transition"
-          >
-            ↑ Import File
-          </button>
-          <button
-            onClick={() => setShowForm(true)}
-            className="bg-[#1e3a5f] text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-[#16304f] transition"
-          >
-            + Add Transaction
-          </button>
+      {/* Hero Header */}
+      <div className="relative rounded-2xl overflow-hidden bg-hero-gradient shadow-patriot mb-6">
+        <div className="absolute inset-0 bg-stripe-pattern opacity-40" />
+        <div className="relative px-8 py-8 flex items-center justify-between gap-6">
+          <div>
+            <div className="inline-flex items-center gap-2 bg-gold-400 text-navy text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full mb-3">◆ Finance</div>
+            <h1 className="font-display text-4xl font-black text-white leading-tight">Campaign <span className="text-gold-400">Budget</span></h1>
+            <p className="text-blue-200 text-sm mt-1">Track income, expenses, and cash on hand</p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={exportCSV}
+              disabled={txs.length === 0}
+              className="border border-white/30 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-white/10 transition disabled:opacity-40"
+            >
+              ↓ Export CSV
+            </button>
+            <button
+              onClick={() => setShowImport(true)}
+              className="border border-white/30 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-white/10 transition"
+            >
+              ↑ Import File
+            </button>
+            <button
+              onClick={() => setShowForm(true)}
+              className="bg-gold-400 text-navy px-4 py-2 rounded-xl text-sm font-black hover:bg-gold-300 transition"
+            >
+              + Add Transaction
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Summary cards */}
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Total Raised</p>
-          <p className="text-2xl font-bold text-emerald-600">{fmt$(data?.income ?? 0)}</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Total Raised</p>
+          <p className="text-3xl font-display font-bold text-emerald-600">{fmt$(data?.income ?? 0)}</p>
         </div>
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Total Spent</p>
-          <p className="text-2xl font-bold text-rose-600">{fmt$(data?.expense ?? 0)}</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Total Spent</p>
+          <p className="text-3xl font-display font-bold text-rose-600">{fmt$(data?.expense ?? 0)}</p>
         </div>
-        <div className={`rounded-2xl border p-5 shadow-sm ${(data?.balance ?? 0) >= 0 ? 'bg-[#1e3a5f] border-[#1e3a5f]' : 'bg-rose-600 border-rose-600'}`}>
-          <p className="text-xs font-semibold text-white/70 uppercase tracking-wide mb-1">Cash on Hand</p>
-          <p className="text-2xl font-bold text-white">{fmt$(data?.balance ?? 0)}</p>
+        <div className={`rounded-2xl border p-5 shadow-sm ${(data?.balance ?? 0) >= 0 ? 'bg-navy border-navy' : 'bg-rose-600 border-rose-600'}`}>
+          <p className="text-[10px] font-black uppercase tracking-widest text-white/70 mb-1">Cash on Hand</p>
+          <p className="text-3xl font-display font-bold text-white">{fmt$(data?.balance ?? 0)}</p>
         </div>
       </div>
 
       {/* Expense breakdown */}
       {topCats.length > 0 && (
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm mb-6">
-          <h2 className="text-sm font-semibold text-gray-700 mb-3">Spending Breakdown</h2>
+          <h2 className="text-xs font-black uppercase tracking-widest text-gray-500 mb-3">Spending Breakdown</h2>
           <div className="space-y-2">
             {topCats.map(([cat, amt]) => (
               <div key={cat} className="flex items-center gap-3">
                 <span className={`text-xs font-medium px-2 py-0.5 rounded-full w-24 text-center shrink-0 ${CAT_COLORS[cat] ?? 'bg-gray-100 text-gray-700'}`}>{cat}</span>
                 <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-[#1e3a5f] rounded-full"
+                    className="h-full bg-navy rounded-full"
                     style={{ width: `${Math.round((amt / totalExpense) * 100)}%` }}
                   />
                 </div>
@@ -300,7 +304,7 @@ export default function BudgetTracker() {
             key={f}
             onClick={() => setFilter(f)}
             className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
-              filter === f ? 'bg-[#1e3a5f] text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+              filter === f ? 'bg-navy text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
             }`}
           >
             {f === 'all' ? 'All' : f === 'income' ? '↑ Income' : '↓ Expenses'}
@@ -323,16 +327,19 @@ export default function BudgetTracker() {
         {loading ? (
           <div className="p-10 text-center text-gray-400 text-sm">Loading…</div>
         ) : visible.length === 0 ? (
-          <div className="p-10 text-center text-gray-400 text-sm">
-            No transactions yet.{' '}
-            <button onClick={() => setShowForm(true)} className="text-[#1e3a5f] font-semibold hover:underline">
-              Add your first entry.
-            </button>
+          <div className="p-8">
+            <div className="text-center py-16 border-2 border-dashed border-gray-200 rounded-2xl">
+              <div className="text-4xl mb-3 opacity-30">💰</div>
+              <p className="font-black text-navy text-sm uppercase tracking-wide mb-1">No Transactions Yet</p>
+              <p className="text-gray-400 text-sm mb-4">Add your first income or expense to get started.</p>
+              <button onClick={() => setShowForm(true)} className="bg-navy text-white font-black uppercase tracking-widest text-xs px-5 py-2.5 rounded-xl hover:bg-navy-700 transition-colors">+ Add Transaction</button>
+            </div>
           </div>
         ) : (
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wide">
+                <th className="w-0 p-0" />
                 <th className="text-left px-4 py-3 font-semibold">Date</th>
                 <th className="text-left px-4 py-3 font-semibold">Category</th>
                 <th className="text-left px-4 py-3 font-semibold">Description</th>
@@ -343,7 +350,10 @@ export default function BudgetTracker() {
             </thead>
             <tbody>
               {visible.map(tx => (
-                <tr key={tx.id} className="border-b border-gray-50 hover:bg-gray-50 transition">
+                <tr key={tx.id} className="relative border-b border-gray-50 hover:bg-gray-50 transition">
+                  <td className="w-0 p-0">
+                    <div className={`absolute left-0 top-0 bottom-0 w-[3px] ${tx.type === 'income' ? 'bg-emerald-400' : 'bg-rose-400'}`} />
+                  </td>
                   <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{fmtDate(tx.txDate)}</td>
                   <td className="px-4 py-3">
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${CAT_COLORS[tx.category] ?? 'bg-gray-100 text-gray-700'}`}>
@@ -376,8 +386,9 @@ export default function BudgetTracker() {
 
       {/* ── Import modal ─────────────────────────────────────────────── */}
       {showImport && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-navy/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div className="h-1.5 bg-gradient-to-r from-gold-400 to-amber-500" />
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
               <div>
                 <h2 className="text-lg font-bold text-gray-900">Import Transactions</h2>
@@ -389,10 +400,10 @@ export default function BudgetTracker() {
             <div className="p-6 flex-1 overflow-y-auto">
               {/* Upload zone */}
               {importRows.length === 0 && (
-                <label className={`flex flex-col items-center justify-center gap-3 border-2 border-dashed rounded-2xl p-10 cursor-pointer transition ${importing ? 'border-blue-300 bg-blue-50' : 'border-gray-200 hover:border-[#1e3a5f] hover:bg-gray-50'}`}>
+                <label className={`flex flex-col items-center justify-center gap-3 border-2 border-dashed rounded-2xl p-10 cursor-pointer transition ${importing ? 'border-blue-300 bg-blue-50' : 'border-gray-200 hover:border-navy hover:bg-gray-50'}`}>
                   {importing ? (
                     <>
-                      <div className="w-8 h-8 border-2 border-[#1e3a5f] border-t-transparent rounded-full animate-spin" />
+                      <div className="w-8 h-8 border-2 border-navy border-t-transparent rounded-full animate-spin" />
                       <p className="text-sm font-semibold text-gray-500">Analyzing file with AI…</p>
                       <p className="text-xs text-gray-400">This may take a few seconds</p>
                     </>
@@ -429,11 +440,11 @@ export default function BudgetTracker() {
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-sm font-semibold text-gray-700">
-                      Found <span className="text-[#1e3a5f] font-black">{importRows.length}</span> transactions —
+                      Found <span className="text-navy font-black">{importRows.length}</span> transactions —
                       <span className="text-gray-500"> review and deselect any to skip</span>
                     </p>
                     <div className="flex gap-2 text-xs">
-                      <button onClick={() => setImportRows(r => r.map(x => ({ ...x, selected: true })))} className="text-[#1e3a5f] font-semibold hover:underline">Select all</button>
+                      <button onClick={() => setImportRows(r => r.map(x => ({ ...x, selected: true })))} className="text-navy font-semibold hover:underline">Select all</button>
                       <span className="text-gray-300">|</span>
                       <button onClick={() => setImportRows(r => r.map(x => ({ ...x, selected: false })))} className="text-gray-400 hover:underline">Deselect all</button>
                     </div>
@@ -458,7 +469,7 @@ export default function BudgetTracker() {
                             className={`border-b border-gray-50 cursor-pointer transition ${row.selected ? 'hover:bg-gray-50' : 'opacity-40 bg-gray-50/50'}`}
                           >
                             <td className="px-3 py-2">
-                              <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${row.selected ? 'bg-[#1e3a5f] border-[#1e3a5f]' : 'border-gray-300'}`}>
+                              <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${row.selected ? 'bg-navy border-navy' : 'border-gray-300'}`}>
                                 {row.selected && <span className="text-white text-[10px] leading-none">✓</span>}
                               </div>
                             </td>
@@ -497,7 +508,7 @@ export default function BudgetTracker() {
                   <button
                     onClick={confirmImport}
                     disabled={saving2 || importRows.filter(r => r.selected).length === 0}
-                    className="bg-[#1e3a5f] text-white px-5 py-2 rounded-xl text-sm font-semibold hover:bg-[#16304f] transition disabled:opacity-50"
+                    className="bg-navy text-white px-5 py-2 rounded-xl text-sm font-semibold hover:bg-navy-700 transition disabled:opacity-50"
                   >
                     {saving2 ? 'Saving…' : `Import ${importRows.filter(r => r.selected).length} transactions`}
                   </button>
@@ -510,126 +521,129 @@ export default function BudgetTracker() {
 
       {/* Add transaction modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold text-gray-900">Add Transaction</h2>
-              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
-            </div>
+        <div className="fixed inset-0 bg-navy/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="h-1.5 bg-gradient-to-r from-gold-400 to-amber-500" />
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="text-lg font-bold text-gray-900">Add Transaction</h2>
+                <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+              </div>
 
-            {/* Type toggle */}
-            <div className="flex rounded-xl overflow-hidden border border-gray-200 mb-4">
-              {(['income', 'expense'] as TxType[]).map(t => (
-                <button
-                  key={t}
-                  onClick={() => setForm(f => ({ ...f, type: t, category: t === 'income' ? 'Donations' : 'Advertising' }))}
-                  className={`flex-1 py-2 text-sm font-semibold transition ${
-                    form.type === t
-                      ? t === 'income' ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'
-                      : 'bg-white text-gray-500 hover:bg-gray-50'
-                  }`}
-                >
-                  {t === 'income' ? '↑ Income' : '↓ Expense'}
-                </button>
-              ))}
-            </div>
-
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-gray-500 mb-1 block">Category *</label>
-                  <select
-                    value={form.category}
-                    onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm"
+              {/* Type toggle */}
+              <div className="flex rounded-xl overflow-hidden border border-gray-200 mb-4">
+                {(['income', 'expense'] as TxType[]).map(t => (
+                  <button
+                    key={t}
+                    onClick={() => setForm(f => ({ ...f, type: t, category: t === 'income' ? 'Donations' : 'Advertising' }))}
+                    className={`flex-1 py-2 text-sm font-semibold transition ${
+                      form.type === t
+                        ? t === 'income' ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'
+                        : 'bg-white text-gray-500 hover:bg-gray-50'
+                    }`}
                   >
-                    {cats.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-500 mb-1 block">Amount *</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={form.amount}
-                    onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm"
-                  />
-                </div>
+                    {t === 'income' ? '↑ Income' : '↓ Expense'}
+                  </button>
+                ))}
               </div>
 
-              <div>
-                <label className="text-xs font-semibold text-gray-500 mb-1 block">Description</label>
-                <input
-                  type="text"
-                  placeholder="Brief description"
-                  value={form.description}
-                  onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm"
-                />
-              </div>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 mb-1 block">Category *</label>
+                    <select
+                      value={form.category}
+                      onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm"
+                    >
+                      {cats.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 mb-1 block">Amount *</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={form.amount}
+                      onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm"
+                    />
+                  </div>
+                </div>
 
-              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-gray-500 mb-1 block">Vendor / Source</label>
+                  <label className="text-xs font-semibold text-gray-500 mb-1 block">Description</label>
                   <input
                     type="text"
-                    placeholder="Name"
-                    value={form.vendor}
-                    onChange={e => setForm(f => ({ ...f, vendor: e.target.value }))}
+                    placeholder="Brief description"
+                    value={form.description}
+                    onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                     className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm"
                   />
                 </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 mb-1 block">Vendor / Source</label>
+                    <input
+                      type="text"
+                      placeholder="Name"
+                      value={form.vendor}
+                      onChange={e => setForm(f => ({ ...f, vendor: e.target.value }))}
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 mb-1 block">Payment Method</label>
+                    <select
+                      value={form.paymentMethod}
+                      onChange={e => setForm(f => ({ ...f, paymentMethod: e.target.value }))}
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm"
+                    >
+                      {PAY_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
+                    </select>
+                  </div>
+                </div>
+
                 <div>
-                  <label className="text-xs font-semibold text-gray-500 mb-1 block">Payment Method</label>
-                  <select
-                    value={form.paymentMethod}
-                    onChange={e => setForm(f => ({ ...f, paymentMethod: e.target.value }))}
+                  <label className="text-xs font-semibold text-gray-500 mb-1 block">Date</label>
+                  <input
+                    type="date"
+                    value={form.txDate}
+                    onChange={e => setForm(f => ({ ...f, txDate: e.target.value }))}
                     className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm"
-                  >
-                    {PAY_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
-                  </select>
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 mb-1 block">Notes</label>
+                  <textarea
+                    rows={2}
+                    placeholder="Optional notes"
+                    value={form.notes}
+                    onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm resize-none"
+                  />
                 </div>
               </div>
 
-              <div>
-                <label className="text-xs font-semibold text-gray-500 mb-1 block">Date</label>
-                <input
-                  type="date"
-                  value={form.txDate}
-                  onChange={e => setForm(f => ({ ...f, txDate: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm"
-                />
+              <div className="flex gap-3 mt-5">
+                <button
+                  onClick={() => setShowForm(false)}
+                  className="flex-1 border border-gray-200 text-gray-600 py-2 rounded-xl text-sm font-semibold hover:bg-gray-50 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={save}
+                  disabled={saving || !form.amount || !form.category}
+                  className="flex-1 bg-navy text-white py-2 rounded-xl text-sm font-semibold hover:bg-navy-700 transition disabled:opacity-50"
+                >
+                  {saving ? 'Saving…' : 'Save'}
+                </button>
               </div>
-
-              <div>
-                <label className="text-xs font-semibold text-gray-500 mb-1 block">Notes</label>
-                <textarea
-                  rows={2}
-                  placeholder="Optional notes"
-                  value={form.notes}
-                  onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm resize-none"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3 mt-5">
-              <button
-                onClick={() => setShowForm(false)}
-                className="flex-1 border border-gray-200 text-gray-600 py-2 rounded-xl text-sm font-semibold hover:bg-gray-50 transition"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={save}
-                disabled={saving || !form.amount || !form.category}
-                className="flex-1 bg-[#1e3a5f] text-white py-2 rounded-xl text-sm font-semibold hover:bg-[#16304f] transition disabled:opacity-50"
-              >
-                {saving ? 'Saving…' : 'Save'}
-              </button>
             </div>
           </div>
         </div>

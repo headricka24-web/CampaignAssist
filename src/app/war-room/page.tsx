@@ -12,23 +12,23 @@ export default function WarRoomPage() {
   return (
     <div className="space-y-6">
       {/* Tab toggle */}
-      <div className="flex gap-2 border-b border-gray-100 pb-4">
+      <div className="flex gap-2 bg-[#0a1e38] rounded-2xl p-1.5 mb-2">
         <button
           onClick={() => setTab('threats')}
-          className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-colors ${
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
             tab === 'threats'
-              ? 'bg-navy text-white shadow-sm'
-              : 'bg-white border border-gray-200 text-gray-500 hover:border-navy hover:text-navy'
+              ? 'bg-red-500 text-white shadow-glow-red'
+              : 'text-white/50 hover:text-white hover:bg-white/5'
           }`}
         >
           🚨 Threats
         </button>
         <button
           onClick={() => setTab('dossier')}
-          className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-colors ${
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
             tab === 'dossier'
-              ? 'bg-navy text-white shadow-sm'
-              : 'bg-white border border-gray-200 text-gray-500 hover:border-navy hover:text-navy'
+              ? 'bg-navy text-white'
+              : 'text-white/50 hover:text-white hover:bg-white/5'
           }`}
         >
           🗂 O.R. Dossier

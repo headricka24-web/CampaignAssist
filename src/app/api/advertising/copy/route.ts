@@ -3,7 +3,7 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/db'
 import { ask } from '@/lib/claude'
 import { auth } from '@/auth'
-import { buildRaceContext } from '@/lib/raceContext'
+import { buildRaceContext, buildCandidateStanceContext } from '@/lib/raceContext'
 
 export const maxDuration = 60
 
@@ -24,17 +24,18 @@ const FORMAT_LABELS: Record<Format, string> = {
 async function getContext(userId: string) {
   const candidate = await prisma.candidate.findFirst({
     where: { userId },
-    select: { name: true, race: true, state: true, party: true, incumbent: true, raceLevel: true, district: true, county: true, city: true },
+    select: { name: true, race: true, state: true, party: true, incumbent: true, raceLevel: true, district: true, county: true, city: true, bio: true, topIssues: true, electionDate: true, fundraisingGoal: true },
   })
   if (!candidate) return null
-  const raceCtx = buildRaceContext({ ...candidate, name: candidate.name, race: candidate.race, state: candidate.state, incumbent: candidate.incumbent ?? false })
-  return { raceCtx, name: candidate.name, state: candidate.state }
+  const raceCtx    = buildRaceContext({ ...candidate, name: candidate.name, race: candidate.race, state: candidate.state, incumbent: candidate.incumbent ?? false })
+  const stanceCtx  = await buildCandidateStanceContext(userId, prisma)
+  return { raceCtx: raceCtx + stanceCtx, name: candidate.name, state: candidate.state }
 }
 
 function buildPrompt(format: Format, issue: string, raceCtx: string): [string, string] {
   const label = FORMAT_LABELS[format]
 
-  const system = `You are a veteran Republican political ad writer with 20+ years of experience crafting winning television, radio, and digital campaign advertisements. You write emotionally resonant, persuasive scripts grounded in conservative values. Your ads are punchy, memorable, and built to move voters.`
+  const system = `You are a veteran political ad writer with 20+ years of experience crafting winning television, radio, and digital campaign advertisements. You write emotionally resonant, persuasive scripts grounded in the candidate's values and positions. Your ads are punchy, memorable, and built to move voters.`
 
   const formatInstructions: Record<Format, string> = {
     'tv-30': `Write a :30 second TV spot script (roughly 75 words of spoken copy). Include:
@@ -92,11 +93,11 @@ END CARD: (final frame — candidate name, tagline, website placeholder)`,
 
   const user = `${raceCtx}
 
-FOCUS ISSUE / THEME: ${issue || 'General campaign introduction and Republican values'}
+FOCUS ISSUE / THEME: ${issue || 'General campaign introduction and candidate values'}
 
 ${formatInstructions[format]}
 
-Make it specific to this candidate and race level. The tone should be confident, values-driven, and built to persuade swing voters while energizing the Republican base.`
+Make it specific to this candidate's actual positions (from CANDIDATE STANCE CONTEXT above) and race level. The tone should be confident, values-driven, and built to persuade swing voters while energizing the candidate's base.`
 
   return [system, user]
 }

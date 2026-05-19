@@ -132,9 +132,9 @@ const DEPARTMENTS = [
   {
     name:    'Command',
     tagline: 'Overview & field strategy',
-    from:    'from-red-700',
-    to:      'to-red-950',
-    glow:    'shadow-red-900/50',
+    from:    'from-[#0f2744]',
+    to:      'to-[#071a35]',
+    glow:    'shadow-blue-900/50',
     mark:    '★',
     links: [
       { href: '/dashboard', label: 'Dashboard',       desc: 'Overview & morning brief'   },
@@ -158,9 +158,9 @@ const DEPARTMENTS = [
   {
     name:    'Communications',
     tagline: 'Message, media & fundraising',
-    from:    'from-indigo-800',
-    to:      'to-indigo-950',
-    glow:    'shadow-indigo-900/50',
+    from:    'from-red-900',
+    to:      'to-red-950',
+    glow:    'shadow-red-900/50',
     mark:    '✦',
     links: [
       { href: '/media',       label: 'Media Studio',   desc: 'Content & talking points' },
@@ -171,9 +171,9 @@ const DEPARTMENTS = [
   {
     name:    'Field Ops',
     tagline: 'Outreach, voters & ground game',
-    from:    'from-emerald-800',
-    to:      'to-emerald-950',
-    glow:    'shadow-emerald-900/50',
+    from:    'from-slate-800',
+    to:      'to-slate-900',
+    glow:    'shadow-slate-900/50',
     mark:    '◎',
     links: [
       { href: '/outreach', label: 'Outreach', desc: 'Contacts, donors & events' },
@@ -183,9 +183,9 @@ const DEPARTMENTS = [
   {
     name:    'Finance',
     tagline: 'Budget, income & expenses',
-    from:    'from-amber-700',
-    to:      'to-amber-950',
-    glow:    'shadow-amber-900/50',
+    from:    'from-slate-800',
+    to:      'to-slate-900',
+    glow:    'shadow-slate-900/50',
     mark:    '◆',
     links: [
       { href: '/budget',     label: 'Budget',     desc: 'Income, expenses & cash on hand'    },
@@ -195,9 +195,9 @@ const DEPARTMENTS = [
   {
     name:    'Advertising',
     tagline: 'Ad copy, strategy & media',
-    from:    'from-orange-700',
-    to:      'to-orange-950',
-    glow:    'shadow-orange-900/50',
+    from:    'from-red-900',
+    to:      'to-red-950',
+    glow:    'shadow-red-900/50',
     mark:    '▶',
     links: [
       { href: '/advertising/copy',     label: 'Ad Copy Studio', desc: 'TV, radio, digital & mail scripts' },
@@ -348,6 +348,11 @@ export default function CommandCenter({ candidate, electionDate }: { candidate: 
 
       {/* ── Campaign Timeline ─────────────────────────────────────────────── */}
       <div className="max-w-5xl mx-auto px-8 pt-8 pb-4">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="h-px flex-1 bg-gradient-to-r from-gold-400/30 to-transparent" />
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gold-400/70">Campaign Timeline</p>
+          <div className="h-px flex-1 bg-gradient-to-l from-gold-400/30 to-transparent" />
+        </div>
         <CampaignTimeline electionDate={electionDate} />
       </div>
 

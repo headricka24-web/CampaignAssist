@@ -3,18 +3,7 @@
 import { useState } from 'react'
 import RichText from './RichText'
 import { usePersistedContent, fmtGeneratedAt } from '@/lib/usePersistedContent'
-
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false)
-  return (
-    <button
-      onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000) }}
-      className="text-xs font-bold px-3 py-1.5 rounded-lg bg-navy text-white hover:bg-navy-700 transition-colors"
-    >
-      {copied ? '✓ Copied' : 'Copy'}
-    </button>
-  )
-}
+import CopyButton from './CopyButton'
 
 function Spinner({ label }: { label: string }) {
   return (
@@ -139,7 +128,17 @@ export default function HotButtons() {
       </div>
 
       {/* ── Briefing ─────────────────────────────────────────── */}
-      {loadingBrief && <Spinner label="Scanning Google News and generating your briefing…" />}
+      {loadingBrief && (
+        <div className="space-y-3 animate-pulse">
+          {[1,2,3].map(i => (
+            <div key={i} className="bg-white rounded-2xl border border-gray-100 p-4 space-y-2">
+              <div className="h-3 bg-gray-100 rounded w-1/3" />
+              <div className="h-3 bg-gray-100 rounded w-full" />
+              <div className="h-3 bg-gray-100 rounded w-4/5" />
+            </div>
+          ))}
+        </div>
+      )}
 
       {briefing && !loadingBrief && (
         <div className="bg-white rounded-2xl border-2 border-navy-100 shadow-patriot overflow-hidden">

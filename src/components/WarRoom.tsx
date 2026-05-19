@@ -199,10 +199,12 @@ function ThreatCard({
 }
 
 export default function WarRoom() {
-  const [threats,  setThreats]  = useState<Threat[]>([])
-  const [loading,  setLoading]  = useState(false)
-  const [fetching, setFetching] = useState(true)
-  const [error,    setError]    = useState('')
+  const [threats,       setThreats]       = useState<Threat[]>([])
+  const [loading,       setLoading]       = useState(false)
+  const [fetching,      setFetching]      = useState(true)
+  const [error,         setError]         = useState('')
+  const [noArticles,    setNoArticles]    = useState(false)
+  const [manualContext, setManualContext] = useState('')
 
   const loadThreats = useCallback(async () => {
     setFetching(true)
@@ -215,19 +217,22 @@ export default function WarRoom() {
 
   useEffect(() => { loadThreats() }, [loadThreats])
 
-  async function handleScan() {
+  async function handleScan(withManual = false) {
     setLoading(true)
     setError('')
+    setNoArticles(false)
     try {
+      const body: Record<string, string> = { type: 'scan' }
+      if (withManual && manualContext.trim()) body.manualContext = manualContext.trim()
       const res  = await fetch('/api/war-room', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ type: 'scan' }),
+        body:    JSON.stringify(body),
       })
       const data = await res.json()
-      if (data.error === 'no_articles') { setError('No articles found — run a News Tracker scan first.'); return }
+      if (data.error === 'no_articles') { setNoArticles(true); return }
       if (data.error) { setError('Scan failed. Try again.'); return }
-      // Re-fetch from DB to load newly persisted threats
+      setNoArticles(false)
       await loadThreats()
     } catch { setError('Scan failed. Check your connection.') }
     finally { setLoading(false) }
@@ -265,7 +270,7 @@ export default function WarRoom() {
             See every attack coming before it lands. The War Room analyzes your live news feed for opposition vulnerabilities, flags threats by severity, and generates a counter-response in seconds.
           </p>
           <button
-            onClick={handleScan}
+            onClick={() => handleScan(false)}
             disabled={loading || fetching}
             className="bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white font-black px-8 py-3 rounded-xl text-sm tracking-widest uppercase shadow-glow-red transition-colors focus:outline-none focus:ring-2 focus:ring-gold-400"
           >
@@ -274,6 +279,28 @@ export default function WarRoom() {
               : threats.length > 0 ? '↺ Rescan Threats' : '🚨 Scan for Threats'}
           </button>
           {error && <p className="mt-3 text-red-300 text-sm">{error}</p>}
+
+          {/* Manual context fallback — shown when no articles are tracked */}
+          {noArticles && !loading && (
+            <div className="mt-4 bg-white/10 rounded-xl p-4 max-w-xl">
+              <p className="text-blue-200 text-sm mb-2 font-bold">No news articles tracked yet.</p>
+              <p className="text-blue-300 text-xs mb-3">Paste background on your race — opponent info, local controversies, recent events — and we'll scan for threats from that context instead.</p>
+              <textarea
+                value={manualContext}
+                onChange={e => setManualContext(e.target.value)}
+                rows={3}
+                placeholder="e.g. Opponent John Smith voted against the school budget in 2023. Local controversy over the proposed highway expansion..."
+                className="w-full text-sm px-3 py-2 rounded-lg bg-white/10 text-white placeholder-white/30 border border-white/20 focus:outline-none focus:ring-2 focus:ring-gold-400 resize-none mb-2"
+              />
+              <button
+                onClick={() => handleScan(true)}
+                disabled={!manualContext.trim() || loading}
+                className="bg-gold-400 text-navy font-black uppercase tracking-widest text-xs px-4 py-2 rounded-lg hover:bg-yellow-300 disabled:opacity-40 transition-colors"
+              >
+                Scan with Manual Context
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -321,10 +348,16 @@ export default function WarRoom() {
 
       {/* Empty state before scan */}
       {threats.length === 0 && !loading && !fetching && (
-        <div className="bg-white rounded-2xl border-2 border-dashed border-gray-200 py-16 text-center">
-          <div className="text-5xl mb-4 opacity-30">🚨</div>
-          <p className="text-gray-500 font-semibold">No scan run yet.</p>
-          <p className="text-gray-400 text-sm mt-1">Hit the button above to scan today's news for attack opportunities.</p>
+        <div className="relative rounded-2xl overflow-hidden border-2 border-dashed border-red-200 bg-red-50/30 py-14 text-center">
+          <div className="text-5xl mb-3">🚨</div>
+          <p className="font-display font-black text-navy text-lg uppercase tracking-wide mb-1">Intelligence Standby</p>
+          <p className="text-gray-500 text-sm max-w-sm mx-auto mb-5">The War Room scans your live news feed for opposition attack angles and generates counter-responses in seconds. Run your first scan to activate it.</p>
+          <button
+            onClick={() => handleScan(false)}
+            className="bg-red-500 hover:bg-red-600 text-white font-black uppercase tracking-widest px-6 py-3 rounded-xl text-sm shadow-glow-red transition-all"
+          >
+            🚨 Scan for Threats
+          </button>
         </div>
       )}
 

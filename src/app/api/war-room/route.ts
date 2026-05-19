@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/auth'
 import { ask } from '@/lib/claude'
-import { buildRaceContext } from '@/lib/raceContext'
+import { buildRaceContext, buildCandidateStanceContext } from '@/lib/raceContext'
 
 export const maxDuration = 60
 
 async function getCandidate(userId: string) {
   return prisma.candidate.findFirst({
     where: { userId },
-    select: { id: true, name: true, race: true, state: true, party: true, incumbent: true, raceLevel: true, district: true, county: true, city: true },
+    select: { id: true, name: true, race: true, state: true, party: true, incumbent: true, raceLevel: true, district: true, county: true, city: true, bio: true, topIssues: true, electionDate: true, fundraisingGoal: true },
   })
 }
 
@@ -94,20 +94,28 @@ export async function POST(req: NextRequest) {
       take: 40,
       include: { outlet: true },
     })
-    if (articles.length === 0) return NextResponse.json({ error: 'no_articles' }, { status: 400 })
 
-    const articleList = articles
-      .map(a => `- [${a.bucket ?? 'General'}] "${a.title}" (${a.outlet.name}) — Sentiment: ${a.sentiment ?? 'Neutral'}`)
-      .join('\n')
+    const manualContext = (body as { type: string; manualContext?: string }).manualContext?.trim() ?? ''
+
+    if (articles.length === 0 && !manualContext) {
+      return NextResponse.json({ error: 'no_articles' }, { status: 400 })
+    }
+
+    const articleList = articles.length > 0
+      ? articles.map(a => `- [${a.bucket ?? 'General'}] "${a.title}" (${a.outlet.name}) — Sentiment: ${a.sentiment ?? 'Neutral'}`).join('\n')
+      : null
+
+    const sourceBlock = articleList
+      ? `Here are the currently tracked news articles:\n${articleList}`
+      : `No news articles are tracked yet. Use the candidate context and the following background information to identify threats:\n${manualContext}`
 
     const raw = await ask(
-      `You are an expert Republican opposition research director and crisis communications strategist. Your job is to find every possible attack vector the opposition could use against the GOP candidate based on current news coverage. Be blunt, specific, and thorough. Think like the enemy.`,
+      `You are an expert opposition research director and crisis communications strategist. Your job is to find every possible attack vector the opposition could use against this candidate. Be blunt, specific, and thorough. Think like the opponent's campaign manager.`,
       `${raceCtx}
 
-Here are the currently tracked news articles:
-${articleList}
+${sourceBlock}
 
-Identify 4-6 SPECIFIC THREATS scaled to this race level (local/community attacks for municipal/county races; state media and legislative attacks for state races; national opposition and media attacks for federal races) — stories or narratives in this coverage that Democrats or media could weaponize against ${name} or the Republican position.
+Identify 4-6 SPECIFIC THREATS scaled to this race level (local/community attacks for municipal/county races; state media and legislative attacks for state races; national opposition and media attacks for federal races) — attack angles the opponent or media could use against ${name}.
 
 For each threat write exactly this format:
 
@@ -153,11 +161,12 @@ Separate each threat with ---`,
 
   // ── RESPOND ───────────────────────────────────────────────────────────────
   if (body.type === 'respond') {
-    const threat = body.threat ?? 'this attack'
+    const threat     = body.threat ?? 'this attack'
+    const stanceCtx  = await buildCandidateStanceContext(userId, prisma)
 
     const response = await ask(
-      `You are a Republican rapid-response communications director. Write sharp, confident, on-offense counter-messaging. Never be defensive — always pivot to Republican strengths.`,
-      `${raceCtx}
+      `You are an experienced rapid-response communications director. Write sharp, confident, on-offense counter-messaging grounded in the candidate's actual positions. Never be defensive — always pivot to this candidate's strengths.`,
+      `${raceCtx}${stanceCtx}
 
 THREAT TO RESPOND TO:
 ${threat}

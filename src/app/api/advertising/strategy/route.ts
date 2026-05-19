@@ -3,7 +3,7 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/db'
 import { ask } from '@/lib/claude'
 import { auth } from '@/auth'
-import { buildRaceContext } from '@/lib/raceContext'
+import { buildRaceContext, buildCandidateStanceContext } from '@/lib/raceContext'
 
 export const maxDuration = 60
 
@@ -29,11 +29,12 @@ const BUDGET_LABELS: Record<Budget, string> = {
 async function getContext(userId: string) {
   const candidate = await prisma.candidate.findFirst({
     where: { userId },
-    select: { name: true, race: true, state: true, party: true, incumbent: true, raceLevel: true, district: true, county: true, city: true },
+    select: { name: true, race: true, state: true, party: true, incumbent: true, raceLevel: true, district: true, county: true, city: true, bio: true, topIssues: true, electionDate: true, fundraisingGoal: true },
   })
   if (!candidate) return null
-  const raceCtx = buildRaceContext({ ...candidate, incumbent: candidate.incumbent ?? false })
-  return { raceCtx }
+  const raceCtx   = buildRaceContext({ ...candidate, incumbent: candidate.incumbent ?? false })
+  const stanceCtx = await buildCandidateStanceContext(userId, prisma)
+  return { raceCtx: raceCtx + stanceCtx }
 }
 
 export async function POST(req: NextRequest) {
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
   const ctx = await getContext(userId)
   if (!ctx) return NextResponse.json({ error: 'no_candidate' }, { status: 400 })
 
-  const system = `You are a senior Republican political media consultant who has run ad campaigns for candidates at every level — municipal to federal. You give precise, budget-conscious, phase-appropriate advertising strategy. You are direct, practical, and focused on winning.`
+  const system = `You are a senior political media consultant who has run ad campaigns for candidates at every level — municipal to federal. You give precise, budget-conscious, phase-appropriate advertising strategy grounded in the candidate's actual positions. You are direct, practical, and focused on winning.`
 
   const user = `${ctx.raceCtx}
 

@@ -39,7 +39,7 @@ export async function POST(req: Request) {
 
   const candidate = await prisma.candidate.findFirst({
     where: { userId },
-    select: { name: true, race: true, state: true, party: true, incumbent: true, raceLevel: true, district: true, county: true, city: true },
+    select: { name: true, race: true, state: true, party: true, incumbent: true, raceLevel: true, district: true, county: true, city: true, bio: true, topIssues: true, electionDate: true, fundraisingGoal: true },
   })
   const name      = candidate?.name      ?? 'the candidate'
   const race      = candidate?.race      ?? 'this race'

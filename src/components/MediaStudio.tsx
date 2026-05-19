@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import RichText from './RichText'
-import { useLocalStorage } from '@/lib/useLocalStorage'
 import { usePersistedContent } from '@/lib/usePersistedContent'
 
 type Section = 'facebook' | 'instagram' | 'newsletter' | 'taglines' | 'strategy' | 'talking-points'
@@ -62,7 +61,7 @@ function StudioCard({ id, icon, title, subtitle, color, border, bar, tone }: typ
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState('')
   const [open,    setOpen]    = useState(false)
-  const [issue,   setIssue]   = useLocalStorage(`media-studio-${id}-issue`, '')
+  const [issue,   setIssue]   = usePersistedContent(`media-studio-${id}-issue`, '')
 
   const hasIssue = issue.trim() !== ''
 
@@ -123,8 +122,11 @@ function StudioCard({ id, icon, title, subtitle, color, border, bar, tone }: typ
               </>
             )}
             <button onClick={generate} disabled={loading}
-              className={`py-2 rounded-xl border-2 border-dashed text-xs font-bold uppercase tracking-widest transition-all disabled:opacity-50
-                ${content ? 'px-3 border-gray-200 text-gray-400 hover:border-navy hover:text-navy' : 'w-full border-gray-200 text-gray-400 hover:bg-navy hover:text-white hover:border-navy'}`}>
+              className={`py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all disabled:opacity-50
+                ${content
+                  ? 'px-3 border-2 border-dashed border-gray-200 text-gray-400 hover:border-navy hover:text-navy'
+                  : 'w-full bg-navy text-white hover:bg-navy-700 shadow-sm'
+                }`}>
               {loading
                 ? <span className="flex items-center justify-center gap-1.5"><span className="animate-spin w-3 h-3 border-2 border-current border-t-transparent rounded-full inline-block" />Writing…</span>
                 : content ? '↺' : hasIssue ? '🎯 Generate →' : 'Generate →'}

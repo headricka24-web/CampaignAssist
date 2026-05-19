@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useLocalStorage } from '@/lib/useLocalStorage'
+import { usePersistedContent } from '@/lib/usePersistedContent'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -704,17 +704,19 @@ export default function OutreachDashboard() {
   const [dragOver,         setDragOver]         = useState(false)
   const [importSuccess,    setImportSuccess]    = useState(false)
 
-  // Goals
-  const [weeklyGoal,              setWeeklyGoal]              = useLocalStorage('outreach-weekly-goal', 500)
+  // Goals — persisted to DB so they survive logout/login
+  const [goalsData, saveGoals] = usePersistedContent('outreach-goals', { weeklyGoal: 500, weeklyFundGoal: 5000, monthlyFundGoal: 20000, volunteerGoal: 20 })
+  const { weeklyGoal, weeklyFundGoal, monthlyFundGoal, volunteerGoal } = goalsData
+  function setWeeklyGoal(v: number)     { saveGoals({ ...goalsData, weeklyGoal: v }) }
+  function setWeeklyFundGoal(v: number) { saveGoals({ ...goalsData, weeklyFundGoal: v }) }
+  function setMonthlyFundGoal(v: number){ saveGoals({ ...goalsData, monthlyFundGoal: v }) }
+  function setVolunteerGoal(v: number)  { saveGoals({ ...goalsData, volunteerGoal: v }) }
   const [editingGoal,             setEditingGoal]             = useState(false)
   const [goalInput,               setGoalInput]               = useState('')
-  const [weeklyFundGoal,          setWeeklyFundGoal]          = useLocalStorage('outreach-weekly-fund-goal', 5000)
   const [editingFundGoal,         setEditingFundGoal]         = useState(false)
   const [fundGoalInput,           setFundGoalInput]           = useState('')
-  const [monthlyFundGoal,         setMonthlyFundGoal]         = useLocalStorage('outreach-monthly-fund-goal', 20000)
   const [editingMonthlyGoal,      setEditingMonthlyGoal]      = useState(false)
   const [monthlyGoalInput,        setMonthlyGoalInput]        = useState('')
-  const [volunteerGoal,           setVolunteerGoal]           = useLocalStorage('outreach-volunteer-goal', 20)
   const [editingVolunteerGoal,    setEditingVolunteerGoal]    = useState(false)
   const [volunteerGoalInput,      setVolunteerGoalInput]      = useState('')
 

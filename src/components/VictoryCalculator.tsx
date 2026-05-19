@@ -87,13 +87,13 @@ function Gauge({ value, max, color }: { value: number; max: number; color: strin
   )
 }
 
-function StatBox({ label, value, sub, accent }: {
-  label: string; value: string; sub?: string; accent: string
+function StatBox({ label, value, sub, accent, valueClass }: {
+  label: string; value: string; sub?: string; accent: string; valueClass?: string
 }) {
   return (
     <div className={`bg-white rounded-2xl border-2 ${accent} shadow-sm p-5`}>
       <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">{label}</p>
-      <p className="font-display text-3xl font-black text-navy leading-none">{value}</p>
+      <p className={`font-display text-3xl font-black leading-none ${valueClass ?? 'text-navy'}`}>{value}</p>
       {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
     </div>
   )
@@ -192,6 +192,8 @@ export default function VictoryCalculator({
   const days           = daysUntil(plan.electionDate)
   const dailyTarget    = days > 0 ? Math.ceil(contactsNeeded / days) : contactsNeeded
   const weeksLeft      = Math.floor(days / 7)
+
+  const isMicroRace = Boolean(plan && plan.registeredVoters > 0 && plan.registeredVoters < 2000)
 
   const geo = (() => {
     if (raceLevel === 'federal'   && candidate?.district) return `${candidate.state} CD-${candidate.district}`
@@ -293,13 +295,43 @@ export default function VictoryCalculator({
 
           {/* Key numbers */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatBox label="Win Number"     value={fmt(winNumber)}    sub={`${threshold}%+ of expected turnout`}              accent="border-red-200"    />
+            <StatBox label="Win Number"     value={fmt(winNumber)}    sub={`${threshold}%+ of expected turnout`}              accent="border-red-200"    valueClass="text-red-600" />
             <StatBox label="GOP Base Votes" value={fmt(gopBaseVotes)} sub={`${plan.gopBase}% of ${fmt(expectedVotes)} voters`} accent="border-blue-100"   />
             <StatBox label="Votes Needed"   value={fmt(persuadable)}  sub="from persuadable voters"                           accent="border-yellow-200" />
             <StatBox label="Days Remaining" value={String(days)}      sub={weeksLeft > 0 ? `${weeksLeft} weeks left` : 'Final stretch!'} accent={days <= 30 ? 'border-red-300' : 'border-green-100'} />
           </div>
 
+          {/* Micro Race panel */}
+          {isMicroRace && plan && (
+            <div className="rounded-2xl bg-navy text-white p-6 space-y-4">
+              <div className="inline-flex items-center gap-2 bg-gold-400 text-navy text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full">
+                ⚡ Micro Race Mode
+              </div>
+              <p className="text-blue-200 text-sm">Your voter universe is small enough to contact every voter personally. Focus on direct outreach rather than paid advertising.</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white/10 rounded-xl p-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1">Votes Needed to Win</p>
+                  <p className="font-display text-3xl font-bold text-gold-400">{winNumber.toLocaleString()}</p>
+                </div>
+                <div className="bg-white/10 rounded-xl p-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1">Total Voter Universe</p>
+                  <p className="font-display text-3xl font-bold text-white">{plan.registeredVoters.toLocaleString()}</p>
+                </div>
+                <div className="bg-white/10 rounded-xl p-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1">Days Remaining</p>
+                  <p className="font-display text-3xl font-bold text-white">{days}</p>
+                </div>
+                <div className="bg-white/10 rounded-xl p-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-white/60 mb-1">Contacts/Day Needed</p>
+                  <p className="font-display text-3xl font-bold text-white">{days > 0 ? Math.ceil((winNumber * 2) / days).toLocaleString() : '—'}</p>
+                </div>
+              </div>
+              <p className="text-blue-300 text-xs">Plan for 2 full passes through your entire voter list. At this scale, personal contact wins races — skip TV and radio ads entirely.</p>
+            </div>
+          )}
+
           {/* Field math */}
+          {!isMicroRace && plan && (
           <div className="grid lg:grid-cols-3 gap-6">
 
             {/* Daily targets */}
@@ -388,6 +420,7 @@ export default function VictoryCalculator({
               </div>
             </div>
           </div>
+          )}
 
           {/* Turnout scenarios */}
           <div className="bg-white rounded-2xl border-2 border-navy-100 shadow-sm overflow-hidden">

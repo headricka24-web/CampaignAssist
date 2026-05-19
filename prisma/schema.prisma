@@ -49,8 +49,14 @@ model Candidate {
   county       String?  // county name
   city         String?  // city or municipality name
   zip          String?  // ZIP code for hyper-local targeting
-  opponentName String?  // opponent name for news tracking & analysis
-  bins         Bin[]
+  opponentName    String?  // opponent name for news tracking & analysis
+  // Campaign details (for richer AI context)
+  bio             String?  // short candidate bio / background
+  topIssues       String?  // comma-separated top issues / priorities
+  electionDate    String?  // YYYY-MM-DD of primary/general election
+  websiteUrl      String?  // campaign website URL
+  fundraisingGoal Float?   // total fundraising goal in dollars
+  bins            Bin[]
 
   @@index([userId])
 }

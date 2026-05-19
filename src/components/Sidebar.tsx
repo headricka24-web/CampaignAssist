@@ -157,14 +157,14 @@ export default function Sidebar({
                       key={link.href}
                       href={link.href}
                       onClick={() => setOpen(false)}
-                      className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all group ${
+                      className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-all group ${
                         active
-                          ? 'bg-white/10 text-white'
-                          : 'text-white/55 hover:text-white/90 hover:bg-white/5'
+                          ? 'bg-white/[0.15] text-white font-bold'
+                          : 'font-medium text-white/55 hover:text-white/90 hover:bg-white/5'
                       }`}
                     >
                       {/* Active indicator bar */}
-                      <span className={`w-0.5 h-4 rounded-full shrink-0 transition-all ${
+                      <span className={`w-1 h-4 rounded-full shrink-0 transition-all ${
                         active ? colors.bar : 'bg-transparent'
                       }`} />
                       {link.label}

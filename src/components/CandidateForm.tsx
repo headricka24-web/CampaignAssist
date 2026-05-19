@@ -4,18 +4,23 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 type Candidate = {
-  id:           string
-  name:         string
-  race:         string
-  state:        string
-  party:        string
-  incumbent:    boolean
-  raceLevel:    string | null
-  district:     string | null
-  county:       string | null
-  city:         string | null
-  zip:          string | null
-  opponentName: string | null
+  id:              string
+  name:            string
+  race:            string
+  state:           string
+  party:           string
+  incumbent:       boolean
+  raceLevel:       string | null
+  district:        string | null
+  county:          string | null
+  city:            string | null
+  zip:             string | null
+  opponentName:    string | null
+  bio:             string | null
+  topIssues:       string | null
+  electionDate:    string | null
+  websiteUrl:      string | null
+  fundraisingGoal: number | null
 }
 
 type RaceLevel = 'federal' | 'state' | 'county' | 'municipal' | ''
@@ -60,9 +65,14 @@ export default function CandidateForm({ existing }: { existing?: Candidate | nul
   const [county,       setCounty]       = useState(existing?.county       ?? '')
   const [city,         setCity]         = useState(existing?.city         ?? '')
   const [zip,          setZip]          = useState(existing?.zip          ?? '')
-  const [opponentName, setOpponentName] = useState(existing?.opponentName ?? '')
-  const [status,       setStatus]       = useState('')
-  const [saving,       setSaving]       = useState(false)
+  const [opponentName,    setOpponentName]    = useState(existing?.opponentName    ?? '')
+  const [bio,             setBio]             = useState(existing?.bio             ?? '')
+  const [topIssues,       setTopIssues]       = useState(existing?.topIssues       ?? '')
+  const [electionDate,    setElectionDate]    = useState(existing?.electionDate    ?? '')
+  const [websiteUrl,      setWebsiteUrl]      = useState(existing?.websiteUrl      ?? '')
+  const [fundraisingGoal, setFundraisingGoal] = useState(existing?.fundraisingGoal?.toString() ?? '')
+  const [status,          setStatus]          = useState('')
+  const [saving,          setSaving]          = useState(false)
 
   // Keep form in sync if existing candidate changes (e.g., after save)
   useEffect(() => {
@@ -78,6 +88,11 @@ export default function CandidateForm({ existing }: { existing?: Candidate | nul
       setCity(existing.city ?? '')
       setZip(existing.zip ?? '')
       setOpponentName(existing.opponentName ?? '')
+      setBio(existing.bio ?? '')
+      setTopIssues(existing.topIssues ?? '')
+      setElectionDate(existing.electionDate ?? '')
+      setWebsiteUrl(existing.websiteUrl ?? '')
+      setFundraisingGoal(existing.fundraisingGoal?.toString() ?? '')
     }
   }, [existing?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -86,7 +101,20 @@ export default function CandidateForm({ existing }: { existing?: Candidate | nul
     setSaving(true)
     setStatus('')
 
-    const payload = { name, race, state, party, incumbent, raceLevel: raceLevel || null, district: district || null, county: county || null, city: city || null, zip: zip || null, opponentName: opponentName || null }
+    const payload = {
+      name, race, state, party, incumbent,
+      raceLevel:       raceLevel       || null,
+      district:        district        || null,
+      county:          county          || null,
+      city:            city            || null,
+      zip:             zip             || null,
+      opponentName:    opponentName    || null,
+      bio:             bio             || null,
+      topIssues:       topIssues       || null,
+      electionDate:    electionDate    || null,
+      websiteUrl:      websiteUrl      || null,
+      fundraisingGoal: fundraisingGoal ? parseFloat(fundraisingGoal) : null,
+    }
 
     const res = await fetch('/api/candidates', {
       method:  isEdit ? 'PATCH' : 'POST',
@@ -226,6 +254,41 @@ export default function CandidateForm({ existing }: { existing?: Candidate | nul
             </div>
           </div>
         )}
+      </div>
+
+      {/* ── Campaign Details ── */}
+      <div className="space-y-4">
+        <SectionLabel>Campaign Details</SectionLabel>
+        <p className="text-xs text-gray-400 -mt-2">
+          These details are injected into every AI prompt — the more context you provide, the more accurate and personalized the output.
+        </p>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Election Date" hint="Used to calculate countdown and daily targets">
+            <input type="date" className={inputCls} value={electionDate} onChange={e => setElectionDate(e.target.value)} />
+          </Field>
+          <Field label="Fundraising Goal ($)" hint="Total dollar goal for the campaign">
+            <input type="number" className={inputCls} value={fundraisingGoal} onChange={e => setFundraisingGoal(e.target.value)} placeholder="50000" min="0" step="1000" />
+          </Field>
+        </div>
+
+        <Field label="Campaign Website URL" hint="Optional — for reference and press materials">
+          <input className={inputCls} value={websiteUrl} onChange={e => setWebsiteUrl(e.target.value)} placeholder="https://smithforcongress.com" />
+        </Field>
+
+        <Field label="Top Issues / Priorities" hint="Comma-separated list — e.g. Public Safety, Lower Taxes, School Choice">
+          <input className={inputCls} value={topIssues} onChange={e => setTopIssues(e.target.value)} placeholder="Public Safety, Lower Taxes, Infrastructure" />
+        </Field>
+
+        <Field label="Candidate Bio / Background" hint="Short background — used by AI to personalize messaging and talking points">
+          <textarea
+            className={`${inputCls} resize-none`}
+            rows={4}
+            value={bio}
+            onChange={e => setBio(e.target.value)}
+            placeholder="Former county commissioner, small business owner, 3rd-generation resident of Hillsborough County…"
+          />
+        </Field>
       </div>
 
       {/* ── Save ── */}

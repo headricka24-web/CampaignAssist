@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import RichText from '@/components/RichText'
 import { usePersistedContent, fmtGeneratedAt } from '@/lib/usePersistedContent'
+import CopyButton from '@/components/CopyButton'
 
 const FORMATS = [
   { id: 'tv-30',          icon: '📺', label: 'TV Spot',       sub: ':30 second',     color: 'text-red-600',    border: 'border-red-100',    bar: 'from-red-500 to-red-700'         },
@@ -16,18 +17,6 @@ const FORMATS = [
 ] as const
 
 type FormatId = typeof FORMATS[number]['id']
-
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false)
-  return (
-    <button
-      onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000) }}
-      className="text-xs font-bold px-3 py-1.5 rounded-lg bg-navy text-white hover:bg-navy-700 transition-colors"
-    >
-      {copied ? '✓ Copied' : 'Copy All'}
-    </button>
-  )
-}
 
 function Modal({ fmt, content, onClose, onRegen }: {
   fmt: typeof FORMATS[number]; content: string; onClose: () => void; onRegen: () => void
@@ -45,7 +34,7 @@ function Modal({ fmt, content, onClose, onRegen }: {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <CopyButton text={content} />
+            <CopyButton text={content} label="Copy All" />
             <button onClick={onRegen} className="text-xs text-gray-400 hover:text-navy transition-colors font-bold">↺ Redo</button>
             <button onClick={onClose} className="ml-2 text-gray-400 hover:text-navy transition-colors text-lg leading-none">✕</button>
           </div>
@@ -91,7 +80,7 @@ function FormatCard({ fmt, issue }: { fmt: typeof FORMATS[number]; issue: string
 
   return (
     <>
-      <div className={`bg-white rounded-2xl border ${fmt.border} shadow-sm overflow-hidden flex flex-col`}>
+      <div className={`bg-white rounded-2xl border-2 ${fmt.border} shadow-sm overflow-hidden flex flex-col`}>
         {/* Color bar */}
         <div className={`h-1 bg-gradient-to-r ${fmt.bar}`} />
 

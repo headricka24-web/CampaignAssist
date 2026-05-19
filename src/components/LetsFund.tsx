@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import RichText from './RichText'
-import { useLocalStorage } from '@/lib/useLocalStorage'
 import { usePersistedContent } from '@/lib/usePersistedContent'
 
 type FundType = 'email' | 'directmail' | 'callscript' | 'textscript' | 'majordonor' | 'thankyou'
@@ -80,8 +79,8 @@ function FundCard(card: typeof CARDS[0] & { tone: Tone }) {
   const [error,       setError]       = useState('')
   const [open,        setOpen]        = useState(false)
   const [showOptions, setShowOptions] = useState(false)
-  const [demographic, setDemographic] = useLocalStorage(`lets-fund-${card.id}-demo`, 'General (No Targeting)')
-  const [issue,       setIssue]       = useLocalStorage(`lets-fund-${card.id}-issue`, '')
+  const [demographic, setDemographic] = usePersistedContent(`lets-fund-${card.id}-demo`, 'General (No Targeting)')
+  const [issue,       setIssue]       = usePersistedContent(`lets-fund-${card.id}-issue`, '')
 
   const isTargeted = demographic !== 'General (No Targeting)' || issue.trim() !== ''
   const targetingLabel = [

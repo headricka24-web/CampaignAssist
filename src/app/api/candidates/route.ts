@@ -19,18 +19,23 @@ export async function POST(req: NextRequest) {
   const userId  = session?.user?.id
   if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
-  const { name, race, state, party, incumbent, raceLevel, district, county, city, zip, opponentName } = await req.json()
+  const { name, race, state, party, incumbent, raceLevel, district, county, city, zip, opponentName, bio, topIssues, electionDate, websiteUrl, fundraisingGoal } = await req.json()
   const candidate = await prisma.candidate.create({
     data: {
       userId,
       name, race, state, party,
-      incumbent:    incumbent    ?? false,
-      raceLevel:    raceLevel    ?? null,
-      district:     district     ?? null,
-      county:       county       ?? null,
-      city:         city         ?? null,
-      zip:          zip          ?? null,
-      opponentName: opponentName ?? null,
+      incumbent:       incumbent       ?? false,
+      raceLevel:       raceLevel       ?? null,
+      district:        district        ?? null,
+      county:          county          ?? null,
+      city:            city            ?? null,
+      zip:             zip             ?? null,
+      opponentName:    opponentName    ?? null,
+      bio:             bio             ?? null,
+      topIssues:       topIssues       ?? null,
+      electionDate:    electionDate    ?? null,
+      websiteUrl:      websiteUrl      ?? null,
+      fundraisingGoal: fundraisingGoal ?? null,
     },
   })
   return NextResponse.json(candidate, { status: 201 })
@@ -41,7 +46,7 @@ export async function PATCH(req: NextRequest) {
   const userId  = session?.user?.id
   if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
-  const { id, name, race, state, party, incumbent, raceLevel, district, county, city, zip, opponentName } = await req.json()
+  const { id, name, race, state, party, incumbent, raceLevel, district, county, city, zip, opponentName, bio, topIssues, electionDate, websiteUrl, fundraisingGoal } = await req.json()
   if (!id) return NextResponse.json({ error: 'missing id' }, { status: 400 })
 
   // Verify ownership
@@ -51,17 +56,22 @@ export async function PATCH(req: NextRequest) {
   const candidate = await prisma.candidate.update({
     where: { id },
     data: {
-      ...(name         !== undefined && { name }),
-      ...(race         !== undefined && { race }),
-      ...(state        !== undefined && { state }),
-      ...(party        !== undefined && { party }),
-      ...(incumbent    !== undefined && { incumbent }),
-      ...(raceLevel    !== undefined && { raceLevel }),
-      ...(district     !== undefined && { district:     district     || null }),
-      ...(county       !== undefined && { county:       county       || null }),
-      ...(city         !== undefined && { city:         city         || null }),
-      ...(zip          !== undefined && { zip:          zip          || null }),
-      ...(opponentName !== undefined && { opponentName: opponentName || null }),
+      ...(name            !== undefined && { name }),
+      ...(race            !== undefined && { race }),
+      ...(state           !== undefined && { state }),
+      ...(party           !== undefined && { party }),
+      ...(incumbent       !== undefined && { incumbent }),
+      ...(raceLevel       !== undefined && { raceLevel }),
+      ...(district        !== undefined && { district:        district        || null }),
+      ...(county          !== undefined && { county:          county          || null }),
+      ...(city            !== undefined && { city:            city            || null }),
+      ...(zip             !== undefined && { zip:             zip             || null }),
+      ...(opponentName    !== undefined && { opponentName:    opponentName    || null }),
+      ...(bio             !== undefined && { bio:             bio             || null }),
+      ...(topIssues       !== undefined && { topIssues:       topIssues       || null }),
+      ...(electionDate    !== undefined && { electionDate:    electionDate    || null }),
+      ...(websiteUrl      !== undefined && { websiteUrl:      websiteUrl      || null }),
+      ...(fundraisingGoal !== undefined && { fundraisingGoal: typeof fundraisingGoal === 'number' ? fundraisingGoal : null }),
     },
   })
   return NextResponse.json(candidate)

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import RichText from '@/components/RichText'
 import { usePersistedContent } from '@/lib/usePersistedContent'
+import CopyButton from '@/components/CopyButton'
 
 const PHASES = [
   { id: 'early',      label: 'Early Campaign',  sub: '6+ months out',      icon: '🌱' },
@@ -20,18 +21,6 @@ const BUDGETS = [
 
 type Phase  = typeof PHASES[number]['id']
 type Budget = typeof BUDGETS[number]['id']
-
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false)
-  return (
-    <button
-      onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000) }}
-      className="text-xs font-bold px-3 py-1.5 rounded-lg bg-navy text-white hover:bg-navy-700 transition-colors"
-    >
-      {copied ? '✓ Copied' : 'Copy'}
-    </button>
-  )
-}
 
 function autoPhase(electionDate: string): Phase | null {
   if (!electionDate) return null
