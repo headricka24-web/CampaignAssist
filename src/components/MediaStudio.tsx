@@ -4,7 +4,7 @@ import { useState } from 'react'
 import RichText from './RichText'
 import { usePersistedContent } from '@/lib/usePersistedContent'
 
-type Section = 'facebook' | 'instagram' | 'newsletter' | 'taglines' | 'strategy' | 'talking-points' | 'press-release'
+type Section = 'facebook' | 'instagram' | 'newsletter' | 'taglines' | 'strategy' | 'talking-points' | 'press-release' | 'canvassing'
 
 const TONES = ['Punchy', 'Sophisticated', 'Intellectual', 'Policy-Oriented'] as const
 type Tone = typeof TONES[number]
@@ -17,6 +17,7 @@ const CARDS: { id: Section; icon: string; title: string; subtitle: string; color
   { id: 'taglines',        icon: '⚡', title: 'Taglines & Signage', subtitle: 'Punchy lines + yard sign ideas',          color: 'text-yellow-600', border: 'border-yellow-100', bar: 'from-yellow-400 to-gold-400'     },
   { id: 'talking-points',  icon: '💬', title: 'Talking Points',     subtitle: 'Enter an issue, get 3 sharp talking points', color: 'text-green-700',  border: 'border-green-100',  bar: 'from-green-500 to-green-700'     },
   { id: 'press-release',   icon: '📰', title: 'Press Release',      subtitle: 'AP-style release ready to send to media',    color: 'text-purple-700', border: 'border-purple-100', bar: 'from-purple-500 to-purple-700'   },
+  { id: 'canvassing',      icon: '🚪', title: 'Canvassing Scripts', subtitle: 'Door knock, phone bank & objection handlers', color: 'text-teal-700',   border: 'border-teal-100',   bar: 'from-teal-500 to-teal-700'       },
 ]
 
 function CopyButton({ text }: { text: string }) {

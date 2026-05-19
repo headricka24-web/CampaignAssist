@@ -7,7 +7,7 @@ import { buildRaceContext, buildCandidateStanceContext } from '@/lib/raceContext
 
 export const maxDuration = 60
 
-const SECTIONS = ['facebook', 'instagram', 'newsletter', 'taglines', 'strategy', 'talking-points', 'press-release'] as const
+const SECTIONS = ['facebook', 'instagram', 'newsletter', 'taglines', 'strategy', 'talking-points', 'press-release', 'canvassing'] as const
 type Section = typeof SECTIONS[number]
 
 function toneInstruction(tone: string): string {
@@ -114,6 +114,60 @@ Focus on offense — where this candidate's message is strongest. Separate each 
 
   'talking-points': (_ctx, _issue) => ['', ''], // handled separately
 
+  'canvassing': (ctx, issue) => [
+    `You are an experienced field director who has run door-to-door and phone bank operations for campaigns at every level. Write scripts that sound natural when spoken aloud — not robotic. Short sentences. Confident, friendly, direct.`,
+    `${ctx.raceCtx}
+${issueNote(issue)}
+Write a complete canvassing script package for this ${ctx.party} campaign, calibrated to this race level (keep it community-focused for local races, policy-focused for state/federal). Ground all scripts in the candidate's actual positions from CANDIDATE STANCE CONTEXT above.
+
+## DOOR KNOCK SCRIPT
+Opening (when door opens — 15 seconds max):
+"[Friendly intro, name drop, race, one punchy reason they're at the door]"
+
+The Pitch (30 seconds — core message, 1-2 top issues, personal connection):
+[Full spoken script]
+
+The Ask:
+"[Direct ask for their vote or support — one sentence]"
+
+Leave-Behind Line (if they can't talk):
+"[What to say when leaving a door hanger — 1 sentence]"
+
+---
+
+## PHONE BANK SCRIPT
+Opening:
+"[Intro, who you're calling for, quick reason for the call]"
+
+If they seem receptive — The Pitch (20 seconds):
+[Full spoken script — slightly shorter than door version]
+
+The Ask:
+"[Ask for support or to confirm their vote]"
+
+Closing:
+"[Thank them, mention election date, hang up cleanly]"
+
+---
+
+## TOP 3 OBJECTION HANDLERS
+For each likely pushback, write a 1-2 sentence response that stays positive and pivots back to the candidate's strengths:
+
+OBJECTION 1: [most common objection for this race/party]
+RESPONSE: [...]
+
+OBJECTION 2: [second most common]
+RESPONSE: [...]
+
+OBJECTION 3: [third most common]
+RESPONSE: [...]
+
+---
+
+## FIELD NOTES
+2 quick tactical tips for volunteers running this script — body language, timing, or local knowledge that helps close the conversation.`,
+  ],
+
   'press-release': (ctx, issue) => [
     `You are an experienced campaign communications director. Write polished, publication-ready press releases that command media attention and drive the narrative. Write in proper AP style.`,
     `${ctx.raceCtx}
@@ -194,11 +248,13 @@ Separate each with ---`,
     return NextResponse.json({ content })
   }
 
-  if (!ctx.hasArticles) {
+  // canvassing and press-release work from candidate context alone — don't require articles
+  const requiresArticles: Section[] = ['facebook', 'instagram', 'newsletter', 'taglines', 'strategy']
+  if (requiresArticles.includes(section) && !ctx.hasArticles) {
     return NextResponse.json({ error: 'no_articles' }, { status: 400 })
   }
 
   const [system, user] = prompts[section](ctx, issue)
-  const content = await ask(system + toneInstruction(tone), user, 500)
+  const content = await ask(system + toneInstruction(tone), user, section === 'canvassing' ? 800 : 500)
   return NextResponse.json({ content })
 }
