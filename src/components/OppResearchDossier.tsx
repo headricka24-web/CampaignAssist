@@ -427,6 +427,10 @@ export default function OppResearchDossier() {
   const [editEntry,     setEditEntry]     = useState<OppEntry | null>(null)
   const [showImport,    setShowImport]    = useState(false)
   const [importPrefill, setImportPrefill] = useState<FormState | null>(null)
+  const [briefContent,  setBriefContent]  = useState('')
+  const [briefMeta,     setBriefMeta]     = useState<{ entryCount: number; threatCount: number } | null>(null)
+  const [generatingBrief, setGeneratingBrief] = useState(false)
+  const [briefError,    setBriefError]    = useState('')
 
   // Load entries when tab changes
   const loadEntries = useCallback(async (tab: TabType) => {
@@ -525,6 +529,26 @@ export default function OppResearchDossier() {
     setShowImport(true)
   }
 
+  async function generateBrief() {
+    setGeneratingBrief(true)
+    setBriefError('')
+    setBriefContent('')
+    try {
+      const res  = await fetch('/api/opp-research/brief', { method: 'POST' })
+      const data = await res.json()
+      if (data.error === 'no_data') {
+        setBriefError('Add at least one opposition research entry or War Room threat before generating a brief.')
+      } else if (data.brief) {
+        setBriefContent(data.brief)
+        setBriefMeta({ entryCount: data.entryCount, threatCount: data.threatCount })
+      }
+    } catch {
+      setBriefError('Generation failed. Try again.')
+    } finally {
+      setGeneratingBrief(false)
+    }
+  }
+
   return (
     <div className="space-y-8">
 
@@ -557,6 +581,16 @@ export default function OppResearchDossier() {
             >
               ⚡ Import from Threats
             </button>
+            <button
+              onClick={generateBrief}
+              disabled={generatingBrief}
+              className="flex items-center gap-2 bg-gold-400 hover:bg-gold-500 disabled:opacity-50 text-navy font-black px-6 py-3 rounded-xl text-sm tracking-widest uppercase transition-colors"
+            >
+              {generatingBrief
+                ? <><span className="w-3.5 h-3.5 border-2 border-navy/30 border-t-navy rounded-full animate-spin" /> Generating…</>
+                : '🗂 Attack Brief'}
+            </button>
+            {briefError && <p className="text-red-300 text-xs font-bold mt-1">{briefError}</p>}
           </div>
         </div>
       </div>
@@ -658,6 +692,47 @@ export default function OppResearchDossier() {
           onClose={() => setShowImport(false)}
           onImport={handleImportSelect}
         />
+      )}
+
+      {/* ── Attack Brief Modal ─────────────────────────────────────────── */}
+      {briefContent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setBriefContent('')}>
+          <div className="absolute inset-0 bg-navy/70 backdrop-blur-sm" />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[88vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="h-1.5 bg-gradient-to-r from-red-500 via-red-600 to-gold-400" />
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-red-500 mb-0.5">Opposition Research</p>
+                <h2 className="font-display font-black text-navy uppercase tracking-wide text-sm">Attack Brief</h2>
+                {briefMeta && (
+                  <p className="text-[11px] text-gray-400 mt-0.5">
+                    Built from {briefMeta.entryCount} dossier {briefMeta.entryCount === 1 ? 'entry' : 'entries'}
+                    {briefMeta.threatCount > 0 && ` + ${briefMeta.threatCount} War Room ${briefMeta.threatCount === 1 ? 'threat' : 'threats'}`}
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => navigator.clipboard.writeText(briefContent)}
+                  className="text-xs bg-navy text-white px-3 py-1.5 rounded-xl font-bold hover:bg-navy-700 transition"
+                >
+                  Copy
+                </button>
+                <button onClick={() => setBriefContent('')} className="text-xl text-gray-300 hover:text-navy leading-none ml-1">✕</button>
+              </div>
+            </div>
+            <div className="overflow-y-auto p-6">
+              <div className="prose prose-sm max-w-none prose-headings:font-black prose-headings:text-navy prose-headings:uppercase prose-headings:tracking-wide prose-strong:text-navy">
+                {briefContent.split('\n').map((line, i) => {
+                  if (line.startsWith('## ')) return <h3 key={i} className="text-xs font-black uppercase tracking-widest text-navy border-b border-gray-100 pb-2 mt-6 mb-3">{line.replace('## ', '')}</h3>
+                  if (line.startsWith('**') && line.endsWith('**')) return <p key={i} className="text-xs font-black text-navy mt-3 mb-1">{line.replace(/\*\*/g, '')}</p>
+                  if (line.trim() === '') return <div key={i} className="h-2" />
+                  return <p key={i} className="text-sm text-gray-700 leading-relaxed">{line}</p>
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

@@ -135,6 +135,11 @@ export default function PressContacts() {
   const [importContacts, setImportContacts] = useState<ImportContact[]>([])
   const [importError,    setImportError]    = useState('')
   const [savingImport,   setSavingImport]   = useState(false)
+  // pitch state
+  const [pitchContactId, setPitchContactId] = useState<string | null>(null)
+  const [pitchContent,   setPitchContent]   = useState('')
+  const [pitchMeta,      setPitchMeta]      = useState<{ name: string; outlet: string; email: string | null } | null>(null)
+  const [generatingPitch, setGeneratingPitch] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -258,6 +263,26 @@ export default function PressContacts() {
     setLookupOutlet(null)
   }
 
+  async function generatePitch(contactId: string) {
+    setGeneratingPitch(true)
+    setPitchContactId(contactId)
+    setPitchContent('')
+    setPitchMeta(null)
+    try {
+      const res  = await fetch('/api/press-contacts/pitch', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ contactId }),
+      })
+      const data = await res.json()
+      if (data.pitch) {
+        setPitchContent(data.pitch)
+        setPitchMeta(data.contact)
+      }
+    } catch { /* silently fail — button resets */ }
+    finally { setGeneratingPitch(false) }
+  }
+
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -304,46 +329,57 @@ export default function PressContacts() {
   const hostileCnt = contacts.filter(c => c.relationship === 'hostile').length
 
   return (
-    <div className="min-h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Press & Media Contacts</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Manage reporters, track outreach, and build media relationships</p>
+    <div className="min-h-full space-y-6">
+      {/* Hero */}
+      <div className="relative rounded-2xl overflow-hidden bg-hero-gradient shadow-patriot">
+        <div className="absolute inset-0 bg-stripe-pattern opacity-40" />
+        <div className="absolute inset-0 flex items-center justify-end pr-12 pointer-events-none select-none">
+          <span className="text-white opacity-[0.03] text-[200px] font-black leading-none">📡</span>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowImport(true)}
-            className="border border-[#1e3a5f] text-[#1e3a5f] px-4 py-2 rounded-xl text-sm font-semibold hover:bg-[#1e3a5f] hover:text-white transition"
-          >
-            ↑ Import File
-          </button>
-          <button
-            onClick={() => { setForm(DEFAULT_CONTACT); setLookupResult(null); setLookupError(''); setShowAddForm(true) }}
-            className="bg-[#1e3a5f] text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-[#16304f] transition"
-          >
-            + Add Contact
-          </button>
+        <div className="relative px-8 py-10">
+          <div className="inline-flex items-center gap-2 bg-navy/60 text-gold-300 text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full mb-4 border border-gold-400/30">
+            Communications
+          </div>
+          <h1 className="font-display text-5xl font-black text-white leading-tight mb-2">
+            Press & Media <span className="text-gold-400">Contacts.</span>
+          </h1>
+          <p className="text-blue-200 text-lg max-w-xl mb-6">
+            Manage reporters, track outreach, and build media relationships that move your story forward.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={() => { setForm(DEFAULT_CONTACT); setLookupResult(null); setLookupError(''); setShowAddForm(true) }}
+              className="bg-red-500 hover:bg-red-600 text-white font-black px-6 py-3 rounded-xl text-sm tracking-widest uppercase shadow-glow-red transition-colors"
+            >
+              + Add Contact
+            </button>
+            <button
+              onClick={() => setShowImport(true)}
+              className="bg-white/10 hover:bg-white/20 text-white font-black px-6 py-3 rounded-xl text-sm tracking-widest uppercase border border-white/20 transition-colors"
+            >
+              ↑ Import File
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Summary strip */}
-      <div className="grid grid-cols-4 gap-3 mb-6">
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm text-center">
-          <p className="text-2xl font-bold text-gray-800">{contacts.length}</p>
-          <p className="text-xs text-gray-400 font-medium mt-0.5">Total Contacts</p>
+      <div className="grid grid-cols-4 gap-3">
+        <div className="bg-white rounded-2xl border-2 border-gray-100 p-4 shadow-sm text-center">
+          <p className="text-2xl font-black text-navy">{contacts.length}</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-0.5">Total Contacts</p>
         </div>
-        <div className="bg-emerald-50 rounded-2xl border border-emerald-100 p-4 shadow-sm text-center">
-          <p className="text-2xl font-bold text-emerald-700">{allyCnt}</p>
-          <p className="text-xs text-emerald-600 font-medium mt-0.5">Allies</p>
+        <div className="bg-emerald-50 rounded-2xl border-2 border-emerald-100 p-4 shadow-sm text-center">
+          <p className="text-2xl font-black text-emerald-700">{allyCnt}</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mt-0.5">Allies</p>
         </div>
-        <div className="bg-amber-50 rounded-2xl border border-amber-100 p-4 shadow-sm text-center">
-          <p className="text-2xl font-bold text-amber-700">{warmCnt}</p>
-          <p className="text-xs text-amber-600 font-medium mt-0.5">Warm</p>
+        <div className="bg-amber-50 rounded-2xl border-2 border-amber-100 p-4 shadow-sm text-center">
+          <p className="text-2xl font-black text-amber-700">{warmCnt}</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 mt-0.5">Warm</p>
         </div>
-        <div className="bg-rose-50 rounded-2xl border border-rose-100 p-4 shadow-sm text-center">
-          <p className="text-2xl font-bold text-rose-700">{hostileCnt}</p>
-          <p className="text-xs text-rose-600 font-medium mt-0.5">Hostile</p>
+        <div className="bg-rose-50 rounded-2xl border-2 border-rose-100 p-4 shadow-sm text-center">
+          <p className="text-2xl font-black text-rose-700">{hostileCnt}</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-rose-600 mt-0.5">Hostile</p>
         </div>
       </div>
 
@@ -354,7 +390,7 @@ export default function PressContacts() {
             key={r}
             onClick={() => setRelFilter(r)}
             className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
-              relFilter === r ? 'bg-[#1e3a5f] text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+              relFilter === r ? 'bg-navy text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
             }`}
           >
             {r === 'all' ? 'All' : REL_CONFIG[r].label}
@@ -375,7 +411,7 @@ export default function PressContacts() {
       ) : filtered.length === 0 ? (
         <div className="p-10 text-center text-gray-400 text-sm bg-white rounded-2xl border border-gray-100">
           No contacts yet.{' '}
-          <button onClick={() => setShowAddForm(true)} className="text-[#1e3a5f] font-semibold hover:underline">
+          <button onClick={() => setShowAddForm(true)} className="text-navy font-semibold hover:underline">
             Add your first media contact.
           </button>
         </div>
@@ -400,9 +436,9 @@ export default function PressContacts() {
 
                   {/* Contact info */}
                   <div className="hidden md:flex items-center gap-4 text-xs text-gray-400">
-                    {contact.email && <a href={`mailto:${contact.email}`} className="hover:text-[#1e3a5f] transition truncate max-w-[180px]">{contact.email}</a>}
+                    {contact.email && <a href={`mailto:${contact.email}`} className="hover:text-navy transition truncate max-w-[180px]">{contact.email}</a>}
                     {contact.phone && <span>{contact.phone}</span>}
-                    {contact.twitter && <a href={`https://twitter.com/${contact.twitter.replace('@','')}`} target="_blank" rel="noreferrer" className="hover:text-[#1e3a5f]">{contact.twitter}</a>}
+                    {contact.twitter && <a href={`https://twitter.com/${contact.twitter.replace('@','')}`} target="_blank" rel="noreferrer" className="hover:text-navy">{contact.twitter}</a>}
                   </div>
 
                   {/* Relationship selector */}
@@ -433,8 +469,17 @@ export default function PressContacts() {
                       </button>
                     )}
                     <button
+                      onClick={() => generatePitch(contact.id)}
+                      disabled={generatingPitch && pitchContactId === contact.id}
+                      className="text-xs border border-purple-300 text-purple-700 px-3 py-1.5 rounded-xl hover:bg-purple-600 hover:text-white hover:border-purple-600 transition font-semibold whitespace-nowrap disabled:opacity-50"
+                    >
+                      {generatingPitch && pitchContactId === contact.id
+                        ? <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 border border-current border-t-transparent rounded-full animate-spin inline-block" /> Writing…</span>
+                        : '✉ Pitch'}
+                    </button>
+                    <button
                       onClick={() => { setOutreachModal(contact.id); setOutreachForm(DEFAULT_OUTREACH) }}
-                      className="text-xs bg-[#1e3a5f] text-white px-3 py-1.5 rounded-xl hover:bg-[#16304f] transition font-semibold whitespace-nowrap"
+                      className="text-xs bg-navy text-white px-3 py-1.5 rounded-xl hover:bg-navy-700 transition font-semibold whitespace-nowrap"
                     >
                       + Log
                     </button>
@@ -493,21 +538,22 @@ export default function PressContacts() {
       {/* ── Import Modal ─────────────────────────────────────────────── */}
       {showImport && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="h-1.5 bg-gradient-to-r from-gold-400 to-amber-500" />
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
               <div>
-                <h2 className="text-lg font-bold text-gray-900">Import Media Contacts</h2>
+                <h2 className="font-display font-black text-sm uppercase tracking-wide text-navy">Import Media Contacts</h2>
                 <p className="text-xs text-gray-400 mt-0.5">Accepts CSV, Excel (.xlsx), or PDF contact lists</p>
               </div>
-              <button onClick={() => { setShowImport(false); setImportContacts([]); setImportError('') }} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+              <button onClick={() => { setShowImport(false); setImportContacts([]); setImportError('') }} className="text-gray-400 hover:text-navy text-xl leading-none">✕</button>
             </div>
 
             <div className="p-6 flex-1 overflow-y-auto">
               {importContacts.length === 0 && (
-                <label className={`flex flex-col items-center justify-center gap-3 border-2 border-dashed rounded-2xl p-10 cursor-pointer transition ${importing ? 'border-blue-300 bg-blue-50' : 'border-gray-200 hover:border-[#1e3a5f] hover:bg-gray-50'}`}>
+                <label className={`flex flex-col items-center justify-center gap-3 border-2 border-dashed rounded-2xl p-10 cursor-pointer transition ${importing ? 'border-blue-300 bg-blue-50' : 'border-gray-200 hover:border-navy hover:bg-gray-50'}`}>
                   {importing ? (
                     <>
-                      <div className="w-8 h-8 border-2 border-[#1e3a5f] border-t-transparent rounded-full animate-spin" />
+                      <div className="w-8 h-8 border-2 border-navy border-t-transparent rounded-full animate-spin" />
                       <p className="text-sm font-semibold text-gray-500">Analyzing file with AI…</p>
                       <p className="text-xs text-gray-400">Extracting contact details from your document</p>
                     </>
@@ -540,11 +586,11 @@ export default function PressContacts() {
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-sm font-semibold text-gray-700">
-                      Found <span className="text-[#1e3a5f] font-black">{importContacts.length}</span> contacts —
+                      Found <span className="text-navy font-black">{importContacts.length}</span> contacts —
                       <span className="text-gray-500"> review and deselect any to skip</span>
                     </p>
                     <div className="flex gap-2 text-xs">
-                      <button onClick={() => setImportContacts(c => c.map(x => ({ ...x, selected: true })))} className="text-[#1e3a5f] font-semibold hover:underline">Select all</button>
+                      <button onClick={() => setImportContacts(c => c.map(x => ({ ...x, selected: true })))} className="text-navy font-semibold hover:underline">Select all</button>
                       <span className="text-gray-300">|</span>
                       <button onClick={() => setImportContacts(c => c.map(x => ({ ...x, selected: false })))} className="text-gray-400 hover:underline">Deselect all</button>
                     </div>
@@ -569,7 +615,7 @@ export default function PressContacts() {
                             className={`border-b border-gray-50 cursor-pointer transition ${c.selected ? 'hover:bg-gray-50' : 'opacity-40 bg-gray-50/50'}`}
                           >
                             <td className="px-3 py-2">
-                              <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${c.selected ? 'bg-[#1e3a5f] border-[#1e3a5f]' : 'border-gray-300'}`}>
+                              <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${c.selected ? 'bg-navy border-navy' : 'border-gray-300'}`}>
                                 {c.selected && <span className="text-white text-[10px] leading-none">✓</span>}
                               </div>
                             </td>
@@ -606,7 +652,7 @@ export default function PressContacts() {
                   <button
                     onClick={confirmImport}
                     disabled={savingImport || importContacts.filter(r => r.selected).length === 0}
-                    className="bg-[#1e3a5f] text-white px-5 py-2 rounded-xl text-sm font-semibold hover:bg-[#16304f] transition disabled:opacity-50"
+                    className="bg-navy text-white px-5 py-2 rounded-xl text-sm font-semibold hover:bg-navy-700 transition disabled:opacity-50"
                   >
                     {savingImport ? 'Saving…' : `Import ${importContacts.filter(r => r.selected).length} contacts`}
                   </button>
@@ -620,13 +666,14 @@ export default function PressContacts() {
       {/* Add Contact Modal */}
       {showAddForm && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold text-gray-900">Add Media Contact</h2>
-              <button onClick={() => { setShowAddForm(false); setLookupResult(null); setLookupError('') }} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="h-1.5 bg-gradient-to-r from-gold-400 to-amber-500" />
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
+              <h2 className="font-display font-black text-sm uppercase tracking-wide text-navy">Add Media Contact</h2>
+              <button onClick={() => { setShowAddForm(false); setLookupResult(null); setLookupError('') }} className="text-gray-400 hover:text-navy text-xl leading-none">✕</button>
             </div>
 
-            <div className="space-y-3">
+            <div className="p-6 overflow-y-auto flex-1 space-y-3">
               {/* Outlet + Search */}
               <div>
                 <label className="text-xs font-semibold text-gray-500 mb-1 block">Outlet *</label>
@@ -794,7 +841,7 @@ export default function PressContacts() {
               </div>
             </div>
 
-            <div className="flex gap-3 mt-5">
+            <div className="flex gap-3 px-6 py-4 border-t border-gray-100 shrink-0">
               <button
                 onClick={() => setShowAddForm(false)}
                 className="flex-1 border border-gray-200 text-gray-600 py-2 rounded-xl text-sm font-semibold hover:bg-gray-50 transition"
@@ -804,7 +851,7 @@ export default function PressContacts() {
               <button
                 onClick={saveContact}
                 disabled={saving || !form.name || !form.outlet}
-                className="flex-1 bg-[#1e3a5f] text-white py-2 rounded-xl text-sm font-semibold hover:bg-[#16304f] transition disabled:opacity-50"
+                className="flex-1 bg-navy text-white py-2 rounded-xl text-sm font-semibold hover:bg-navy-700 transition disabled:opacity-50"
               >
                 {saving ? 'Saving…' : 'Save Contact'}
               </button>
@@ -816,11 +863,13 @@ export default function PressContacts() {
       {/* Log Outreach Modal */}
       {outreachModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold text-gray-900">Log Outreach</h2>
-              <button onClick={() => setOutreachModal(null)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="h-1.5 bg-gradient-to-r from-gold-400 to-amber-500" />
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <h2 className="font-display font-black text-sm uppercase tracking-wide text-navy">Log Outreach</h2>
+              <button onClick={() => setOutreachModal(null)} className="text-gray-400 hover:text-navy text-xl leading-none">✕</button>
             </div>
+            <div className="p-6">
 
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
@@ -879,10 +928,51 @@ export default function PressContacts() {
               <button
                 onClick={logOutreach}
                 disabled={loggingOutreach}
-                className="flex-1 bg-[#1e3a5f] text-white py-2 rounded-xl text-sm font-semibold hover:bg-[#16304f] transition disabled:opacity-50"
+                className="flex-1 bg-navy text-white py-2 rounded-xl text-sm font-semibold hover:bg-navy-700 transition disabled:opacity-50"
               >
                 {loggingOutreach ? 'Saving…' : 'Log Entry'}
               </button>
+            </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Pitch Email Modal ────────────────────────────────────────────── */}
+      {pitchContent && pitchMeta && (
+        <div className="fixed inset-0 bg-navy/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => { setPitchContent(''); setPitchMeta(null) }}>
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="h-1.5 bg-gradient-to-r from-purple-500 to-purple-700" />
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-purple-600 mb-0.5">AI-Generated Pitch Email</p>
+                <h2 className="font-display font-black text-navy text-sm uppercase tracking-wide">
+                  {pitchMeta.name} · {pitchMeta.outlet}
+                </h2>
+              </div>
+              <div className="flex items-center gap-2">
+                {pitchMeta.email && (
+                  <a
+                    href={`mailto:${pitchMeta.email}?body=${encodeURIComponent(pitchContent)}`}
+                    className="text-xs bg-purple-600 text-white px-3 py-1.5 rounded-xl font-bold hover:bg-purple-700 transition"
+                  >
+                    ✉ Open in Mail
+                  </a>
+                )}
+                <button
+                  onClick={() => { navigator.clipboard.writeText(pitchContent) }}
+                  className="text-xs bg-navy text-white px-3 py-1.5 rounded-xl font-bold hover:bg-navy-700 transition"
+                >
+                  Copy
+                </button>
+                <button onClick={() => { setPitchContent(''); setPitchMeta(null) }} className="text-xl text-gray-300 hover:text-navy leading-none ml-1">✕</button>
+              </div>
+            </div>
+            <div className="overflow-y-auto p-6">
+              <pre className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap font-sans">{pitchContent}</pre>
+            </div>
+            <div className="px-6 py-3 border-t border-gray-100 bg-gray-50">
+              <p className="text-[10px] text-gray-400">⚠ AI-generated — review before sending. Verify reporter details and customize as needed.</p>
             </div>
           </div>
         </div>
