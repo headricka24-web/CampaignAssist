@@ -268,12 +268,28 @@ function VoterProfileDrawer({
           <div>
             <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Tags</label>
             <div className="flex flex-wrap gap-1.5 mb-2">
-              {tags.map(t => (
-                <span key={t} className="flex items-center gap-1 text-[10px] font-bold bg-navy/10 text-navy px-2 py-1 rounded-full">
-                  {t}
-                  <button onClick={() => removeTag(t)} className="text-gray-400 hover:text-red-500 transition-colors leading-none">✕</button>
-                </span>
-              ))}
+              {tags.map(t => {
+                const PB_LABELS: Record<string, { label: string; icon: string; cls: string }> = {
+                  'phone-bank:committed':      { label: 'Committed',      icon: '✅', cls: 'bg-green-100 text-green-700'   },
+                  'phone-bank:not-interested': { label: 'Not Interested', icon: '👎', cls: 'bg-orange-100 text-orange-700' },
+                  'phone-bank:do-not-contact': { label: 'Do Not Contact', icon: '🚫', cls: 'bg-red-100 text-red-700'       },
+                  'phone-bank:left-vm':        { label: 'Left VM',        icon: '📬', cls: 'bg-yellow-100 text-yellow-700' },
+                  'phone-bank:no-answer':      { label: 'No Answer',      icon: '📵', cls: 'bg-gray-100 text-gray-600'     },
+                  'phone-bank:called':         { label: 'Called',         icon: '📞', cls: 'bg-blue-100 text-blue-700'     },
+                }
+                const pb = PB_LABELS[t]
+                return pb ? (
+                  <span key={t} className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full ${pb.cls}`}>
+                    <span>{pb.icon}</span>{pb.label}
+                    <button onClick={() => removeTag(t)} className="opacity-50 hover:opacity-100 transition-opacity leading-none ml-0.5">✕</button>
+                  </span>
+                ) : (
+                  <span key={t} className="flex items-center gap-1 text-[10px] font-bold bg-navy/10 text-navy px-2 py-1 rounded-full">
+                    {t}
+                    <button onClick={() => removeTag(t)} className="text-gray-400 hover:text-red-500 transition-colors leading-none">✕</button>
+                  </span>
+                )
+              })}
               {tags.length === 0 && <span className="text-xs text-gray-300">No tags</span>}
             </div>
             <div className="flex gap-2">
@@ -392,20 +408,58 @@ function SegmentSidebar({
         ))}
       </ul>
 
-      {/* Dynamic tags from imported data */}
-      {activeTags.length > 0 && (
+      {/* Phone Bank Results — dedicated section for phone-bank: tags */}
+      {(() => {
+        const PB_LABELS: Record<string, { label: string; icon: string }> = {
+          'phone-bank:committed':      { label: 'Committed / Yes',   icon: '✅' },
+          'phone-bank:not-interested': { label: 'Not Interested',    icon: '👎' },
+          'phone-bank:do-not-contact': { label: 'Do Not Contact',    icon: '🚫' },
+          'phone-bank:left-vm':        { label: 'Left Voicemail',    icon: '📬' },
+          'phone-bank:no-answer':      { label: 'No Answer',         icon: '📵' },
+          'phone-bank:called':         { label: 'Called',            icon: '📞' },
+        }
+        const pbTags = activeTags.filter(([tag]) => tag.startsWith('phone-bank:'))
+        if (pbTags.length === 0) return null
+        return (
+          <>
+            <p className="text-[9px] font-black uppercase tracking-widest text-gray-300 px-3 pt-4 pb-1">Phone Bank</p>
+            <ul className="space-y-0.5">
+              {pbTags.map(([tag, count]) => {
+                const meta = PB_LABELS[tag] ?? { label: tag.replace('phone-bank:', ''), icon: '📋' }
+                return (
+                  <li key={tag}>
+                    <button
+                      onClick={() => onSegment(tag)}
+                      className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-left transition-all ${segment === tag ? 'bg-navy text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+                    >
+                      <span className="flex items-center gap-1.5 text-xs font-bold truncate">
+                        <span>{meta.icon}</span>
+                        <span className="truncate">{meta.label}</span>
+                      </span>
+                      <span className={`text-[10px] font-black shrink-0 px-1.5 py-0.5 rounded-full ${segment === tag ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                        {count.toLocaleString()}
+                      </span>
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          </>
+        )
+      })()}
+
+      {/* Dynamic tags from imported data (non-phone-bank) */}
+      {activeTags.filter(([tag]) => !tag.startsWith('phone-bank:')).length > 0 && (
         <>
           <p className="text-[9px] font-black uppercase tracking-widest text-gray-300 px-3 pt-4 pb-1">By Tag</p>
           <ul className="space-y-0.5">
-            {activeTags.map(([tag, count]) => (
-              <li key={tag}>
-                <SidebarBtn
-                  label={tag}
-                  count={count}
-                  active={segment === tag}
-                />
-              </li>
-            ))}
+            {activeTags
+              .filter(([tag]) => !tag.startsWith('phone-bank:'))
+              .map(([tag, count]) => (
+                <li key={tag}>
+                  <SidebarBtn label={tag} count={count} active={segment === tag} />
+                </li>
+              ))}
           </ul>
         </>
       )}

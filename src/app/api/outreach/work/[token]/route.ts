@@ -3,14 +3,53 @@ import { prisma } from '@/lib/db'
 
 // Public endpoints — no auth required, token acts as the key
 
-// Map phone-bank disposition → voter contactStatus
-const DISPOSITION_TO_STATUS: Record<string, string> = {
-  Committed:    'Reached',
-  Called:       'Reached',
-  LeftVM:       'Left Message',
-  NoAnswer:     'Needs Follow-Up',
-  NotInterested:'Reached',
-  DoNotContact: 'Do Not Contact',
+// All phone-bank tags share this prefix so we can cleanly replace them
+const PB_TAG_PREFIX = 'phone-bank:'
+
+type VoterSync = {
+  contactStatus: string
+  supportLevel?: string
+  tag: string
+}
+
+const DISPOSITION_SYNC: Record<string, VoterSync> = {
+  Committed:    { contactStatus: 'Reached',         supportLevel: 'Strong Support', tag: 'phone-bank:committed'     },
+  Called:       { contactStatus: 'Reached',                                          tag: 'phone-bank:called'        },
+  LeftVM:       { contactStatus: 'Left Message',                                     tag: 'phone-bank:left-vm'       },
+  NoAnswer:     { contactStatus: 'Needs Follow-Up',                                  tag: 'phone-bank:no-answer'     },
+  NotInterested:{ contactStatus: 'Reached',         supportLevel: 'Opposed',         tag: 'phone-bank:not-interested'},
+  DoNotContact: { contactStatus: 'Do Not Contact',                                   tag: 'phone-bank:do-not-contact'},
+}
+
+async function syncVoter(voterId: string, sync: VoterSync) {
+  const voter = await prisma.voter.findUnique({ where: { id: voterId }, select: { tags: true } })
+  if (!voter) return
+
+  // Parse existing tags, strip any previous phone-bank tag, add the new one
+  let tags: string[] = []
+  try { tags = JSON.parse(voter.tags) } catch {}
+  tags = tags.filter(t => !t.startsWith(PB_TAG_PREFIX))
+  tags.push(sync.tag)
+
+  await prisma.voter.update({
+    where: { id: voterId },
+    data:  {
+      contactStatus:   sync.contactStatus,
+      lastContactedAt: new Date(),
+      tags:            JSON.stringify(tags),
+      ...(sync.supportLevel ? { supportLevel: sync.supportLevel } : {}),
+    },
+  })
+}
+
+async function syncVoterByPhone(candidateId: string, phone: string, sync: VoterSync) {
+  const voters = await prisma.voter.findMany({
+    where:  { candidateId, phone },
+    select: { id: true, tags: true },
+  })
+  for (const voter of voters) {
+    await syncVoter(voter.id, sync)
+  }
 }
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
@@ -79,27 +118,20 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ to
     },
   })
 
-  // Sync back to Voter record — by voterId if linked, else try to match by phone
-  const voterStatus = DISPOSITION_TO_STATUS[disposition]
-  if (voterStatus) {
+  // Sync back to Voter — update contactStatus, supportLevel, and phone-bank tag
+  const sync = DISPOSITION_SYNC[disposition]
+  if (sync) {
     if (contact.voterId) {
-      // Direct link — always reliable
-      await prisma.voter.update({
-        where: { id: contact.voterId },
-        data:  { contactStatus: voterStatus, lastContactedAt: new Date() },
-      }).catch(() => { /* voter may have been deleted */ })
+      await syncVoter(contact.voterId, sync).catch(() => {})
     } else if (contact.phone) {
-      // Fallback: match by phone within the same candidate's voter file
-      const listContact = await prisma.listContact.findUnique({
+      // Fallback: match by phone within the candidate's voter file
+      const lc = await prisma.listContact.findUnique({
         where:  { id: contactId },
         select: { list: { select: { candidateId: true } } },
       })
-      const candidateId = listContact?.list?.candidateId
+      const candidateId = lc?.list?.candidateId
       if (candidateId) {
-        await prisma.voter.updateMany({
-          where: { candidateId, phone: contact.phone },
-          data:  { contactStatus: voterStatus, lastContactedAt: new Date() },
-        }).catch(() => {})
+        await syncVoterByPhone(candidateId, contact.phone, sync).catch(() => {})
       }
     }
   }
