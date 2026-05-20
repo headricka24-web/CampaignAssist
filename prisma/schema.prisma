@@ -365,6 +365,69 @@ model ThreatRecord {
 
 // ── O.R. Dossier ─────────────────────────────────────────────────────────────
 
+// ── Contact List Segmentation ─────────────────────────────────────────────────
+
+model ContactList {
+  id          String        @id @default(cuid())
+  createdAt   DateTime      @default(now())
+  candidateId String
+  name        String
+  description String?
+  totalCount  Int           @default(0)
+  contacts    ListContact[]
+  segments    Segment[]
+
+  @@index([candidateId])
+}
+
+model ListContact {
+  id              String      @id @default(cuid())
+  createdAt       DateTime    @default(now())
+  listId          String
+  list            ContactList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  segmentId       String?
+  segment         Segment?    @relation(fields: [segmentId], references: [id], onDelete: SetNull)
+  firstName       String
+  lastName        String?
+  phone           String?
+  email           String?
+  address         String?
+  city            String?
+  state           String?
+  zip             String?
+  party           String?
+  supportLevel    String?
+  notes           String?
+  disposition     String?     // Called | NoAnswer | LeftVM | Committed | NotInterested | DoNotContact
+  dispositionNote String?
+  dispositionAt   DateTime?
+  sortOrder       Int         @default(0)
+
+  @@index([listId])
+  @@index([segmentId])
+}
+
+model Segment {
+  id          String        @id @default(cuid())
+  createdAt   DateTime      @default(now())
+  candidateId String
+  listId      String
+  list        ContactList   @relation(fields: [listId], references: [id], onDelete: Cascade)
+  name        String
+  assignedTo  String?
+  shareToken  String        @unique @default(cuid())
+  totalCount  Int           @default(0)
+  workedCount Int           @default(0)
+  callScript  String?       @db.Text
+  contacts    ListContact[]
+
+  @@index([candidateId])
+  @@index([listId])
+  @@index([shareToken])
+}
+
+// ── O.R. Dossier ─────────────────────────────────────────────────────────────
+
 model OppResearchEntry {
   id          String   @id @default(cuid())
   createdAt   DateTime @default(now())

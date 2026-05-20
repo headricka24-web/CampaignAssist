@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { usePersistedContent } from '@/lib/usePersistedContent'
+import ContactLists from './ContactLists'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type Priority  = 'high' | 'medium' | 'low'
 type ModalType = 'contact' | 'donor' | 'volunteer' | 'event' | 'draft' | 'import-preview' | 'edit-contact' | 'edit-donor' | 'edit-volunteer' | null
-type DashTab   = 'overview' | 'contacts' | 'donors' | 'volunteers'
+type DashTab   = 'overview' | 'contacts' | 'donors' | 'volunteers' | 'lists'
 
 type ContactRecord = {
   id: string; name: string; phone: string | null; email: string | null
@@ -877,6 +878,7 @@ export default function OutreachDashboard() {
           { id: 'contacts',    label: '📞 Contacts'    },
           { id: 'donors',      label: '💵 Donors'      },
           { id: 'volunteers',  label: '👥 Volunteers'  },
+          { id: 'lists',       label: '📋 Lists'       },
         ] as { id: DashTab; label: string }[]).map(({ id, label }) => (
           <button key={id} onClick={() => switchTab(id)}
             className={`flex-1 text-xs font-black uppercase tracking-widest py-2.5 rounded-xl transition-all ${
@@ -1549,6 +1551,9 @@ export default function OutreachDashboard() {
 
       {/* end overview tab */}
       </>}
+
+      {/* ── Lists Tab ─────────────────────────────────────────────────── */}
+      {dashTab === 'lists' && <ContactLists />}
 
       {/* ── Modals ────────────────────────────────────────────────────── */}
       {modal === 'contact'   && <Modal title="Log Voter Contact"   onClose={closeModal}><ContactForm   onDone={closeModal} /></Modal>}

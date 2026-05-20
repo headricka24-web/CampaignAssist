@@ -34,6 +34,10 @@ export default function NewsClient({ candidates, initialBuckets }: Props) {
   const [expandedId, setExpandedId]       = useState<string | null>(null)
   const [sortCol, setSortCol]             = useState<'datePublished' | 'outlet' | 'sentiment' | 'title'>('datePublished')
   const [sortDir, setSortDir]             = useState<'asc' | 'desc'>('desc')
+  const [nutshellContent, setNutshellContent] = useState<string | null>(null)
+  const [nutshellCount, setNutshellCount]     = useState<number>(0)
+  const [generatingNutshell, setGeneratingNutshell] = useState(false)
+  const [nutshellError, setNutshellError]     = useState<string | null>(null)
 
   async function handleScan() {
     if (!candidateId) return
@@ -88,6 +92,27 @@ export default function NewsClient({ candidates, initialBuckets }: Props) {
     }
     for (const a of updated) if (a.bucket && grouped[a.bucket]) grouped[a.bucket].push(a)
     setBuckets(grouped)
+  }
+
+  async function handleNutshell() {
+    setGeneratingNutshell(true)
+    setNutshellError(null)
+    try {
+      const res  = await fetch('/api/news/nutshell', { method: 'POST' })
+      const data = await res.json()
+      if (res.ok) {
+        setNutshellContent(data.nutshell)
+        setNutshellCount(data.articleCount)
+      } else if (data.error === 'no_articles') {
+        setNutshellError('No articles tracked yet. Run a scan first.')
+      } else {
+        setNutshellError('Failed to generate briefing.')
+      }
+    } catch {
+      setNutshellError('Failed to generate briefing.')
+    } finally {
+      setGeneratingNutshell(false)
+    }
   }
 
   function toggleSort(col: typeof sortCol) {
@@ -190,6 +215,17 @@ export default function NewsClient({ candidates, initialBuckets }: Props) {
                 className="text-xs text-red-300 hover:text-red-200 font-semibold border border-red-400 border-opacity-40 px-3 py-2 rounded-lg transition-colors">
                 🗑 Clear All
               </button>
+            )}
+
+            <button onClick={handleNutshell} disabled={generatingNutshell}
+              className="border border-blue-300 text-blue-200 hover:bg-blue-900 hover:text-white font-bold px-5 py-2.5 rounded-lg text-sm tracking-wide transition-colors disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-gold-400">
+              {generatingNutshell
+                ? <span className="flex items-center gap-2"><span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin inline-block" />Synthesizing…</span>
+                : '📰 In a Nutshell'}
+            </button>
+
+            {nutshellError && (
+              <p className="text-sm font-medium text-red-300" role="alert">{nutshellError}</p>
             )}
 
             {scanStatus && (
@@ -336,6 +372,63 @@ export default function NewsClient({ candidates, initialBuckets }: Props) {
           )}
         </div>
       </div>
+
+      {/* In a Nutshell Modal */}
+      {nutshellContent && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          role="dialog" aria-modal="true" aria-label="In a Nutshell briefing">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden">
+
+            {/* Header accent bar */}
+            <div className="h-1.5 bg-gradient-to-r from-navy via-blue-500 to-gold-400 rounded-t-2xl" />
+
+            <div className="flex items-start justify-between px-6 pt-5 pb-3">
+              <div>
+                <h2 className="font-display font-black text-xl text-navy tracking-wide">In a Nutshell</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Synthesized from {nutshellCount} tracked articles</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => navigator.clipboard.writeText(nutshellContent)}
+                  className="text-xs font-bold border border-gray-200 hover:border-navy text-gray-500 hover:text-navy px-3 py-1.5 rounded-lg transition-colors focus:outline-none">
+                  Copy
+                </button>
+                <button onClick={() => setNutshellContent(null)}
+                  className="text-gray-400 hover:text-gray-700 text-xl font-bold w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors focus:outline-none"
+                  aria-label="Close">
+                  ×
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-y-auto px-6 pb-6 flex-1">
+              <div className="prose prose-sm max-w-none text-gray-800">
+                {nutshellContent.split('\n').map((line, i) => {
+                  if (line.startsWith('## ')) {
+                    return <h3 key={i} className="font-display font-black text-navy text-sm uppercase tracking-widest mt-5 mb-2 border-b border-gray-100 pb-1">{line.replace('## ', '')}</h3>
+                  }
+                  if (line.startsWith('- **')) {
+                    const match = line.match(/^- \*\*(.+?):\*\*\s*(.*)/)
+                    if (match) {
+                      return (
+                        <p key={i} className="text-sm text-gray-700 leading-relaxed mb-2">
+                          <span className="font-bold text-navy">{match[1]}:</span> {match[2]}
+                        </p>
+                      )
+                    }
+                  }
+                  if (line.trim() === '') return <div key={i} className="h-1" />
+                  return <p key={i} className="text-sm text-gray-700 leading-relaxed mb-1">{line}</p>
+                })}
+              </div>
+            </div>
+
+            <div className="px-6 pb-5 border-t border-gray-100 pt-3">
+              <p className="text-xs text-gray-400">AI synthesis — verify against primary sources. Re-run after each scan for updated intelligence.</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
