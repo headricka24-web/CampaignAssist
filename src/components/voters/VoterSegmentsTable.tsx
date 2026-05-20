@@ -526,7 +526,11 @@ export default function VoterSegmentsTable({ onUploadMore }: { onUploadMore: () 
   const [selectedVoter, setSelectedVoter] = useState<Voter | null>(null)
   const [searchInput,   setSearchInput]   = useState('')
   const [filters,       setFilters]       = useState<AdvancedFilters>(EMPTY_FILTERS)
-  const [exporting,     setExporting]     = useState(false)
+  const [exporting,      setExporting]      = useState(false)
+  const [phoneBankModal, setPhoneBankModal] = useState(false)
+  const [pbName,         setPbName]         = useState('')
+  const [pbCreating,     setPbCreating]     = useState(false)
+  const [pbResult,       setPbResult]       = useState<{ count: number } | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -614,6 +618,28 @@ export default function VoterSegmentsTable({ onUploadMore }: { onUploadMore: () 
     }
   }
 
+  async function handleCreatePhoneBank() {
+    if (!pbName.trim()) return
+    setPbCreating(true)
+    try {
+      const res  = await fetch('/api/outreach/lists/from-voters', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          name:          pbName.trim(),
+          segment:       segment !== 'All Contacts' ? segment : undefined,
+          search:        search || undefined,
+          parties:       filters.parties.length       ? filters.parties       : undefined,
+          supportLevels: filters.supportLevels.length ? filters.supportLevels : undefined,
+          hasPhone:      filters.hasPhone             ? true                  : undefined,
+        }),
+      })
+      const data = await res.json()
+      if (res.ok) { setPbResult({ count: data.count }); setPbName('') }
+      else        { alert(data.error === 'no_voters' ? 'No voters match the current filters.' : 'Failed to create list.') }
+    } finally { setPbCreating(false) }
+  }
+
   const counts       = data?.segmentCounts ?? {}
   const tagCounts    = data?.tagCounts     ?? {}
   const totalPages   = data ? Math.ceil(data.total / data.limit) : 1
@@ -649,7 +675,7 @@ export default function VoterSegmentsTable({ onUploadMore }: { onUploadMore: () 
             <p className="text-[11px] text-gray-400">{data ? `${data.total.toLocaleString()} contact${data.total !== 1 ? 's' : ''}` : '…'}</p>
           </div>
 
-          {/* Export buttons */}
+          {/* Export + Phone Bank buttons */}
           <div className="flex gap-2 items-center">
             {data && data.voters.length > 0 && (
               <button
@@ -667,6 +693,13 @@ export default function VoterSegmentsTable({ onUploadMore }: { onUploadMore: () 
               title="Export all matching voters as CSV"
             >
               {exporting ? 'Exporting…' : '↓ Export CSV'}
+            </button>
+            <button
+              onClick={() => { setPhoneBankModal(true); setPbResult(null); setPbName(segment !== 'All Contacts' ? segment : '') }}
+              className="text-xs font-black px-3 py-2 rounded-xl bg-gold-400 hover:bg-gold-300 text-navy transition-all"
+              title="Create a phone bank call list from these voters"
+            >
+              📋 Phone Bank
             </button>
           </div>
 
@@ -814,6 +847,70 @@ export default function VoterSegmentsTable({ onUploadMore }: { onUploadMore: () 
           onClose={() => setSelectedVoter(null)}
           onUpdate={updateVoter}
         />
+      )}
+
+      {/* ── Phone Bank Modal ── */}
+      {phoneBankModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => !pbCreating && setPhoneBankModal(false)}>
+          <div className="absolute inset-0 bg-navy/70 backdrop-blur-sm" />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="h-1.5 bg-gradient-to-r from-gold-400 to-navy" />
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <div>
+                <h2 className="font-display font-black text-sm uppercase tracking-wide text-navy">Create Phone Bank List</h2>
+                <p className="text-[11px] text-gray-400 mt-0.5">
+                  {data ? `${data.total.toLocaleString()} voters` : 'current filter'} → Outreach → Lists
+                </p>
+              </div>
+              <button onClick={() => setPhoneBankModal(false)} className="text-xl text-gray-300 hover:text-navy leading-none">✕</button>
+            </div>
+
+            {pbResult ? (
+              <div className="p-6 text-center space-y-4">
+                <p className="text-4xl">✅</p>
+                <p className="font-bold text-navy text-base">{pbResult.count.toLocaleString()} voters added to your call list</p>
+                <p className="text-sm text-gray-500">Go to <strong>Outreach → 📋 Lists</strong> to split into segments, assign volunteers, generate a call script, and share links.</p>
+                <div className="flex gap-2">
+                  <a href="/outreach"
+                    className="flex-1 bg-navy text-white font-bold py-2.5 rounded-xl text-sm text-center hover:bg-navy-700 transition-colors">
+                    Go to Outreach →
+                  </a>
+                  <button onClick={() => setPhoneBankModal(false)}
+                    className="px-4 text-sm text-gray-400 hover:text-gray-600 rounded-xl border border-gray-200 transition-colors">
+                    Close
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">List Name</label>
+                  <input
+                    value={pbName}
+                    onChange={e => setPbName(e.target.value)}
+                    placeholder="e.g. GOTV Push — Ward 4"
+                    className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 text-navy placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-gold-400"
+                  />
+                </div>
+                <p className="text-xs text-gray-400">
+                  This will copy your currently filtered voters into a new Contact List in the Outreach section where you can split them into segments, share call links with volunteers, and generate call scripts.
+                </p>
+                <div className="flex gap-2">
+                  <button onClick={handleCreatePhoneBank} disabled={pbCreating || !pbName.trim()}
+                    className="flex-1 bg-navy text-white font-bold py-2.5 rounded-xl text-sm hover:bg-navy-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2">
+                    {pbCreating
+                      ? <><span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />Creating…</>
+                      : '📋 Create List'}
+                  </button>
+                  <button onClick={() => setPhoneBankModal(false)}
+                    className="px-4 text-sm text-gray-400 hover:text-gray-600 rounded-xl border border-gray-200 transition-colors">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   )
