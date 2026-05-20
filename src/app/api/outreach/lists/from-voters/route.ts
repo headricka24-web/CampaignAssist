@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
   const voters = await prisma.voter.findMany({
     where,
     select: {
-      firstName: true, lastName: true, phone: true, email: true,
+      id: true, firstName: true, lastName: true, phone: true, email: true,
       address: true, city: true, zip: true, party: true,
       supportLevel: true, notes: true,
     },
@@ -73,6 +73,7 @@ export async function POST(req: NextRequest) {
       contacts: {
         createMany: {
           data: voters.map((v, i) => ({
+            voterId:      v.id,
             firstName:    v.firstName,
             lastName:     v.lastName ?? null,
             phone:        v.phone ?? null,

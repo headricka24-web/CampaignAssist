@@ -3,6 +3,16 @@ import { prisma } from '@/lib/db'
 
 // Public endpoints — no auth required, token acts as the key
 
+// Map phone-bank disposition → voter contactStatus
+const DISPOSITION_TO_STATUS: Record<string, string> = {
+  Committed:    'Reached',
+  Called:       'Reached',
+  LeftVM:       'Left Message',
+  NoAnswer:     'Needs Follow-Up',
+  NotInterested:'Reached',
+  DoNotContact: 'Do Not Contact',
+}
+
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
 
@@ -52,13 +62,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ to
 
   const contact = await prisma.listContact.findFirst({
     where:  { id: contactId, segmentId: segment.id },
-    select: { id: true, disposition: true },
+    select: { id: true, disposition: true, voterId: true, phone: true },
   })
   if (!contact) return NextResponse.json({ error: 'contact not found' }, { status: 404 })
 
   const wasWorked = Boolean(contact.disposition)
   const isWorked  = disposition !== 'Skipped'
 
+  // Update the ListContact
   await prisma.listContact.update({
     where: { id: contactId },
     data:  {
@@ -68,7 +79,32 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ to
     },
   })
 
-  // Update workedCount if worked-status changed
+  // Sync back to Voter record — by voterId if linked, else try to match by phone
+  const voterStatus = DISPOSITION_TO_STATUS[disposition]
+  if (voterStatus) {
+    if (contact.voterId) {
+      // Direct link — always reliable
+      await prisma.voter.update({
+        where: { id: contact.voterId },
+        data:  { contactStatus: voterStatus, lastContactedAt: new Date() },
+      }).catch(() => { /* voter may have been deleted */ })
+    } else if (contact.phone) {
+      // Fallback: match by phone within the same candidate's voter file
+      const listContact = await prisma.listContact.findUnique({
+        where:  { id: contactId },
+        select: { list: { select: { candidateId: true } } },
+      })
+      const candidateId = listContact?.list?.candidateId
+      if (candidateId) {
+        await prisma.voter.updateMany({
+          where: { candidateId, phone: contact.phone },
+          data:  { contactStatus: voterStatus, lastContactedAt: new Date() },
+        }).catch(() => {})
+      }
+    }
+  }
+
+  // Update segment workedCount
   if (!wasWorked && isWorked) {
     await prisma.segment.update({ where: { id: segment.id }, data: { workedCount: { increment: 1 } } })
   } else if (wasWorked && !isWorked) {

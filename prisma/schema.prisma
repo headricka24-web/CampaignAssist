@@ -398,6 +398,7 @@ model ListContact {
   party           String?
   supportLevel    String?
   notes           String?
+  voterId         String?
   disposition     String?     // Called | NoAnswer | LeftVM | Committed | NotInterested | DoNotContact
   dispositionNote String?
   dispositionAt   DateTime?

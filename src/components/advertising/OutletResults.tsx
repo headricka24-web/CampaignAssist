@@ -164,26 +164,40 @@ function SectionBody({ lines, beat, addedOutlets, onAdded }: { lines: string[]; 
       tableBuffer = []
     }
   }
-  function flushBullets() {
-    if (bulletBuffer.length) {
-      elements.push(
-        <ul key={elements.length} className="space-y-1.5 mt-3">
-          {bulletBuffer.map((b, i) => (
-            <li key={i} className="flex gap-2 text-sm text-gray-600 leading-relaxed">
-              <span className="text-gray-300 mt-1 shrink-0">•</span>
-              <span>{inlineFormat(b.replace(/^[-•]\s*/, ''))}</span>
-            </li>
-          ))}
-        </ul>
-      )
-      bulletBuffer = []
-    }
-  }
-
   // Extract bold outlet name from the start of a bullet, e.g. "**WMUR-TV (ABC)** – ..."
   function extractOutletName(text: string): string | null {
     const m = text.match(/^\*\*([^*]+)\*\*/)
     return m ? m[1].trim() : null
+  }
+
+  function flushBullets() {
+    if (!bulletBuffer.length) return
+    const items = [...bulletBuffer]
+    bulletBuffer = []
+    elements.push(
+      <ul key={elements.length} className="space-y-2 mt-3">
+        {items.map((b, i) => {
+          const raw        = b.replace(/^[-•]\s*/, '')
+          const outletName = extractOutletName(raw)
+          return (
+            <li key={i} className="flex gap-2 text-sm text-gray-600 leading-relaxed items-start">
+              <span className="text-gray-300 mt-1 shrink-0">•</span>
+              <span className="flex-1">{inlineFormat(raw)}</span>
+              {outletName && (
+                <span className="shrink-0 mt-0.5">
+                  <AddContactButton
+                    outlet={outletName}
+                    beat={beat}
+                    added={addedOutlets.has(outletName)}
+                    onAdded={onAdded}
+                  />
+                </span>
+              )}
+            </li>
+          )
+        })}
+      </ul>
+    )
   }
 
   for (const line of lines) {
@@ -221,36 +235,7 @@ function SectionBody({ lines, beat, addedOutlets, onAdded }: { lines: string[]; 
   }
 
   flushTable()
-
-  // Render bullets with inline add buttons for bold outlet names
-  if (bulletBuffer.length) {
-    elements.push(
-      <ul key={elements.length} className="space-y-2 mt-3">
-        {bulletBuffer.map((b, i) => {
-          const raw        = b.replace(/^[-•]\s*/, '')
-          const outletName = extractOutletName(raw)
-          return (
-            <li key={i} className="flex gap-2 text-sm text-gray-600 leading-relaxed items-start">
-              <span className="text-gray-300 mt-1 shrink-0">•</span>
-              <span className="flex-1">{inlineFormat(raw)}</span>
-              {outletName && (
-                <span className="shrink-0 mt-0.5">
-                  <AddContactButton
-                    outlet={outletName}
-                    beat={beat}
-                    added={addedOutlets.has(outletName)}
-                    onAdded={onAdded}
-                  />
-                </span>
-              )}
-            </li>
-          )
-        })}
-      </ul>
-    )
-    bulletBuffer = []
-  }
-
+  flushBullets()
   return <>{elements}</>
 }
 

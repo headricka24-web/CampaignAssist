@@ -19,9 +19,12 @@ async function getDashboardData(userId: string) {
   const yesterday = new Date(Date.now() - 86_400_000)
   const where = { userId }
 
+  // Get candidate id for threat lookup
+  const candidate = await prisma.candidate.findFirst({ where: { userId }, select: { id: true } })
+
   const [
     total, newToday, byBucket, bySentiment, articles,
-    lastArticle, warRoomContent, hotButtonsContent,
+    lastArticle, threatRecords, hotButtonsContent,
   ] = await Promise.all([
     prisma.article.count({ where }),
     prisma.article.count({ where: { ...where, createdAt: { gte: yesterday } } }),
@@ -34,15 +37,21 @@ async function getDashboardData(userId: string) {
       include: { outlet: true },
     }),
     prisma.article.findFirst({ where, orderBy: { createdAt: 'desc' }, select: { createdAt: true } }),
-    prisma.generatedContent.findUnique({ where: { userId_type: { userId, type: 'war-room-threats' } } }),
+    candidate
+      ? prisma.threatRecord.findMany({
+          where:   { candidateId: candidate.id, dismissed: false },
+          orderBy: { createdAt: 'desc' },
+          select:  { severity: true, threat: true, angle: true, why: true },
+        })
+      : Promise.resolve([]),
     prisma.generatedContent.findUnique({ where: { userId_type: { userId, type: 'hot-buttons-briefing' } } }),
   ])
 
-  // Parse war room threats
-  let threats: Threat[] = []
-  if (warRoomContent?.content) {
-    try { threats = JSON.parse(warRoomContent.content) } catch { /* ignore */ }
-  }
+  // Threats come directly from ThreatRecord
+  const severityOrder = { HIGH: 0, MEDIUM: 1, LOW: 2 }
+  const threats: Threat[] = [...threatRecords]
+    .map(t => ({ ...t, severity: t.severity as 'HIGH' | 'MEDIUM' | 'LOW' }))
+    .sort((a, b) => (severityOrder[a.severity] ?? 1) - (severityOrder[b.severity] ?? 1))
 
   // Parse hot buttons briefing into a short summary (first 300 chars)
   let hotButtonSnippet: string | null = null
