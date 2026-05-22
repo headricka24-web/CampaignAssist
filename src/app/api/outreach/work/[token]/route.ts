@@ -16,7 +16,6 @@ const DISPOSITION_SYNC: Record<string, VoterSync> = {
   Committed:    { contactStatus: 'Reached',         supportLevel: 'Strong Support', tag: 'phone-bank:committed'     },
   Called:       { contactStatus: 'Reached',                                          tag: 'phone-bank:called'        },
   LeftVM:       { contactStatus: 'Left Message',                                     tag: 'phone-bank:left-vm'       },
-  NoAnswer:     { contactStatus: 'Needs Follow-Up',                                  tag: 'phone-bank:no-answer'     },
   NotInterested:{ contactStatus: 'Reached',         supportLevel: 'Opposed',         tag: 'phone-bank:not-interested'},
   DoNotContact: { contactStatus: 'Do Not Contact',                                   tag: 'phone-bank:do-not-contact'},
 }

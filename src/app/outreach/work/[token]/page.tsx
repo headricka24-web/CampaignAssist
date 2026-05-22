@@ -23,7 +23,6 @@ const DISPOSITIONS = [
   { key: 'Committed',     label: 'Committed ✓',    cls: 'bg-green-500 hover:bg-green-600 text-white'    },
   { key: 'Called',        label: 'Called',          cls: 'bg-blue-500 hover:bg-blue-600 text-white'     },
   { key: 'LeftVM',        label: 'Left VM',         cls: 'bg-indigo-500 hover:bg-indigo-600 text-white' },
-  { key: 'NoAnswer',      label: 'No Answer',       cls: 'bg-gray-400 hover:bg-gray-500 text-white'     },
   { key: 'NotInterested', label: 'Not Interested',  cls: 'bg-orange-500 hover:bg-orange-600 text-white' },
   { key: 'DoNotContact',  label: 'Do Not Contact',  cls: 'bg-red-600 hover:bg-red-700 text-white'       },
 ] as const
@@ -32,7 +31,6 @@ const DISPOSITION_BADGE: Record<string, string> = {
   Committed:    'bg-green-100 text-green-700',
   Called:       'bg-blue-100 text-blue-700',
   LeftVM:       'bg-indigo-100 text-indigo-700',
-  NoAnswer:     'bg-gray-100 text-gray-600',
   NotInterested:'bg-orange-100 text-orange-700',
   DoNotContact: 'bg-red-100 text-red-700',
 }

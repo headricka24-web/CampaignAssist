@@ -274,7 +274,6 @@ function VoterProfileDrawer({
                   'phone-bank:not-interested': { label: 'Not Interested', icon: '👎', cls: 'bg-orange-100 text-orange-700' },
                   'phone-bank:do-not-contact': { label: 'Do Not Contact', icon: '🚫', cls: 'bg-red-100 text-red-700'       },
                   'phone-bank:left-vm':        { label: 'Left VM',        icon: '📬', cls: 'bg-yellow-100 text-yellow-700' },
-                  'phone-bank:no-answer':      { label: 'No Answer',      icon: '📵', cls: 'bg-gray-100 text-gray-600'     },
                   'phone-bank:called':         { label: 'Called',         icon: '📞', cls: 'bg-blue-100 text-blue-700'     },
                 }
                 const pb = PB_LABELS[t]
@@ -415,7 +414,6 @@ function SegmentSidebar({
           'phone-bank:not-interested': { label: 'Not Interested',    icon: '👎' },
           'phone-bank:do-not-contact': { label: 'Do Not Contact',    icon: '🚫' },
           'phone-bank:left-vm':        { label: 'Left Voicemail',    icon: '📬' },
-          'phone-bank:no-answer':      { label: 'No Answer',         icon: '📵' },
           'phone-bank:called':         { label: 'Called',            icon: '📞' },
         }
         const pbTags = activeTags.filter(([tag]) => tag.startsWith('phone-bank:'))

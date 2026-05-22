@@ -72,9 +72,12 @@ Handle 3 likely pushbacks. Format each as:
 ## CLOSE
 Graceful exit whether they said yes, maybe, or no. Leave the door open. 5 sentences max.
 
+## VOICEMAIL SCRIPT
+A short, natural-sounding voicemail to leave if no one picks up. 3-4 sentences max. Include the candidate's name, a brief reason for the call, and a callback number placeholder like [CALLBACK NUMBER]. Should sound like a real person left it, not a robocall.
+
 ---
 Keep the whole script readable at a glance. Use plain language — no political jargon. Write the dialogue exactly as it should be spoken.`,
-    900,
+    1100,
   )
 
   // Persist to segment
